@@ -1,0 +1,72 @@
+# ===== BACKEND =====
+
+## Build results
+Backend/bin/
+Backend/obj/
+
+## User-specific files
+Backend/*.user
+Backend/*.suo
+Backend/*.userosscache
+Backend/*.sln.docstates
+
+## VS Code/Visual Studio temp folders
+.vscode/
+Backend/.vs/
+
+## App settings
+Backend/appsettings.Development.json
+Backend/appsettings.Local.json
+
+# Dotnet watch temp
+Backend/.aspnet/
+
+# Rider/JetBrains
+.idea/
+
+# Logs
+Backend/logs/
+*.log
+
+---
+
+# ===== FRONTEND (React + Vite + npm) =====
+
+## Node modules
+Frontend/node_modules/
+
+## Build output
+Frontend/dist/
+
+## Local env files
+Frontend/.env
+Frontend/.env.local
+Frontend/.env.development
+Frontend/.env.production
+
+# Vite cache
+Frontend/.vite/
+
+## System files
+.DS_Store
+Thumbs.db
+
+---
+
+# ===== GLOBAL =====
+
+# OS files
+*.swp
+*.tmp
+*.bak
+*.orig
+*.log
+
+# Ignore IDEs and editors
+*.sublime*
+*.code-workspace
+*.idea/
+
+# Git config
+.git/
+
