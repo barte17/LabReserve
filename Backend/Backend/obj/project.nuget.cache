@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "46P9qDltlfE=",
+  "dgSpecHash": "AZmhAT6n5Iw=",
   "success": true,
-  "projectFilePath": "D:\\studia\\LabReserveApp\\Backend\\Backend\\Backend.csproj",
+  "projectFilePath": "D:\\lr\\Backend\\Backend\\Backend.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\barte\\.nuget\\packages\\microsoft.extensions.apidescription.server\\6.0.5\\microsoft.extensions.apidescription.server.6.0.5.nupkg.sha512",
     "C:\\Users\\barte\\.nuget\\packages\\microsoft.openapi\\1.6.14\\microsoft.openapi.1.6.14.nupkg.sha512",
