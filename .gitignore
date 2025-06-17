@@ -1,32 +1,32 @@
 # ===== BACKEND =====
 
 ## Build results
-Backend/bin/
-Backend/obj/
+Backend/Backend/bin/
+Backend/Backend/obj/
 
 ## User-specific files
-Backend/*.user
-Backend/*.suo
-Backend/*.userosscache
-Backend/*.sln.docstates
+Backend/Backend/*.user
+Backend/Backend/*.suo
+Backend/Backend/*.userosscache
+Backend/Backend/*.sln.docstates
 
 ## VS Code/Visual Studio temp folders
-.vscode/
-Backend/.vs/
+Backend/Backend/.vscode/
+Backend/Backend/.vs/
 
 ## App settings
-Backend/appsettings.Development.json
-Backend/appsettings.Local.json
+Backend/Backend/appsettings.Development.json
+Backend/Backend/appsettings.Local.json
 
 # Dotnet watch temp
-Backend/.aspnet/
+Backend/Backend/.aspnet/
 
 # Rider/JetBrains
-.idea/
+Backend/Backend/.idea/
 
 # Logs
-Backend/logs/
-*.log
+Backend/Backend/logs/
+Backend/Backend/*.log
 
 ---
 
