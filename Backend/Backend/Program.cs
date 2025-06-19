@@ -1,5 +1,18 @@
+using Backend.Data;
+using Backend.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
+
+// Baza danych postgres
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+    .AddEntityFrameworkStores<AppDbContext>()
+    .AddDefaultTokenProviders();
 
 builder.Services.AddCors(options =>
 {
@@ -34,5 +47,22 @@ app.UseCors("AllowAll"); // Dodaj to!
 app.UseAuthorization();
 
 app.MapControllers();
+
+
+
+//Utworzenie przyk³adowych danych, jeœli baza jest pusta z klasy SeedData
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+
+    // Seed ról i u¿ytkowników
+    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+    await IdentitySeedData.SeedRolesAndUsers(roleManager, userManager);
+
+    SeedData.Seed(db);
+}
 
 app.Run();
