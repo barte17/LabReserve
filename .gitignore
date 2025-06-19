@@ -13,6 +13,7 @@ Backend/Backend/*.sln.docstates
 ## VS Code/Visual Studio temp folders
 Backend/Backend/.vscode/
 Backend/Backend/.vs/
+Backend/.vs/
 
 ## App settings
 Backend/Backend/appsettings.Development.json
