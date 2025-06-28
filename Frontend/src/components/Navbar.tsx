@@ -7,7 +7,7 @@ export function Navbar() {
       <ul>
         <li><Link to="/stanowiska">Wyświetl stanowiska</Link></li>
         <li><Link to="/sale">Wyświetl sale</Link></li>
-        <li><Link to="/panel-uzytkownika">Panel użytkownika</Link></li>
+        <li><Link to="/account">Panel użytkownika</Link></li>
         <li><Link to="/panel-admina">Panel admina</Link></li>
       </ul>
     </nav>

@@ -8,6 +8,12 @@ export default function PanelAdmina() {
   return (
     <div>
       <h1>Panel admina</h1>
+      <div>
+        <button>Wyświetl rezerwacje</button>
+        <button>Dodaj salę</button>
+        <button>Dodaj stanowisko</button>
+        <button>Zarządzaj użytkownikami</button>
+      </div>
     </div>
   );
 }
