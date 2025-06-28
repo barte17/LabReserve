@@ -16,8 +16,8 @@ namespace Backend.Data
                     Budynek = "A",
                     MaxOsob = 20,
                     MaStanowiska = true,
-                    CzynnaOd = new TimeOnly(8, 0),
-                    CzynnaDo = new TimeOnly(18, 0),
+                    CzynnaOd = new TimeSpan(8, 0, 0),
+                    CzynnaDo = new TimeSpan(18, 0, 0),
                     Opis = "Testowa sala z SeedData",
                     IdOpiekuna = "test-opiekun"
                 };

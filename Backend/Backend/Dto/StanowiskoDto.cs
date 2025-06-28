@@ -12,4 +12,12 @@
 
         public string? Opis { get; set; }
     }
+
+    public class CreateStanowiskoDto
+    {
+        public int SalaId { get; set; }
+        public string Nazwa { get; set; } = string.Empty;
+        public string? Typ { get; set; }
+        public string? Opis { get; set; }
+    }
 }

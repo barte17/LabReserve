@@ -18,8 +18,8 @@ namespace Backend.Models
 
         public bool? MaStanowiska { get; set; }
 
-        public TimeOnly? CzynnaOd { get; set; }
-        public TimeOnly? CzynnaDo { get; set; }
+        public TimeSpan? CzynnaOd { get; set; }
+        public TimeSpan? CzynnaDo { get; set; }
 
         [MaxLength(500)]
         public string? Opis { get; set; }
