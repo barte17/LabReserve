@@ -57,67 +57,97 @@ export default function AddRoomForm({ onSubmit }: { onSubmit: (data: SalaFormDat
     onSubmit(parsedData);
   };
 
-  return (
-    <form onSubmit={handleSubmit}>
-      <h3>Dodaj salę</h3>
-      <input
-        placeholder="Numer sali"
-        type="number"
-        value={numer}
-        onChange={e => setNumer(e.target.value)}
-        required
-      />
-      <input
-        placeholder="Budynek"
-        value={budynek}
-        onChange={e => setBudynek(e.target.value)}
-        required
-      />
-      <input
-        placeholder="Max osób"
-        type="number"
-        value={maxOsob}
-        onChange={e => setMaxOsob(e.target.value)}
-      />
-      <label>
-        <input
-          type="checkbox"
-          checked={maStanowiska}
-          onChange={e => setMaStanowiska(e.target.checked)}
-        />
-        Czy ma stanowiska?
-      </label>
-      <label>
-        Godzina otwarcia:
-        <input
-          type="time"
-          value={czynnaOd}
-          onChange={e => setCzynnaOd(e.target.value)}
-        />
-      </label>
-      <label>
-        Godzina zamknięcia:
-        <input
-          type="time"
-          value={czynnaDo}
-          onChange={e => setCzynnaDo(e.target.value)}
-        />
-      </label>
-      <label>Opiekun sali (Nauczyciel):</label>
-      <select value={idOpiekuna} onChange={e => setIdOpiekuna(e.target.value)}>
-        <option value="">-- wybierz nauczyciela --</option>
-        {nauczyciele.map(user => (
-          <option key={user.id} value={user.id}>
-            {user.imie} {user.nazwisko}
-          </option>
-        ))}
-      </select>
-      <textarea
-        placeholder="Opis"
-        value={opis}
-        onChange={e => setOpis(e.target.value)}
-      />
-      <button type="submit">Dodaj</button>
-    </form>
+    return (
+    <div className="card">
+      <h3 className="text-2xl font-semibold text-light-text mb-6">Dodaj salę</h3>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-light-text mb-1">Numer sali</label>
+          <input
+            type="number"
+            value={numer}
+            onChange={(e) => setNumer(e.target.value)}
+            required
+            className="input"
+            placeholder="Numer sali"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-light-text mb-1">Budynek</label>
+          <input
+            value={budynek}
+            onChange={(e) => setBudynek(e.target.value)}
+            required
+            className="input"
+            placeholder="Budynek"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-light-text mb-1">Max osób</label>
+          <input
+            type="number"
+            value={maxOsob}
+            onChange={(e) => setMaxOsob(e.target.value)}
+            className="input"
+            placeholder="Max osób"
+          />
+        </div>
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            checked={maStanowiska}
+            onChange={(e) => setMaStanowiska(e.target.checked)}
+            className="h-4 w-4 text-light-text focus:ring-light-text border-gray-300 rounded"
+          />
+          <label className="ml-2 text-sm font-medium text-light-text">Czy ma stanowiska?</label>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-light-text mb-1">Godzina otwarcia</label>
+          <input
+            type="time"
+            value={czynnaOd}
+            onChange={(e) => setCzynnaOd(e.target.value)}
+            className="input"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-light-text mb-1">Godzina zamknięcia</label>
+          <input
+            type="time"
+            value={czynnaDo}
+            onChange={(e) => setCzynnaDo(e.target.value)}
+            className="input"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-light-text mb-1">Opiekun sali</label>
+          <select
+            value={idOpiekuna}
+            onChange={(e) => setIdOpiekuna(e.target.value)}
+            className="select"
+          >
+            <option value="">-- Wybierz nauczyciela --</option>
+            {nauczyciele.map((user) => (
+              <option key={user.id} value={user.id}>
+                {user.imie} {user.nazwisko}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-light-text mb-1">Opis</label>
+          <textarea
+            value={opis}
+            onChange={(e) => setOpis(e.target.value)}
+            className="input"
+            placeholder="Opis"
+            rows={4}
+          />
+        </div>
+        <button type="submit" className="btn-primary">
+          Dodaj
+        </button>
+      </form>
+    </div>
   );
 }
