@@ -3,6 +3,7 @@ using Backend.Dto;
 using Backend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace Backend.Controllers
 {
@@ -36,6 +37,32 @@ namespace Backend.Controllers
                 .ToListAsync();
 
             return Ok(rezerwacje);
+        }
+
+        [HttpPatch("{id}/status")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateStatusDto dto)
+        {
+            var rezerwacja = await _context.Rezerwacje.FindAsync(id);
+            if (rezerwacja == null)
+                return NotFound();
+
+            rezerwacja.Status = dto.Status;
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var rezerwacja = await _context.Rezerwacje.FindAsync(id);
+            if (rezerwacja == null)
+                return NotFound();
+
+            _context.Rezerwacje.Remove(rezerwacja);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
 
     }

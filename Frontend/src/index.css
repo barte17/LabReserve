@@ -21,7 +21,7 @@ body {
 
 /* Custom input style */
 .input {
-  @apply w-full px-4 py-2 bg-accent text-dark-text border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-light-text transition;
+  @apply w-full px-4 py-2 bg-white text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 transition placeholder-gray-400;
 }
 
 /* Custom button style */
@@ -36,12 +36,12 @@ body {
 
 /* Custom select style */
 select {
-  @apply w-full px-4 py-2 bg-accent text-dark-text border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-light-text transition;
+  @apply w-full px-4 py-2 bg-white text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 transition placeholder-gray-400;
 }
 
 /* Custom textarea style */
 textarea {
-  @apply w-full px-4 py-2 bg-accent text-dark-text border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-light-text transition;
+  @apply w-full px-4 py-2 bg-white text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 transition placeholder-gray-400;
 }
 
 /* Custom checkbox style */
@@ -67,4 +67,38 @@ li {
 /* Custom navbar link style */
 .navbar-link {
   @apply text-light-text font-medium hover:underline;
+}
+
+/* Panel filtrów */
+.rezerwacje-filters {
+  @apply flex flex-wrap gap-6 mb-8 items-end bg-white/80 border border-gray-200 rounded-lg shadow p-4;
+}
+
+/* Nagłówek sekcji rezerwacji */
+.rezerwacje-section-title {
+  @apply text-lg font-bold mt-10 mb-3 text-gray-800;
+}
+
+/* Karta rezerwacji */
+.rezerwacja-card {
+  @apply flex items-center justify-between bg-light-bg text-light-text p-4 rounded-md shadow-sm border border-gray-200 mb-2;
+}
+
+/* Akcje rezerwacji */
+.rezerwacja-actions {
+  @apply flex flex-col gap-2 ml-4;
+}
+
+/* Przycisk akcji */
+.rezerwacja-btn {
+  @apply px-3 py-1 rounded text-sm font-medium transition;
+}
+.rezerwacja-btn-accept {
+  @apply bg-green-500 hover:bg-green-600 text-white disabled:opacity-60;
+}
+.rezerwacja-btn-reject {
+  @apply bg-yellow-500 hover:bg-yellow-600 text-white disabled:opacity-60;
+}
+.rezerwacja-btn-delete {
+  @apply bg-red-500 hover:bg-red-600 text-white;
 }
