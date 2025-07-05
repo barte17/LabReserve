@@ -9,7 +9,7 @@ type Rezerwacja = {
   uzytkownikId: string;
   dataStart: string;
   dataKoniec: string;
-  dataUtworzenia: string; // <-- dodaj to pole
+  dataUtworzenia: string;
   opis?: string;
   status: string;
 };
@@ -18,11 +18,11 @@ export default function RezerwacjeList() {
   const [rezerwacje, setRezerwacje] = useState<Rezerwacja[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Nowe stany do wyszukiwania, sortowania i filtrowania
+  // Stany do wyszukiwania, sortowania i filtrowania
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<"dataUtworzenia" | "dataStart">("dataUtworzenia");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-  const [statusFilter, setStatusFilter] = useState<"" | "oczekujące" | "zaakceptowano" | "odrzucono">("");
+  const [statusFilter, setStatusFilter] = useState<"" | "oczekujące" | "zaakceptowano" | "odrzucono" | "anulowano">("");
 
   useEffect(() => {
     fetch("/api/rezerwacja")
@@ -68,7 +68,8 @@ export default function RezerwacjeList() {
     const matchesSearch =
       r.uzytkownikId.toLowerCase().includes(search.toLowerCase()) ||
       (r.opis?.toLowerCase().includes(search.toLowerCase()) ?? false) ||
-      (r.salaId ? `Sala ${r.salaId}` : `Stanowisko ${r.stanowiskoId}`).toLowerCase().includes(search.toLowerCase());
+      (r.salaId ? `Sala ${r.salaId}` : `Stanowisko ${r.stanowiskoId}`).toLowerCase().includes(search.toLowerCase()) ||
+      r.id.toString().includes(search); 
     return matchesStatus && matchesSearch;
   });
 
@@ -85,6 +86,7 @@ export default function RezerwacjeList() {
   const oczekujace = filtered.filter(r => r.status === "oczekujące");
   const zaakceptowane = filtered.filter(r => r.status === "zaakceptowano");
   const odrzucone = filtered.filter(r => r.status === "odrzucono");
+  const anulowane = filtered.filter(r => r.status === "anulowano"); 
 
   return (
     <div className="max-w-3xl mx-auto px-2">
@@ -126,12 +128,13 @@ export default function RezerwacjeList() {
           <select
             className="select"
             value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value as "" | "oczekujące" | "zaakceptowano" | "odrzucono")}
+            onChange={e => setStatusFilter(e.target.value as "" | "oczekujące" | "zaakceptowano" | "odrzucono" | "anulowano")}
           >
             <option value="">Wszystkie</option>
             <option value="oczekujące">Oczekujące</option>
             <option value="zaakceptowano">Zaakceptowane</option>
             <option value="odrzucono">Odrzucone</option>
+            <option value="anulowano">Anulowane</option>
           </select>
         </div>
       </div>
@@ -141,11 +144,13 @@ export default function RezerwacjeList() {
         {renderList(zaakceptowane, "Zaakceptowane")}
         {zaakceptowane.length > 0 && <hr className="my-8" />}
         {renderList(odrzucone, "Odrzucone")}
+        {odrzucone.length > 0 && <hr className="my-8" />}
+        {renderList(anulowane, "Anulowane")}
       </div>
     </div>
   );
 
-  // renderList z nowymi klasami:
+  // Funkcja renderująca listę rezerwacji
   function renderList(lista: Rezerwacja[], label: string) {
     return (
       <>

@@ -13,12 +13,17 @@ type SalaTyp = {
   budynek: string;
 };
 
-export default function AddStationForm({ onSubmit }: { onSubmit: (data: StanowiskoFormData) => void }) {
+export default function AddStationForm({ onSubmit, initialData, submitLabel = "Dodaj", onCancel }: {
+  onSubmit: (data: StanowiskoFormData) => void;
+  initialData?: Partial<StanowiskoFormData>;
+  submitLabel?: string;
+  onCancel?: () => void;
+}) {
   const [sale, setSale] = useState<SalaTyp[]>([]);
-  const [salaId, setSalaId] = useState<number | "">("");
-  const [nazwa, setNazwa] = useState("");
-  const [typ, setTyp] = useState("");
-  const [opis, setOpis] = useState("");
+  const [salaId, setSalaId] = useState<number | "">(initialData?.salaId ?? "");
+  const [nazwa, setNazwa] = useState(initialData?.nazwa ?? "");
+  const [typ, setTyp] = useState(initialData?.typ ?? "");
+  const [opis, setOpis] = useState(initialData?.opis ?? "");
 
   useEffect(() => {
     fetch("/api/sala/stanowiska-dozwolone")
@@ -89,8 +94,13 @@ export default function AddStationForm({ onSubmit }: { onSubmit: (data: Stanowis
           />
         </div>
         <button type="submit" className="btn-primary">
-          Dodaj
+          {submitLabel}
         </button>
+        {onCancel && (
+          <button type="button" className="btn ml-2" onClick={onCancel}>
+            Anuluj
+          </button>
+        )}
       </form>
     </div>
   );

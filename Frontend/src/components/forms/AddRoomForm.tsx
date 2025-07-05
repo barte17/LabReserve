@@ -17,16 +17,20 @@ type User = {
   nazwisko: string;
 };
 
-export default function AddRoomForm({ onSubmit }: { onSubmit: (data: SalaFormData) => void }) {
-  const [numer, setNumer] = useState("");
-  const [budynek, setBudynek] = useState("");
-  const [maxOsob, setMaxOsob] = useState("");
-  const [maStanowiska, setMaStanowiska] = useState(false);
-  const [czynnaOd, setCzynnaOd] = useState("");
-  const [czynnaDo, setCzynnaDo] = useState("");
-  const [opis, setOpis] = useState("");
-
-  const [idOpiekuna, setIdOpiekuna] = useState("");
+export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Dodaj", onCancel }: {
+  onSubmit: (data: SalaFormData) => void;
+  initialData?: Partial<SalaFormData>;
+  submitLabel?: string;
+  onCancel?: () => void;
+}) {
+  const [numer, setNumer] = useState(initialData?.numer?.toString() ?? "");
+  const [budynek, setBudynek] = useState(initialData?.budynek ?? "");
+  const [maxOsob, setMaxOsob] = useState(initialData?.maxOsob?.toString() ?? "");
+  const [maStanowiska, setMaStanowiska] = useState(initialData?.maStanowiska ?? false);
+  const [czynnaOd, setCzynnaOd] = useState(initialData?.czynnaOd ? initialData.czynnaOd.slice(0,5) : "");
+  const [czynnaDo, setCzynnaDo] = useState(initialData?.czynnaDo ? initialData.czynnaDo.slice(0,5) : "");
+  const [opis, setOpis] = useState(initialData?.opis ?? "");
+  const [idOpiekuna, setIdOpiekuna] = useState(initialData?.idOpiekuna ?? "");
   const [nauczyciele, setNauczyciele] = useState<User[]>([]);
 
   useEffect(() => {
@@ -103,21 +107,31 @@ export default function AddRoomForm({ onSubmit }: { onSubmit: (data: SalaFormDat
         </div>
         <div>
           <label className="block text-sm font-medium text-light-text mb-1">Godzina otwarcia</label>
-          <input
-            type="time"
-            value={czynnaOd}
-            onChange={(e) => setCzynnaOd(e.target.value)}
-            className="input"
-          />
+          <div className="relative group">
+            <input
+              type="time"
+              value={czynnaOd}
+              onChange={(e) => setCzynnaOd(e.target.value)}
+              className="input pr-14"
+            />
+            <span className="absolute inset-y-0 right-2 flex items-center pointer-events-none transition-colors group-hover:text-blue-500 text-gray-400">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeWidth="2" d="M12 7v5l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </span>
+          </div>
         </div>
         <div>
           <label className="block text-sm font-medium text-light-text mb-1">Godzina zamknięcia</label>
-          <input
-            type="time"
-            value={czynnaDo}
-            onChange={(e) => setCzynnaDo(e.target.value)}
-            className="input"
-          />
+          <div className="relative group">
+            <input
+              type="time"
+              value={czynnaDo}
+              onChange={(e) => setCzynnaDo(e.target.value)}
+              className="input pr-12"
+            />
+            <span className="absolute inset-y-0 right-2 flex items-center pointer-events-none transition-colors group-hover:text-blue-500 text-gray-400">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeWidth="2" d="M12 7v5l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </span>
+          </div>
         </div>
         <div>
           <label className="block text-sm font-medium text-light-text mb-1">Opiekun sali</label>
@@ -145,8 +159,13 @@ export default function AddRoomForm({ onSubmit }: { onSubmit: (data: SalaFormDat
           />
         </div>
         <button type="submit" className="btn-primary">
-          Dodaj
+          {submitLabel}
         </button>
+        {onCancel && (
+          <button type="button" className="btn ml-2" onClick={onCancel}>
+            Anuluj
+          </button>
+        )}
       </form>
     </div>
   );

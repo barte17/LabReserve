@@ -11,6 +11,8 @@
         public TimeSpan? CzynnaDo { get; set; }
         public string? Opis { get; set; }
         public string? IdOpiekuna { get; set; }
+        public string? ImieOpiekuna { get; set; }
+        public string? NazwiskoOpiekuna { get; set; }
     }
 
     public class CreateSalaDto

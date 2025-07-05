@@ -47,5 +47,30 @@ namespace Backend.Controllers
             return stanowisko;
         }
 
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateStanowisko(int id, CreateStanowiskoDto dto)
+        {
+            var stanowisko = await _context.Stanowiska.FindAsync(id);
+            if (stanowisko == null) return NotFound();
+
+            stanowisko.SalaId = dto.SalaId;
+            stanowisko.Nazwa = dto.Nazwa;
+            stanowisko.Typ = dto.Typ;
+            stanowisko.Opis = dto.Opis;
+
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteStanowisko(int id)
+        {
+            var stanowisko = await _context.Stanowiska.FindAsync(id);
+            if (stanowisko == null) return NotFound();
+            _context.Stanowiska.Remove(stanowisko);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
     }
 }

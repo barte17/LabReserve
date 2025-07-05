@@ -3,6 +3,8 @@ import AddSalaForm from "../components/forms/AddRoomForm";
 import AddStanowiskoForm from "../components/forms/AddStationForm";
 import RezerwacjeList from "../components/RezerwacjeList";
 import AdminNavbar from "../components/AdminNavbar";
+import SaleListAdmin from "../components/SaleListAdmin";
+import StanowiskaListAdmin from "../components/StanowiskaListAdmin";
 
 type PanelView =
   | "default"
@@ -67,8 +69,8 @@ export default function PanelAdmina() {
         {view === "addStation" && <AddStanowiskoForm onSubmit={handleAddStation} />}
         {view === "rezerwacje" && <RezerwacjeList />}
         {view === "users" && <Placeholder text="Zarządzanie użytkownikami (w trakcie)" />}
-        {view === "sale" && <Placeholder text="Lista sal (do zaimplementowania)" />}
-        {view === "stanowiska" && <Placeholder text="Lista stanowisk (do zaimplementowania)" />}
+        {view === "sale" && <SaleListAdmin />}
+        {view === "stanowiska" && <StanowiskaListAdmin />}
         {view === "default" && <p className="text-gray-500">Wybierz opcję z panelu powyżej.</p>}
       </div>
     </div>

@@ -18,9 +18,26 @@ namespace Backend.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Sala>>> GetAll()
+        public async Task<ActionResult<IEnumerable<SalaDto>>> GetAll()
         {
-            return await _context.Sale.ToListAsync();
+            var sale = await _context.Sale
+                .Select(s => new SalaDto
+                {
+                    Id = s.Id,
+                    Numer = s.Numer,
+                    Budynek = s.Budynek,
+                    MaxOsob = s.MaxOsob,
+                    MaStanowiska = s.MaStanowiska,
+                    CzynnaOd = s.CzynnaOd,
+                    CzynnaDo = s.CzynnaDo,
+                    Opis = s.Opis,
+                    IdOpiekuna = s.IdOpiekuna,
+                    ImieOpiekuna = s.Opiekun != null ? s.Opiekun.Imie : null,
+                    NazwiskoOpiekuna = s.Opiekun != null ? s.Opiekun.Nazwisko : null
+                })
+                .ToListAsync();
+
+            return Ok(sale);
         }
 
         [HttpPost]
@@ -66,6 +83,35 @@ namespace Backend.Controllers
                 .ToListAsync();
 
             return Ok(sale);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateSala(int id, CreateSalaDto dto)
+        {
+            var sala = await _context.Sale.FindAsync(id);
+            if (sala == null) return NotFound();
+
+            sala.Numer = dto.Numer;
+            sala.Budynek = dto.Budynek;
+            sala.MaxOsob = dto.MaxOsob;
+            sala.MaStanowiska = dto.MaStanowiska;
+            sala.CzynnaOd = dto.CzynnaOd;
+            sala.CzynnaDo = dto.CzynnaDo;
+            sala.Opis = dto.Opis;
+            sala.IdOpiekuna = dto.IdOpiekuna;
+
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteSala(int id)
+        {
+            var sala = await _context.Sale.FindAsync(id);
+            if (sala == null) return NotFound();
+            _context.Sale.Remove(sala);
+            await _context.SaveChangesAsync();
+            return NoContent();
         }
     }
 }
