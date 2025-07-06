@@ -8,7 +8,7 @@ namespace Backend.Data
         public static async Task SeedRolesAndUsers(RoleManager<IdentityRole> roleManager, UserManager<ApplicationUser> userManager)
         {
             // === ROLE ===
-            string[] roleNames = { "Student", "Nauczyciel", "Admin", "Opiekun" };
+            string[] roleNames = { "Student", "Nauczyciel", "Admin", "Opiekun", "Niezatwierdzony" };
 
             foreach (var role in roleNames)
             {
