@@ -14,8 +14,22 @@ const Login = () => {
     e.preventDefault();
     try {
       const result = await login(email, password);
-      localStorage.setItem('accessToken', result.accessToken); // jeśli token
+      localStorage.setItem('accessToken', result.token);
+      // Po zalogowaniu pobierz dane użytkownika, aby uzyskać rolę
+      const userRes = await fetch('/api/account/me', {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${result.token}`,
+        },
+      });
+      if (userRes.ok) {
+        const userData = await userRes.json();
+        localStorage.setItem('userRole', userData.rola || '');
+      } else {
+        localStorage.setItem('userRole', '');
+      }
       navigate('/');
+      window.location.reload();
     } catch (err) {
       setError('Niepoprawne dane logowania');
     }
@@ -30,7 +44,7 @@ const Login = () => {
         <h2 className="text-2xl font-bold mb-6 text-center">Logowanie</h2>
 
         <input
-          type="email"
+          type="email"  
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}

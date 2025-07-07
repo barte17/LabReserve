@@ -6,10 +6,12 @@ import PanelAdmina from "../pages/AdminPanel";
 import UserPanel from "../pages/AccountPanel";
 import Login from '../pages/Login';
 import Register from '../pages/Register';
+import Home from '../pages/Home';
 
 export function AppRoutes() {
   return (
     <Routes>
+      <Route path="/" element={<Home />} />
       <Route path="/stanowiska" element={<Stanowiska />} />
       <Route path="/sale" element={<Sale />} />
       <Route path="/account" element={<UserPanel />} />

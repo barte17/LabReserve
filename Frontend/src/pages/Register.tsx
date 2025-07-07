@@ -14,19 +14,42 @@ const Register = () => {
   const navigate = useNavigate();
 
   const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password !== confirmPassword) {
-      setError('Hasła nie są takie same');
-      return;
-    }
+  e.preventDefault();
 
-    try {
-      await register(email, password, imie, nazwisko);
-      navigate('/login');
-    } catch (err) {
-      setError('Rejestracja nie powiodła się');
-    }
-  };
+  // Reset błędu
+  setError('');
+
+  // Walidacja frontendowa
+  const onlyLettersRegex = /^[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż\s-]+$/;
+  const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+
+  if (!onlyLettersRegex.test(imie)) {
+    setError('Imię może zawierać tylko litery.');
+    return;
+  }
+
+  if (!onlyLettersRegex.test(nazwisko)) {
+    setError('Nazwisko może zawierać tylko litery.');
+    return;
+  }
+
+  if (!strongPasswordRegex.test(password)) {
+    setError('Hasło musi mieć minimum 8 znaków, w tym dużą i małą literę, cyfrę oraz znak specjalny.');
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    setError('Hasła nie są takie same');
+    return;
+  }
+
+  try {
+    await register(email, password, imie, nazwisko);
+    navigate('/login');
+  } catch (err) {
+    setError('Rejestracja nie powiodła się');
+  }
+};
 
    return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">

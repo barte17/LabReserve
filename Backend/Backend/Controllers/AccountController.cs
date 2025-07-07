@@ -1,5 +1,6 @@
 ﻿using Backend.Dto;
 using Backend.Models;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -92,12 +93,36 @@ namespace Backend.Controllers
             });
         }
 
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            await HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
+            return Ok();
+        }
+
         [Authorize]
         [HttpGet("me")]
-        public IActionResult Me()
+        public async Task<IActionResult> Me()
         {
-            return Ok(User.Identity.Name);
+            var userName = User.Identity.Name;
+            var user = await _userManager.FindByNameAsync(userName);
+
+            if (user == null)
+                return NotFound("Użytkownik nie istnieje");
+
+            var roles = await _userManager.GetRolesAsync(user);
+
+            return Ok(new
+            {
+                id = user.Id,
+                email = user.Email,
+                imie = user.Imie,
+                nazwisko = user.Nazwisko,
+                rola = roles.FirstOrDefault() ?? "Brak",
+                numerTelefonu = user.PhoneNumber
+            });
         }
+
     }
 
 }
