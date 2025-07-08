@@ -1,4 +1,23 @@
 // src/services/authService.ts
+import { jwtDecode } from 'jwt-decode';
+
+interface DecodedToken {
+  id: string; 
+  email?: string;
+  role?: string;
+  exp: number;
+}
+
+export const getUserFromToken = (): DecodedToken | null => {
+  const token = localStorage.getItem("accessToken");
+  if (!token) return null;
+
+  try {
+    return jwtDecode<DecodedToken>(token);
+  } catch {
+    return null;
+  }
+};
 
 export const login = async (email: string, password: string) => {
   const response = await fetch(`api/account/login`, {

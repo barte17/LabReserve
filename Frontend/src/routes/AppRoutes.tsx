@@ -7,6 +7,8 @@ import UserPanel from "../pages/AccountPanel";
 import Login from '../pages/Login';
 import Register from '../pages/Register';
 import Home from '../pages/Home';
+import PublicRoute from "../routes/PublicRoute";
+import { AdminRoute } from "../routes/AdminRoute";
 
 export function AppRoutes() {
   return (
@@ -15,9 +17,27 @@ export function AppRoutes() {
       <Route path="/stanowiska" element={<Stanowiska />} />
       <Route path="/sale" element={<Sale />} />
       <Route path="/account" element={<UserPanel />} />
-      <Route path="/panel-admina" element={<PanelAdmina />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+
+
+      <Route path="/panel-admina" element={
+        <AdminRoute>
+          <PanelAdmina />
+        </AdminRoute>
+      } />
+
+      { /* Public routes */ }
+      <Route path="/login" element={
+        <PublicRoute>
+          <Login />
+        </PublicRoute>
+        } />
+
+      <Route path="/register" element={
+        <PublicRoute>
+          <Register />
+        </PublicRoute>
+        } />
+      
     </Routes>
   );
 }

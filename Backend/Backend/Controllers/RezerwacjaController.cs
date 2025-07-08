@@ -1,6 +1,7 @@
 ﻿using Backend.Data;
 using Backend.Dto;
 using Backend.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
@@ -9,6 +10,7 @@ namespace Backend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Admin")]
     public class RezerwacjaController : Controller
     {
         private readonly AppDbContext _context;

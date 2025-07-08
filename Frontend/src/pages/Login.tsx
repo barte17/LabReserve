@@ -68,6 +68,9 @@ const Login = () => {
         >
           Zaloguj się
         </button>
+        <p className="mt-4 text-center">
+          Nie masz konta? <a href="/register" className="text-blue-500 hover:underline">Zarejestruj się</a>
+        </p>
       </form>
     </div>
   );

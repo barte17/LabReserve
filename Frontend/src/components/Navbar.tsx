@@ -33,6 +33,7 @@ export function Navbar() {
     <nav className="navbar">
       <ul className="navbar-list" style={{ display: "flex", width: "100%", alignItems: "center", justifyContent: "space-between" }}>
         <span style={{ display: "flex", gap: "1rem" }}>
+          <li><Link to="/" className="navbar-link">Strona główna</Link></li>
           <li><Link to="/stanowiska" className="navbar-link">Wyświetl stanowiska</Link></li>
           <li><Link to="/sale" className="navbar-link">Wyświetl sale</Link></li>
           {isLogged && role === "Admin" && (

@@ -1,6 +1,7 @@
 ﻿using Backend.Data;
 using Backend.Dto;
 using Backend.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,6 +25,7 @@ namespace Backend.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateStanowisko(CreateStanowiskoDto dto)
         {
             var stanowisko = new Stanowisko
@@ -48,6 +50,7 @@ namespace Backend.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateStanowisko(int id, CreateStanowiskoDto dto)
         {
             var stanowisko = await _context.Stanowiska.FindAsync(id);
@@ -63,6 +66,7 @@ namespace Backend.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteStanowisko(int id)
         {
             var stanowisko = await _context.Stanowiska.FindAsync(id);
