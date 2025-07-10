@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { fetchSale, editSala, deleteSala } from "../services/salaService";
 import AddSalaForm from "./forms/AddRoomForm";
 
 type Sala = {
@@ -29,8 +30,7 @@ export default function SaleListAdmin({ onEdit }: Props) {
   const [editingSala, setEditingSala] = useState<Sala | null>(null);
 
   useEffect(() => {
-    fetch("/api/sala")
-      .then((res) => res.json())
+    fetchSale()
       .then((data) => setSale(data))
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -44,10 +44,8 @@ export default function SaleListAdmin({ onEdit }: Props) {
   const handleDelete = async (id: number) => {
     if (!window.confirm("Na pewno usunąć salę?")) return;
     try {
-      const res = await fetch(`/api/sala/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        setSale((prev) => prev.filter((s) => s.id !== id));
-      }
+      await deleteSala(id);
+      setSale((prev) => prev.filter((s) => s.id !== id));
     } catch (e) {
       console.error(e);
     }
@@ -60,17 +58,9 @@ export default function SaleListAdmin({ onEdit }: Props) {
   const handleEditSubmit = async (data: any) => {
     if (!editingSala) return;
     try {
-      const res = await fetch(`/api/sala/${editingSala.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (res.ok) {
-        setSale((prev) => prev.map((s) => (s.id === editingSala.id ? { ...s, ...data } : s)));
-        setEditingSala(null);
-      } else {
-        alert("Błąd podczas edycji sali");
-      }
+      await editSala(editingSala.id, data);
+      setSale((prev) => prev.map((s) => (s.id === editingSala.id ? { ...s, ...data } : s)));
+      setEditingSala(null);
     } catch (e) {
       console.error(e);
       alert("Błąd podczas edycji sali");

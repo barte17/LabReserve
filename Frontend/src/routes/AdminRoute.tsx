@@ -7,7 +7,7 @@ export const AdminRoute = ({ children }: { children: ReactNode }) => {
   const user = getUserFromToken();
 
   if (!user) return <Navigate to="/login" replace />;
-  if (user.role !== "Admin") return <Navigate to="/" replace />;
+  if (!user.role?.includes("Admin")) return <Navigate to="/" replace />;
 
   return children;
 };

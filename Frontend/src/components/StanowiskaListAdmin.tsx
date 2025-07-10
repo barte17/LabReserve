@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import AddStationForm from "./forms/AddStationForm";
+import { fetchStanowiska, editStanowisko, deleteStanowisko } from "../services/stanowiskoService";
 
 type Stanowisko = {
   id: number;
@@ -18,8 +19,7 @@ export default function StanowiskaListAdmin() {
   const [editingStanowisko, setEditingStanowisko] = useState<Stanowisko | null>(null);
 
   useEffect(() => {
-    fetch("/api/stanowisko")
-      .then((res) => res.json())
+    fetchStanowiska()
       .then((data) => setStanowiska(data))
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -28,10 +28,8 @@ export default function StanowiskaListAdmin() {
   const handleDelete = async (id: number) => {
     if (!window.confirm("Na pewno usunąć stanowisko?")) return;
     try {
-      const res = await fetch(`/api/stanowisko/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        setStanowiska((prev) => prev.filter((s) => s.id !== id));
-      }
+      await deleteStanowisko(id);
+      setStanowiska((prev) => prev.filter((s) => s.id !== id));
     } catch (e) {
       console.error(e);
     }
@@ -44,17 +42,9 @@ export default function StanowiskaListAdmin() {
   const handleEditSubmit = async (data: any) => {
     if (!editingStanowisko) return;
     try {
-      const res = await fetch(`/api/stanowisko/${editingStanowisko.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (res.ok) {
-        setStanowiska((prev) => prev.map((s) => (s.id === editingStanowisko.id ? { ...s, ...data } : s)));
-        setEditingStanowisko(null);
-      } else {
-        alert("Błąd podczas edycji stanowiska");
-      }
+      await editStanowisko(editingStanowisko.id, data);
+      setStanowiska((prev) => prev.map((s) => (s.id === editingStanowisko.id ? { ...s, ...data } : s)));
+      setEditingStanowisko(null);
     } catch (e) {
       console.error(e);
       alert("Błąd podczas edycji stanowiska");

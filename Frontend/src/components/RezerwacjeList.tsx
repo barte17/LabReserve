@@ -1,6 +1,7 @@
 // components/RezerwacjeList.tsx
 
 import { useEffect, useState } from "react";
+import { fetchRezerwacje, updateStatus, deleteRezerwacja } from "../services/rezerwacjaService";
 
 type Rezerwacja = {
   id: number;
@@ -25,36 +26,27 @@ export default function RezerwacjeList() {
   const [statusFilter, setStatusFilter] = useState<"" | "oczekujące" | "zaakceptowano" | "odrzucono" | "anulowano">("");
 
   useEffect(() => {
-    fetch("/api/rezerwacja")
-      .then((res) => res.json())
-      .then((data) => setRezerwacje(data))
+    fetchRezerwacje()
+      .then(setRezerwacje)
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
-  const updateStatus = async (id: number, status: string) => {
+  const handleUpdateStatus = async (id: number, status: string) => {
     try {
-      const res = await fetch(`/api/rezerwacja/${id}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
-      if (res.ok) {
-        setRezerwacje((prev) =>
-          prev.map((r) => (r.id === id ? { ...r, status } : r))
-        );
-      }
+      await updateStatus(id, status);
+      setRezerwacje((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, status } : r))
+      );
     } catch (e) {
       console.error(e);
     }
   };
 
-  const deleteRezerwacja = async (id: number) => {
+  const handleDelete = async (id: number) => {
     try {
-      const res = await fetch(`/api/rezerwacja/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        setRezerwacje((prev) => prev.filter((r) => r.id !== id));
-      }
+      await deleteRezerwacja(id);
+      setRezerwacje((prev) => prev.filter((r) => r.id !== id));
     } catch (e) {
       console.error(e);
     }
@@ -193,21 +185,21 @@ export default function RezerwacjeList() {
                   <div className="rezerwacja-actions">
                     <button
                       className="rezerwacja-btn rezerwacja-btn-accept"
-                      onClick={() => updateStatus(r.id, "zaakceptowano")}
+                      onClick={() => handleUpdateStatus(r.id, "zaakceptowano")}
                       disabled={r.status === "zaakceptowano"}
                     >
                       Zaakceptuj
                     </button>
                     <button
                       className="rezerwacja-btn rezerwacja-btn-reject"
-                      onClick={() => updateStatus(r.id, "odrzucono")}
+                      onClick={() => handleUpdateStatus(r.id, "odrzucono")}
                       disabled={r.status === "odrzucono"}
                     >
                       Odrzuć
                     </button>
                     <button
                       className="rezerwacja-btn rezerwacja-btn-delete"
-                      onClick={() => deleteRezerwacja(r.id)}
+                      onClick={() => handleDelete(r.id)}
                     >
                       Usuń
                     </button>

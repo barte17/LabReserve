@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import AddSalaForm from "../components/forms/AddRoomForm";
 import AddStanowiskoForm from "../components/forms/AddStationForm";
+import { addSala } from "../services/salaService";
+import { addStanowisko } from "../services/stanowiskoService";
 import RezerwacjeList from "../components/RezerwacjeList";
 import AdminNavbar from "../components/AdminNavbar";
 import SaleListAdmin from "../components/SaleListAdmin";
@@ -24,30 +26,23 @@ export default function PanelAdmina() {
   }, []);
 
   const handleAddRoom = async (data: any) => {
-    await fetch("/api/sala", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    })
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error("Błąd dodawania sali");
-        }
-        alert("Dodano salę!");
-      })
-      .catch((err) => {
-        console.error(err);
-        alert("Nie udało się dodać sali");
-      });
+    try {
+      await addSala(data);
+      alert("Dodano salę!");
+    } catch (err) {
+      console.error(err);
+      alert("Nie udało się dodać sali");
+    }
   };
 
   const handleAddStation = async (data: any) => {
-    await fetch("/api/stanowisko", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    alert("Dodano stanowisko!");
+    try {
+      await addStanowisko(data);
+      alert("Dodano stanowisko!");
+    } catch (err) {
+      console.error(err);
+      alert("Nie udało się dodać stanowiska");
+    }
   };
 
   // Prosty placeholder dla widoków, które nie są jeszcze zaimplementowane
