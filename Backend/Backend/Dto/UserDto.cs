@@ -7,6 +7,13 @@
         public string Nazwisko { get; set; } = string.Empty;
 
         public string Email { get; set; } = string.Empty;
+
+        public List<string> Roles { get; set; }
+    }
+
+    public class ChangeRolesDto
+    {
+        public List<string> Roles { get; set; }
     }
 
 

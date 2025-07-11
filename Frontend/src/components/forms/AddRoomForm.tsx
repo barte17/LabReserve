@@ -34,7 +34,7 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
   const [nauczyciele, setNauczyciele] = useState<User[]>([]);
 
   useEffect(() => {
-    fetch("/api/users/teachers")
+    fetch("/api/users/opiekunowie")
       .then(res => res.json())
       .then(setNauczyciele)
       .catch(console.error);

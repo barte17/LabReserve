@@ -41,15 +41,29 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({
               Rezerwacje
             </button>
           </li>
-          <li className="flex-1">
+          <li className="flex-1 relative" onMouseEnter={() => setOpenDropdown("users")} onMouseLeave={() => setOpenDropdown(null)}>
             <button
-              className={`w-full py-3 text-base font-semibold border-b-4 transition rounded-t ${
+              className={`w-full py-3 text-base font-semibold border-b-4 transition rounded-t flex items-center justify-center gap-2 ${
                 view === "users" ? activeTab : hoverTab
               }`}
-              onClick={() => setView("users")}
+              onClick={() => setOpenDropdown(openDropdown === "users" ? null : "users")}
+              type="button"
             >
-              Użytkownicy
+              Użytkownicy <span className="text-xs">▼</span>
             </button>
+            {openDropdown === "users" && (
+              <div className="absolute left-0 top-full w-full bg-white border-x border-b rounded-b shadow z-30 flex flex-col">
+                <button
+                  className="text-left px-4 py-2 hover:bg-green-100 hover:text-green-900 transition"
+                  onClick={() => {
+                    setView("users");
+                    setOpenDropdown(null);
+                  }}
+                >
+                  Wyświetl użytkowników
+                </button>
+              </div>
+            )}
           </li>
           <li className="flex-1 relative" onMouseEnter={() => setOpenDropdown("sale")} onMouseLeave={() => setOpenDropdown(null)}>
             <button

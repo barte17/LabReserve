@@ -18,10 +18,10 @@ namespace Backend.Controllers
             _userManager = userManager;
         }
 
-        [HttpGet("teachers")]
-        public async Task<ActionResult<IEnumerable<UserDto>>> GetTeachers()
+        [HttpGet("opiekunowie")]
+        public async Task<ActionResult<IEnumerable<UserDto>>> GetOpiekunowie()
         {
-            var nauczyciele = await _userManager.GetUsersInRoleAsync("Nauczyciel");
+            var nauczyciele = await _userManager.GetUsersInRoleAsync("Opiekun");
 
             var result = nauczyciele.Select(u => new UserDto
             {
@@ -32,6 +32,47 @@ namespace Backend.Controllers
             });
 
             return Ok(result);
+        }
+
+
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
+        {
+            var users = _userManager.Users.ToList();
+            var result = new List<UserDto>();
+
+            foreach (var u in users)
+            {
+                var roles = await _userManager.GetRolesAsync(u);
+                result.Add(new UserDto
+                {
+                    Id = u.Id,
+                    Email = u.Email,
+                    Imie = u.Imie,
+                    Nazwisko = u.Nazwisko,
+                    Roles = roles.ToList()
+                });
+            }
+
+            return Ok(result);
+        }
+
+
+        [HttpPut("{id}/roles")]
+        public async Task<IActionResult> ChangeUserRoles(string id, [FromBody] ChangeRolesDto dto)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null) return NotFound();
+
+            var currentRoles = await _userManager.GetRolesAsync(user);
+            var removeResult = await _userManager.RemoveFromRolesAsync(user, currentRoles);
+            if (!removeResult.Succeeded) return BadRequest("Nie udało się usunąć starych ról");
+
+            var addResult = await _userManager.AddToRolesAsync(user, dto.Roles);
+            if (!addResult.Succeeded) return BadRequest("Nie udało się dodać nowych ról");
+
+            return Ok();
         }
 
 

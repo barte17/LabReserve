@@ -90,6 +90,7 @@ namespace Backend.Data
 
                 await userManager.CreateAsync(opiekun, "Haslo!23");
                 await userManager.AddToRoleAsync(opiekun, "Opiekun");
+                await userManager.AddToRoleAsync(opiekun, "Nauczyciel");
             }
         }
     }

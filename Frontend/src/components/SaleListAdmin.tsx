@@ -59,7 +59,8 @@ export default function SaleListAdmin({ onEdit }: Props) {
     if (!editingSala) return;
     try {
       await editSala(editingSala.id, data);
-      setSale((prev) => prev.map((s) => (s.id === editingSala.id ? { ...s, ...data } : s)));
+      const updatedSale = await fetchSale();
+      setSale(updatedSale);
       setEditingSala(null);
     } catch (e) {
       console.error(e);
