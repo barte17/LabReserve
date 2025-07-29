@@ -72,7 +72,8 @@ namespace Backend.Controllers
             var addResult = await _userManager.AddToRolesAsync(user, dto.Roles);
             if (!addResult.Succeeded) return BadRequest("Nie udało się dodać nowych ról");
 
-            return Ok();
+            return Ok(new { message = "Role zostały pomyślnie zaktualizowane." });
+
         }
 
 

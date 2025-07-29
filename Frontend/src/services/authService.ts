@@ -11,7 +11,7 @@ interface DecodedToken {
 interface User {
   id: string;
   email?: string;
-  role: string[];
+  roles: string[];
   exp: number;
 }
 
@@ -36,7 +36,7 @@ export const getUserFromToken = (): User | null => {
     const user: User = {
       id: decoded.id,
       email: decoded.email,
-      role: roleArray,
+      roles: roleArray,
       exp: decoded.exp,
     };
 
@@ -48,9 +48,9 @@ export const getUserFromToken = (): User | null => {
   }
 };
 
-export const hasRole = (role: string): boolean => {
+export const hasRole = (roles: string): boolean => {
   const user = getUserFromToken();
-  return user?.role.includes(role) ?? false;
+  return user?.roles.includes(roles) ?? false;
 };
 
 export const login = async (email: string, password: string) => {

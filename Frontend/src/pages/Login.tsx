@@ -24,14 +24,14 @@ const Login = () => {
       });
       if (userRes.ok) {
         const userData = await userRes.json();
-        localStorage.setItem('userRole', userData.rola || '');
+        localStorage.setItem('userRoles', JSON.stringify(userData.roles || []));
       } else {
-        localStorage.setItem('userRole', '');
+        localStorage.setItem('userRoles', JSON.stringify([]));
       }
       navigate('/');
       window.location.reload();
-    } catch (err) {
-      setError('Niepoprawne dane logowania');
+    } catch {
+      setError('Nie udało się zalogować.');
     }
   };
 

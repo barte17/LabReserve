@@ -1,4 +1,3 @@
-
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { logout } from "../services/authService";
@@ -10,22 +9,22 @@ import { logout } from "../services/authService";
 export function Navbar() {
 
   const [isLogged, setIsLogged] = useState(false);
-  const [role, setRole] = useState<string | null>(null);
+  const [roles, setRoles] = useState<string[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     setIsLogged(!!token);
-    const userRole = localStorage.getItem("userRole");
-    setRole(userRole || null);
+    const userRoles = localStorage.getItem("userRoles");
+    setRoles(userRoles ? JSON.parse(userRoles) : []);
   }, []);
 
   const handleLogout = async () => {
     await logout();
     localStorage.removeItem("accessToken");
-    localStorage.removeItem("userRole");
+    localStorage.removeItem("userRoles");
     setIsLogged(false);
-    setRole(null);
+    setRoles([]);
     navigate("/login");
   };
 
@@ -36,7 +35,7 @@ export function Navbar() {
           <li><Link to="/" className="navbar-link">Strona główna</Link></li>
           <li><Link to="/stanowiska" className="navbar-link">Wyświetl stanowiska</Link></li>
           <li><Link to="/sale" className="navbar-link">Wyświetl sale</Link></li>
-          {isLogged && role === "Admin" && (
+          {isLogged && roles.includes("Admin") && (
             <li><Link to="/panel-admina" className="navbar-link">Panel admina</Link></li>
           )}
         </span>

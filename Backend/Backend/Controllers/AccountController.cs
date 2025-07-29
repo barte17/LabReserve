@@ -104,28 +104,29 @@ namespace Backend.Controllers
             return Ok();
         }
 
-        [Authorize]
-        [HttpGet("me")]
-        public async Task<IActionResult> Me()
-        {
-            var userName = User.Identity.Name;
-            var user = await _userManager.FindByNameAsync(userName);
+[Authorize]
+[HttpGet("me")]
+public async Task<IActionResult> Me()
+{
+    var userName = User.Identity.Name;
+    var user = await _userManager.FindByNameAsync(userName);
 
-            if (user == null)
-                return NotFound("Użytkownik nie istnieje");
+    if (user == null)
+        return NotFound("Użytkownik nie istnieje");
 
-            var roles = await _userManager.GetRolesAsync(user);
+    var roles = await _userManager.GetRolesAsync(user);
 
-            return Ok(new
-            {
-                id = user.Id,
-                email = user.Email,
-                imie = user.Imie,
-                nazwisko = user.Nazwisko,
-                rola = roles.FirstOrDefault() ?? "Brak",
-                numerTelefonu = user.PhoneNumber
-            });
-        }
+
+    return Ok(new
+    {
+        id = user.Id,
+        email = user.Email,
+        imie = user.Imie,
+        nazwisko = user.Nazwisko,
+        roles = roles,
+        numerTelefonu = user.PhoneNumber
+    });
+}
 
     }
 
