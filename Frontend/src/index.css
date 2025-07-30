@@ -2,103 +2,215 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  color-scheme: light dark;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* ===== GLOBALNE STYLE BAZOWE ===== */
+@layer base {
+  :root {
+    font-family: Inter, system-ui, sans-serif;
+    line-height: 1.6;
+    font-weight: 400;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  * {
+    @apply border-neutral-200;
+  }
+
+  body {
+    @apply bg-neutral-50 text-neutral-900 font-sans min-h-screen;
+    margin: 0;
+    padding-top: 80px;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-semibold text-neutral-900;
+  }
+
+  h1 { @apply text-3xl lg:text-4xl; }
+  h2 { @apply text-2xl lg:text-3xl; }
+  h3 { @apply text-xl lg:text-2xl; }
+  h4 { @apply text-lg lg:text-xl; }
 }
 
-body {
-  @apply bg-dark-bg text-dark-text font-sans min-h-screen flex flex-col;
-  margin: 0;
-  padding-top: 70px;
+/* ===== KOMPONENTY WIELOKROTNEGO UŻYTKU ===== */
+@layer components {
+  
+  /* ----- PRZYCISKI ----- */
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 shadow-md hover:shadow-lg;
+  }
+
+  .btn-secondary {
+    @apply btn bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50 focus:ring-neutral-500 shadow-sm hover:shadow-md;
+  }
+
+  .btn-danger {
+    @apply btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 shadow-md hover:shadow-lg;
+  }
+
+  .btn-success {
+    @apply btn bg-green-600 text-white hover:bg-green-700 focus:ring-green-500 shadow-md hover:shadow-lg;
+  }
+
+  .btn-warning {
+    @apply btn bg-yellow-500 text-white hover:bg-yellow-600 focus:ring-yellow-400 shadow-md hover:shadow-lg;
+  }
+
+  .btn-lg {
+    @apply px-6 py-3 text-base;
+  }
+
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+
+  /* ----- FORMULARZE ----- */
+  .form-input {
+    @apply w-full px-4 py-3 bg-white text-neutral-900 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 placeholder-neutral-400;
+  }
+
+  .form-label {
+    @apply block text-sm font-medium text-neutral-700 mb-2;
+  }
+
+  .form-error {
+    @apply text-primary-600 text-sm mt-1;
+  }
+
+  .form-group {
+    @apply mb-6;
+  }
+
+  /* ----- KARTY ----- */
+  .card {
+    @apply bg-white rounded-xl shadow-soft border border-neutral-200 overflow-hidden;
+  }
+
+  .card-header {
+    @apply px-6 py-4 border-b border-neutral-200 bg-neutral-50;
+  }
+
+  .card-body {
+    @apply p-6;
+  }
+
+  .card-footer {
+    @apply px-6 py-4 border-t border-neutral-200 bg-neutral-50;
+  }
+
+  /* ----- NAWIGACJA ----- */
+  .navbar {
+    @apply fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-b border-neutral-200 z-50 shadow-sm;
+  }
+
+  .navbar-brand {
+    @apply text-xl font-bold text-primary-600;
+  }
+
+  .navbar-nav {
+    @apply flex items-center space-x-1;
+  }
+
+  .navbar-link {
+    @apply px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all duration-200 font-medium;
+  }
+
+  .navbar-link-active {
+    @apply navbar-link bg-primary-100 text-primary-700;
+  }
+
+  /* ----- LISTY I ELEMENTY ----- */
+  .list-item {
+    @apply bg-white p-6 rounded-xl shadow-soft border border-neutral-200 mb-4 hover:shadow-medium transition-all duration-200;
+  }
+
+  .list-item-header {
+    @apply flex items-start justify-between mb-3;
+  }
+
+  .list-item-title {
+    @apply text-lg font-semibold text-neutral-900;
+  }
+
+  .list-item-subtitle {
+    @apply text-sm text-neutral-600 mt-1;
+  }
+
+  .list-item-content {
+    @apply text-neutral-700 space-y-2;
+  }
+
+  .list-item-actions {
+    @apply flex items-center space-x-2 mt-4 pt-4 border-t border-neutral-200;
+  }
+
+  /* ----- STATUSY I ODZNAKI ----- */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-success {
+    @apply badge bg-green-100 text-green-800;
+  }
+
+  .badge-warning {
+    @apply badge bg-yellow-100 text-yellow-800;
+  }
+
+  .badge-danger {
+    @apply badge bg-red-100 text-red-800;
+  }
+
+  .badge-info {
+    @apply badge bg-blue-100 text-blue-800;
+  }
+
+  .badge-neutral {
+    @apply badge bg-neutral-100 text-neutral-800;
+  }
+
+  /* ----- ADMIN PANEL ----- */
+  /* Usunięte - AdminNavbar używa teraz inline styles */
+
+  /* ----- FILTRY I WYSZUKIWANIE ----- */
+  .filters-panel {
+    @apply bg-white rounded-xl shadow-soft border border-neutral-200 p-6 mb-8;
+  }
+
+  .filters-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4;
+  }
+
+  /* ----- ANIMACJE ----- */
+  .animate-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
 }
 
-/* Custom input style */
-.input {
-  @apply w-full px-4 py-2 bg-white text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 transition placeholder-gray-400;
-}
+/* ===== UTILITIES DODATKOWE ===== */
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent;
+  }
 
-/* Custom button style */
-.btn-primary {
-  @apply bg-accent text-dark-text px-4 py-2 rounded-md hover:bg-muted transition font-medium;
-}
+  .bg-gradient-primary {
+    @apply bg-gradient-to-r from-primary-600 to-primary-700;
+  }
 
-/* Custom card style for Flowbite */
-.card {
-  @apply bg-light-bg text-light-text rounded-lg shadow-md p-6 border border-gray-200;
-}
-
-/* Custom select style */
-select {
-  @apply w-full px-4 py-2 bg-white text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 transition placeholder-gray-400;
-}
-
-/* Custom textarea style */
-textarea {
-  @apply w-full px-4 py-2 bg-white text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 transition placeholder-gray-400;
-}
-
-/* Custom checkbox style */
-input[type="checkbox"] {
-  @apply h-4 w-4 text-light-text focus:ring-light-text border-gray-300 rounded;
-}
-
-/* Custom list item style */
-li {
-  @apply bg-light-bg text-light-text p-4 rounded-md shadow-sm border border-gray-200 mb-2;
-}
-
-/* Custom navbar style */
-.navbar {
-  @apply fixed top-0 left-0 right-0 bg-light-bg text-light-text py-3 px-6 shadow-md z-10;
-}
-
-/* Custom navbar list style */
-.navbar-list {
-  @apply flex gap-5 list-none;
-}
-
-/* Custom navbar link style */
-.navbar-link {
-  @apply text-light-text font-medium hover:underline;
-}
-
-/* Panel filtrów */
-.rezerwacje-filters {
-  @apply flex flex-wrap gap-6 mb-8 items-end bg-white/80 border border-gray-200 rounded-lg shadow p-4;
-}
-
-/* Nagłówek sekcji rezerwacji */
-.rezerwacje-section-title {
-  @apply text-lg font-bold mt-10 mb-3 text-gray-800;
-}
-
-/* Karta rezerwacji */
-.rezerwacja-card {
-  @apply flex items-center justify-between bg-light-bg text-light-text p-4 rounded-md shadow-sm border border-gray-200 mb-2;
-}
-
-/* Akcje rezerwacji */
-.rezerwacja-actions {
-  @apply flex flex-col gap-2 ml-4;
-}
-
-/* Przycisk akcji */
-.rezerwacja-btn {
-  @apply px-3 py-1 rounded text-sm font-medium transition;
-}
-.rezerwacja-btn-accept {
-  @apply bg-green-500 hover:bg-green-600 text-white disabled:opacity-60;
-}
-.rezerwacja-btn-reject {
-  @apply bg-yellow-500 hover:bg-yellow-600 text-white disabled:opacity-60;
-}
-.rezerwacja-btn-delete {
-  @apply bg-red-500 hover:bg-red-600 text-white;
+  .shadow-glow {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+  }
 }

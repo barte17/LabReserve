@@ -52,22 +52,50 @@ export default function PanelAdmina() {
   );
 
   return (
-    <div className="p-6 max-w-screen-lg mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Panel administratora</h1>
-      <AdminNavbar
-        view={view}
-        setView={setView}
-        openDropdown={openDropdown}
-        setOpenDropdown={setOpenDropdown}
-      />
-      <div className="bg-white shadow-md p-6 rounded-md border min-h-[300px]">
-        {view === "addRoom" && <AddSalaForm onSubmit={handleAddRoom} />}
-        {view === "addStation" && <AddStanowiskoForm onSubmit={handleAddStation} />}
-        {view === "rezerwacje" && <RezerwacjeList />}
-        {view === "users" && <UsersListAdmin />}
-        {view === "sale" && <SaleListAdmin />}
-        {view === "stanowiska" && <StanowiskaListAdmin />}
-        {view === "default" && <p className="text-gray-500">Wybierz opcję z panelu powyżej.</p>}
+    <div className="min-h-screen bg-neutral-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-neutral-900 mb-2">
+            Panel Administratora
+          </h1>
+          <p className="text-neutral-600">
+            Zarządzaj systemem rezerwacji, użytkownikami i zasobami
+          </p>
+        </div>
+
+        {/* Navigation */}
+        <AdminNavbar
+          view={view}
+          setView={setView}
+          openDropdown={openDropdown}
+          setOpenDropdown={setOpenDropdown}
+        />
+
+        {/* Content */}
+        <div className="card min-h-[500px]">
+          <div className="card-body">
+            {view === "addRoom" && <AddSalaForm onSubmit={handleAddRoom} />}
+            {view === "addStation" && <AddStanowiskoForm onSubmit={handleAddStation} />}
+            {view === "rezerwacje" && <RezerwacjeList />}
+            {view === "users" && <UsersListAdmin />}
+            {view === "sale" && <SaleListAdmin />}
+            {view === "stanowiska" && <StanowiskaListAdmin />}
+            {view === "default" && (
+              <div className="text-center py-12">
+                <svg className="h-16 w-16 text-neutral-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                <h3 className="text-lg font-medium text-neutral-900 mb-2">
+                  Witaj w panelu administratora
+                </h3>
+                <p className="text-neutral-600">
+                  Wybierz opcję z menu powyżej, aby rozpocząć zarządzanie systemem.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

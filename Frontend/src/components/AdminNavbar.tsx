@@ -16,124 +16,136 @@ interface AdminNavbarProps {
   setOpenDropdown: (v: string | null) => void;
 }
 
-const activeTab =
-  "bg-green-600 text-white border-green-600 border-b-4";
-const hoverTab =
-  "hover:bg-green-100 hover:text-green-900";
-
 const AdminNavbar: React.FC<AdminNavbarProps> = ({
   view,
   setView,
   openDropdown,
   setOpenDropdown,
 }) => {
+  
+  const handleDropdownClick = (dropdownName: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log(`${dropdownName} clicked, current dropdown:`, openDropdown);
+    setOpenDropdown(openDropdown === dropdownName ? null : dropdownName);
+  };
+
   return (
-    <nav className="mb-6 w-full">
-      <div className="flex justify-center w-full">
-        <ul className="flex bg-white rounded shadow border w-full max-w-3xl mx-auto">
-          <li className="flex-1">
-            <button
-              className={`w-full py-3 text-base font-semibold border-b-4 transition rounded-t ${
-                view === "rezerwacje" ? activeTab : hoverTab
-              }`}
-              onClick={() => setView("rezerwacje")}
-            >
-              Rezerwacje
-            </button>
-          </li>
-          <li className="flex-1 relative" onMouseEnter={() => setOpenDropdown("users")} onMouseLeave={() => setOpenDropdown(null)}>
-            <button
-              className={`w-full py-3 text-base font-semibold border-b-4 transition rounded-t flex items-center justify-center gap-2 ${
-                view === "users" ? activeTab : hoverTab
-              }`}
-              onClick={() => setOpenDropdown(openDropdown === "users" ? null : "users")}
-              type="button"
-            >
-              Użytkownicy <span className="text-xs">▼</span>
-            </button>
-            {openDropdown === "users" && (
-              <div className="absolute left-0 top-full w-full bg-white border-x border-b rounded-b shadow z-30 flex flex-col">
-                <button
-                  className="text-left px-4 py-2 hover:bg-green-100 hover:text-green-900 transition"
-                  onClick={() => {
-                    setView("users");
-                    setOpenDropdown(null);
-                  }}
-                >
-                  Wyświetl użytkowników
-                </button>
-              </div>
-            )}
-          </li>
-          <li className="flex-1 relative" onMouseEnter={() => setOpenDropdown("sale")} onMouseLeave={() => setOpenDropdown(null)}>
-            <button
-              className={`w-full py-3 text-base font-semibold border-b-4 transition rounded-t flex items-center justify-center gap-2 ${
-                view === "sale" || view === "addRoom" ? activeTab : hoverTab
-              }`}
-              onClick={() => setOpenDropdown(openDropdown === "sale" ? null : "sale")}
-              type="button"
-            >
-              Sale <span className="text-xs">▼</span>
-            </button>
-            {openDropdown === "sale" && (
-              <div className="absolute left-0 top-full w-full bg-white border-x border-b rounded-b shadow z-30 flex flex-col">
-                <button
-                  className="text-left px-4 py-2 hover:bg-green-100 hover:text-green-900 transition"
-                  onClick={() => {
-                    setView("sale");
-                    setOpenDropdown(null);
-                  }}
-                >
-                  Wyświetl sale
-                </button>
-                <button
-                  className="text-left px-4 py-2 hover:bg-green-100 hover:text-green-900 transition"
-                  onClick={() => {
-                    setView("addRoom");
-                    setOpenDropdown(null);
-                  }}
-                >
-                  Dodaj salę
-                </button>
-              </div>
-            )}
-          </li>
-          <li className="flex-1 relative" onMouseEnter={() => setOpenDropdown("stanowiska")} onMouseLeave={() => setOpenDropdown(null)}>
-            <button
-              className={`w-full py-3 text-base font-semibold border-b-4 transition rounded-t flex items-center justify-center gap-2 ${
-                view === "stanowiska" || view === "addStation" ? activeTab : hoverTab
-              }`}
-              onClick={() => setOpenDropdown(openDropdown === "stanowiska" ? null : "stanowiska")}
-              type="button"
-            >
-              Stanowiska <span className="text-xs">▼</span>
-            </button>
-            {openDropdown === "stanowiska" && (
-              <div className="absolute left-0 top-full w-full bg-white border-x border-b rounded-b shadow z-30 flex flex-col">
-                <button
-                  className="text-left px-4 py-2 hover:bg-green-100 hover:text-green-900 transition"
-                  onClick={() => {
-                    setView("stanowiska");
-                    setOpenDropdown(null);
-                  }}
-                >
-                  Wyświetl stanowiska
-                </button>
-                <button
-                  className="text-left px-4 py-2 hover:bg-green-100 hover:text-green-900 transition"
-                  onClick={() => {
-                    setView("addStation");
-                    setOpenDropdown(null);
-                  }}
-                >
-                  Dodaj stanowisko
-                </button>
-              </div>
-            )}
-          </li>
-        </ul>
+    <div className="bg-white rounded-xl shadow-soft border border-neutral-200 mb-8 overflow-visible">
+      <div className="flex">
+        {/* Rezerwacje */}
+        <div className="flex-1">
+          <button
+            className={`w-full px-4 py-4 text-center font-medium transition-all duration-200 border-b-2 ${
+              view === "rezerwacje" 
+                ? "text-primary-600 bg-primary-50 border-primary-600" 
+                : "text-neutral-700 hover:text-primary-600 hover:bg-primary-50 border-transparent"
+            }`}
+            onClick={() => {
+              setView("rezerwacje");
+              setOpenDropdown(null);
+            }}
+          >
+            Rezerwacje Sal
+          </button>
+        </div>
+
+        {/* Użytkownicy */}
+        <div className="flex-1">
+          <button
+            className={`w-full px-4 py-4 text-center font-medium transition-all duration-200 border-b-2 ${
+              view === "users" 
+                ? "text-primary-600 bg-primary-50 border-primary-600" 
+                : "text-neutral-700 hover:text-primary-600 hover:bg-primary-50 border-transparent"
+            }`}
+            onClick={() => {
+              setView("users");
+              setOpenDropdown(null);
+            }}
+          >
+            Użytkownicy
+          </button>
+        </div>
+
+        {/* Sale */}
+        <div className="flex-1 relative">
+          <button
+            className={`w-full px-4 py-4 text-center font-medium transition-all duration-200 border-b-2 flex items-center justify-center ${
+              view === "sale" || view === "addRoom" 
+                ? "text-primary-600 bg-primary-50 border-primary-600" 
+                : "text-neutral-700 hover:text-primary-600 hover:bg-primary-50 border-transparent"
+            }`}
+            onClick={(e) => handleDropdownClick("sale", e)}
+          >
+            Sale
+            <svg className={`h-4 w-4 ml-2 transition-transform duration-200 ${openDropdown === "sale" ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          {openDropdown === "sale" && (
+            <div className="absolute top-full left-0 right-0 bg-white border-x border-b border-neutral-200 rounded-b-lg shadow-lg z-50">
+              <button
+                className="block w-full px-4 py-3 text-center text-neutral-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200"
+                onClick={() => {
+                  setView("sale");
+                  setOpenDropdown(null);
+                }}
+              >
+                Lista sal
+              </button>
+              <button
+                className="block w-full px-4 py-3 text-center text-neutral-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200"
+                onClick={() => {
+                  setView("addRoom");
+                  setOpenDropdown(null);
+                }}
+              >
+                Dodaj salę
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Laboratoria */}
+        <div className="flex-1 relative">
+          <button
+            className={`w-full px-4 py-4 text-center font-medium transition-all duration-200 border-b-2 flex items-center justify-center ${
+              view === "stanowiska" || view === "addStation" 
+                ? "text-primary-600 bg-primary-50 border-primary-600" 
+                : "text-neutral-700 hover:text-primary-600 hover:bg-primary-50 border-transparent"
+            }`}
+            onClick={(e) => handleDropdownClick("stanowiska", e)}
+          >
+            Stanowiska
+            <svg className={`h-4 w-4 ml-2 transition-transform duration-200 ${openDropdown === "stanowiska" ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          {openDropdown === "stanowiska" && (
+            <div className="absolute top-full left-0 right-0 bg-white border-x border-b border-neutral-200 rounded-b-lg shadow-lg z-50">
+              <button
+                className="block w-full px-4 py-3 text-center text-neutral-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200"
+                onClick={() => {
+                  setView("stanowiska");
+                  setOpenDropdown(null);
+                }}
+              >
+                Lista stanowisk
+              </button>
+              <button
+                className="block w-full px-4 py-3 text-center text-neutral-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200"
+                onClick={() => {
+                  setView("addStation");
+                  setOpenDropdown(null);
+                }}
+              >
+                Dodaj stanowisko
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-    </nav>
+    </div>
   );
 };
 

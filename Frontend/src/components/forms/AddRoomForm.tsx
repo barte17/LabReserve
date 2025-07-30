@@ -62,110 +62,167 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
   };
 
     return (
-    <div className="card">
-      <h3 className="text-2xl font-semibold text-light-text mb-6">Dodaj salę</h3>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-light-text mb-1">Numer sali</label>
-          <input
-            type="number"
-            value={numer}
-            onChange={(e) => setNumer(e.target.value)}
-            required
-            className="input"
-            placeholder="Numer sali"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-light-text mb-1">Budynek</label>
-          <input
-            value={budynek}
-            onChange={(e) => setBudynek(e.target.value)}
-            required
-            className="input"
-            placeholder="Budynek"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-light-text mb-1">Max osób</label>
-          <input
-            type="number"
-            value={maxOsob}
-            onChange={(e) => setMaxOsob(e.target.value)}
-            className="input"
-            placeholder="Max osób"
-          />
-        </div>
-        <div className="flex items-center">
-          <input
-            type="checkbox"
-            checked={maStanowiska}
-            onChange={(e) => setMaStanowiska(e.target.checked)}
-            className="h-4 w-4 text-light-text focus:ring-light-text border-gray-300 rounded"
-          />
-          <label className="ml-2 text-sm font-medium text-light-text">Czy ma stanowiska?</label>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-light-text mb-1">Godzina otwarcia</label>
-          <div className="relative group">
+    <div>
+      <div className="mb-6">
+        <h3 className="text-2xl font-bold text-neutral-900 mb-2">
+          {initialData ? 'Edytuj salę' : 'Dodaj nową salę'}
+        </h3>
+        <p className="text-neutral-600">
+          Wypełnij formularz, aby {initialData ? 'zaktualizować' : 'dodać'} salę do systemu
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="form-group">
+            <label className="form-label">Numer sali</label>
             <input
-              type="time"
-              value={czynnaOd}
-              onChange={(e) => setCzynnaOd(e.target.value)}
-              className="input pr-14"
+              type="number"
+              value={numer}
+              onChange={(e) => setNumer(e.target.value)}
+              required
+              className="form-input"
+              placeholder="Wprowadź numer sali"
             />
-            <span className="absolute inset-y-0 right-2 flex items-center pointer-events-none transition-colors group-hover:text-blue-500 text-gray-400">
-              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeWidth="2" d="M12 7v5l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            </span>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Budynek</label>
+            <input
+              value={budynek}
+              onChange={(e) => setBudynek(e.target.value)}
+              required
+              className="form-input"
+              placeholder="Nazwa budynku"
+            />
           </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-light-text mb-1">Godzina zamknięcia</label>
-          <div className="relative group">
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="form-group">
+            <label className="form-label">Maksymalna liczba osób</label>
             <input
-              type="time"
-              value={czynnaDo}
-              onChange={(e) => setCzynnaDo(e.target.value)}
-              className="input pr-12"
+              type="number"
+              value={maxOsob}
+              onChange={(e) => setMaxOsob(e.target.value)}
+              className="form-input"
+              placeholder="Pojemność sali"
             />
-            <span className="absolute inset-y-0 right-2 flex items-center pointer-events-none transition-colors group-hover:text-blue-500 text-gray-400">
-              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeWidth="2" d="M12 7v5l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            </span>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Opiekun sali</label>
+            <select
+              value={idOpiekuna}
+              onChange={(e) => setIdOpiekuna(e.target.value)}
+              className="form-input"
+            >
+              <option value="">-- Wybierz opiekuna --</option>
+              {nauczyciele.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.imie} {user.nazwisko}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-light-text mb-1">Opiekun sali</label>
-          <select
-            value={idOpiekuna}
-            onChange={(e) => setIdOpiekuna(e.target.value)}
-            className="select"
-          >
-            <option value="">-- Wybierz nauczyciela --</option>
-            {nauczyciele.map((user) => (
-              <option key={user.id} value={user.id}>
-                {user.imie} {user.nazwisko}
-              </option>
-            ))}
-          </select>
+
+        <div className="form-group">
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              checked={maStanowiska}
+              onChange={(e) => setMaStanowiska(e.target.checked)}
+              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded"
+              id="maStanowiska"
+            />
+            <label htmlFor="maStanowiska" className="ml-3 text-sm font-medium text-neutral-700">
+              Sala posiada laboratoria/stanowiska badawcze
+            </label>
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-light-text mb-1">Opis</label>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="form-group">
+            <label className="form-label">Godzina otwarcia</label>
+            <div className="relative">
+              <select
+                value={czynnaOd}
+                onChange={(e) => setCzynnaOd(e.target.value)}
+                className="form-input pr-10"
+              >
+                <option value="">Wybierz godzinę otwarcia</option>
+                {Array.from({ length: 24 }, (_, i) => {
+                  const hour = i.toString().padStart(2, '0');
+                  return (
+                    <option key={hour} value={`${hour}:00`}>
+                      {hour}:00
+                    </option>
+                  );
+                })}
+              </select>
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                <svg className="h-5 w-5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Godzina zamknięcia</label>
+            <div className="relative">
+              <select
+                value={czynnaDo}
+                onChange={(e) => setCzynnaDo(e.target.value)}
+                className="form-input pr-10"
+              >
+                <option value="">Wybierz godzinę zamknięcia</option>
+                {Array.from({ length: 24 }, (_, i) => {
+                  const hour = i.toString().padStart(2, '0');
+                  return (
+                    <option key={hour} value={`${hour}:00`}>
+                      {hour}:00
+                    </option>
+                  );
+                })}
+              </select>
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                <svg className="h-5 w-5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Opis sali</label>
           <textarea
             value={opis}
             onChange={(e) => setOpis(e.target.value)}
-            className="input"
-            placeholder="Opis"
+            className="form-input"
+            placeholder="Dodatkowe informacje o sali..."
             rows={4}
           />
         </div>
-        <button type="submit" className="btn-primary">
-          {submitLabel}
-        </button>
-        {onCancel && (
-          <button type="button" className="btn ml-2" onClick={onCancel}>
-            Anuluj
+
+        <div className="flex items-center space-x-4 pt-6 border-t border-neutral-200">
+          <button type="submit" className="btn btn-primary">
+            <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            {submitLabel}
           </button>
-        )}
+          {onCancel && (
+            <button type="button" className="btn btn-secondary" onClick={onCancel}>
+              <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Anuluj
+            </button>
+          )}
+        </div>
       </form>
     </div>
   );

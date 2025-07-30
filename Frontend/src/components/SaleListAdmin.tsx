@@ -116,14 +116,21 @@ export default function SaleListAdmin({ onEdit }: Props) {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-2">
-      <h3 className="text-2xl font-bold mb-6 mt-4 text-center">Lista sal</h3>
-      <div className="rezerwacje-filters">
-        <div>
-          <label className="block text-sm font-semibold mb-1 text-gray-700">Wyszukaj</label>
+    <div>
+      <div className="mb-6">
+        <h3 className="text-2xl font-bold text-neutral-900 mb-2">
+          Sale uczelniane - zarządzanie
+        </h3>
+        <p className="text-neutral-600">
+          Edytuj i zarządzaj salami uczelnianymi w systemie
+        </p>
+      </div>
+      <div className="filters-panel mb-6">
+        <div className="form-group">
+          <label className="form-label">Wyszukaj salę</label>
           <input
             type="text"
-            className="input"
+            className="form-input"
             placeholder="Numer, budynek, opiekun, opis..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -131,25 +138,16 @@ export default function SaleListAdmin({ onEdit }: Props) {
         </div>
         <div>
           <label className="block text-sm font-semibold mb-1 text-gray-700">Sortuj wg</label>
-          <div className="flex items-center">
-            <select
-              className="select"
-              value={sortKey}
-                 onChange={e => setSortKey(e.target.value as any)}
-            >
-              <option value="budynekA">Budynek A</option>
-              <option value="budynekB">Budynek B</option>
-              <option value="maxOsobAsc">Maks osób rosnąco</option>
-              <option value="maxOsobDesc">Maks osób malejąco</option>
-            </select>
-            <button
-              className="ml-2 px-2 py-2 border border-gray-300 rounded bg-gray-100 hover:bg-gray-200"
-              onClick={() => setSortDir(d => (d === "asc" ? "desc" : "asc"))}
-              title="Zmień kierunek sortowania"
-            >
-              {sortDir === "asc" ? "▲" : "▼"}
-            </button>
-          </div>
+          <select
+            className="select"
+            value={sortKey}
+            onChange={e => setSortKey(e.target.value as any)}
+          >
+            <option value="budynekA">Budynek A</option>
+            <option value="budynekB">Budynek B</option>
+            <option value="maxOsobAsc">Maks osób rosnąco</option>
+            <option value="maxOsobDesc">Maks osób malejąco</option>
+          </select>
         </div>
         <div>
           <label className="block text-sm font-semibold mb-1 text-gray-700">Stanowiska</label>
@@ -164,37 +162,90 @@ export default function SaleListAdmin({ onEdit }: Props) {
           </select>
         </div>
       </div>
-      <ul>
+      <div className="space-y-4">
         {filtered.map((s) => (
-          <li key={s.id} className="rezerwacja-card">
-            <div>
-              <p><strong>ID sali:</strong> {s.id}</p>
-              <p><strong>Numer:</strong> {s.numer}</p>
-              <p><strong>Budynek:</strong> {s.budynek}</p>
-              <p><strong>Maks. osób:</strong> {s.maxOsob ?? "-"}</p>
-              <p><strong>Stanowiska:</strong> {s.maStanowiska ? "Tak" : "Nie"}</p>
-              <p><strong>Czynna od:</strong> {s.czynnaOd ?? "-"}</p>
-              <p><strong>Czynna do:</strong> {s.czynnaDo ?? "-"}</p>
-              <p><strong>Opiekun:</strong> {s.imieOpiekuna && s.nazwiskoOpiekuna ? `${s.imieOpiekuna} ${s.nazwiskoOpiekuna}` : "brak"}</p>
-              {s.opis && <p><strong>Opis:</strong> {s.opis}</p>}
+          <div key={s.id} className="list-item animate-in">
+            <div className="list-item-header">
+              <div>
+                <h4 className="list-item-title">
+                  Sala {s.numer}
+                </h4>
+                <p className="list-item-subtitle">
+                  Budynek: {s.budynek}
+                </p>
+              </div>
+              <div className="flex space-x-2">
+                {s.maStanowiska && (
+                  <span className="badge badge-info">
+                    Z laboratoriami
+                  </span>
+                )}
+                <span className="badge badge-neutral">
+                  ID: {s.id}
+                </span>
+              </div>
             </div>
-            <div className="rezerwacja-actions">
-              <button
-                className="rezerwacja-btn rezerwacja-btn-edit bg-blue-500 hover:bg-blue-600 text-white"
-                onClick={() => handleEdit(s)}
-              >
-                Edytuj
-              </button>
-              <button
-                className="rezerwacja-btn rezerwacja-btn-delete"
-                onClick={() => handleDelete(s.id)}
-              >
-                Usuń
-              </button>
+
+            <div className="list-item-content">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="font-medium text-neutral-700">Pojemność:</span>
+                  <span className="text-neutral-600 ml-2">
+                    {s.maxOsob ? `${s.maxOsob} osób` : "Nie podano"}
+                  </span>
+                </div>
+                <div>
+                  <span className="font-medium text-neutral-700">Opiekun:</span>
+                  <span className="text-neutral-600 ml-2">
+                    {s.imieOpiekuna && s.nazwiskoOpiekuna ? `${s.imieOpiekuna} ${s.nazwiskoOpiekuna}` : "Nie przypisano"}
+                  </span>
+                </div>
+                <div>
+                  <span className="font-medium text-neutral-700">Godziny pracy:</span>
+                  <span className="text-neutral-600 ml-2">
+                    {s.czynnaOd && s.czynnaDo ? `${s.czynnaOd} - ${s.czynnaDo}` : "Nie podano"}
+                  </span>
+                </div>
+                <div>
+                  <span className="font-medium text-neutral-700">Stanowiska:</span>
+                  <span className="text-neutral-600 ml-2">
+                    {s.maStanowiska ? "Tak" : "Nie"}
+                  </span>
+                </div>
+              </div>
+              
+              {s.opis && (
+                <div className="mt-3">
+                  <span className="font-medium text-neutral-700">Opis:</span>
+                  <p className="text-neutral-600 mt-1">{s.opis}</p>
+                </div>
+              )}
             </div>
-          </li>
+            <div className="list-item-actions">
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => handleEdit(s)}
+                  className="btn btn-secondary btn-sm"
+                >
+                  <svg className="h-3 w-3 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Edytuj
+                </button>
+                <button
+                  onClick={() => handleDelete(s.id)}
+                  className="btn btn-danger btn-sm"
+                >
+                  <svg className="h-3 w-3 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Usuń
+                </button>
+              </div>
+            </div>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }

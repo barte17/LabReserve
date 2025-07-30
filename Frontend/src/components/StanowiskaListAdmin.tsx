@@ -96,14 +96,21 @@ export default function StanowiskaListAdmin() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-2">
-      <h3 className="text-2xl font-bold mb-6 mt-4 text-center">Lista stanowisk</h3>
-      <div className="rezerwacje-filters">
-        <div>
-          <label className="block text-sm font-semibold mb-1 text-gray-700">Wyszukaj</label>
+    <div>
+      <div className="mb-6">
+        <h3 className="text-2xl font-bold text-neutral-900 mb-2">
+          Stanowiska laboratoryjne - zarządzanie
+        </h3>
+        <p className="text-neutral-600">
+          Edytuj i zarządzaj stanowiskami laboratoryjnymi w systemie
+        </p>
+      </div>
+      <div className="filters-panel mb-6">
+        <div className="form-group">
+          <label className="form-label">Wyszukaj stanowisko</label>
           <input
             type="text"
-            className="input"
+            className="form-input"
             placeholder="ID, sala, nazwa, typ, opis..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -131,9 +138,9 @@ export default function StanowiskaListAdmin() {
           </div>
         </div>
       </div>
-      <ul>
+      <div className="space-y-4">
         {filtered.map((s) => (
-          <li key={s.id} className="rezerwacja-card">
+          <div key={s.id} className="list-item animate-in">
             <div>
               <p><strong>ID stanowiska:</strong> {s.id}</p>
               <p><strong>ID sali:</strong> {s.salaId}</p>
@@ -141,23 +148,31 @@ export default function StanowiskaListAdmin() {
               <p><strong>Typ:</strong> {s.typ ?? "-"}</p>
               <p><strong>Opis:</strong> {s.opis ?? "-"}</p>
             </div>
-            <div className="rezerwacja-actions">
-              <button
-                className="rezerwacja-btn rezerwacja-btn-edit bg-blue-500 hover:bg-blue-600 text-white"
-                onClick={() => handleEdit(s)}
-              >
-                Edytuj
-              </button>
-              <button
-                className="rezerwacja-btn rezerwacja-btn-delete"
-                onClick={() => handleDelete(s.id)}
-              >
-                Usuń
-              </button>
+            <div className="list-item-actions">
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => handleEdit(s)}
+                  className="btn btn-secondary btn-sm"
+                >
+                  <svg className="h-3 w-3 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Edytuj
+                </button>
+                <button
+                  onClick={() => handleDelete(s.id)}
+                  className="btn btn-danger btn-sm"
+                >
+                  <svg className="h-3 w-3 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Usuń
+                </button>
+              </div>
             </div>
-          </li>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }
