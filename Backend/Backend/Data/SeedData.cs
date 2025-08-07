@@ -72,9 +72,9 @@ namespace Backend.Data
                 var rezerwacja1 = new Rezerwacja
                 {
                     Id = 1001,
-                    DataStart = DateTime.SpecifyKind(new DateTime(2025, 6, 26, 10, 0, 0), DateTimeKind.Utc),
-                    DataKoniec = DateTime.SpecifyKind(new DateTime(2025, 6, 26, 12, 0, 0), DateTimeKind.Utc),
-                    DataUtworzenia = DateTime.Now.ToUniversalTime(),
+                    DataStart = DateTime.SpecifyKind(new DateTime(2025, 6, 26, 10, 0, 0), DateTimeKind.Unspecified),
+                    DataKoniec = DateTime.SpecifyKind(new DateTime(2025, 6, 26, 12, 0, 0), DateTimeKind.Unspecified),
+                    DataUtworzenia = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified),
                     StanowiskoId = stanowisko1.Id,
                     UzytkownikId = "test-student"
                 };
@@ -87,9 +87,9 @@ namespace Backend.Data
                 var rezerwacja2 = new Rezerwacja
                 {
                     Id = 1002,
-                    DataStart = DateTime.SpecifyKind(new DateTime(2025, 6, 27, 11, 0, 0), DateTimeKind.Utc),
-                    DataKoniec = DateTime.SpecifyKind(new DateTime(2025, 6, 27, 13, 0, 0), DateTimeKind.Utc),
-                    DataUtworzenia = DateTime.Now.ToUniversalTime(),
+                    DataStart = DateTime.SpecifyKind(new DateTime(2025, 6, 27, 11, 0, 0), DateTimeKind.Unspecified),
+                    DataKoniec = DateTime.SpecifyKind(new DateTime(2025, 6, 27, 13, 0, 0), DateTimeKind.Unspecified),
+                    DataUtworzenia = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified),
                     SalaId = sala1.Id,
                     UzytkownikId = "test-nauczyciel",
                     Opis = "Rezerwacja sali testowa dla nauczyciela",
@@ -104,9 +104,9 @@ namespace Backend.Data
                 var rezerwacja3 = new Rezerwacja
                 {
                     Id = 1003,
-                    DataStart = DateTime.SpecifyKind(new DateTime(2025, 6, 24, 15, 0, 0), DateTimeKind.Utc),
-                    DataKoniec = DateTime.SpecifyKind(new DateTime(2025, 6, 27, 19, 0, 0), DateTimeKind.Utc),
-                    DataUtworzenia = DateTime.Now.ToUniversalTime(),
+                    DataStart = DateTime.SpecifyKind(new DateTime(2025, 6, 24, 15, 0, 0), DateTimeKind.Unspecified),
+                    DataKoniec = DateTime.SpecifyKind(new DateTime(2025, 6, 27, 19, 0, 0), DateTimeKind.Unspecified),
+                    DataUtworzenia = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified),
                     SalaId = sala1.Id,
                     UzytkownikId = "test-nauczyciel",
                     Opis = "2 Rezerwacja sali testowa dla nauczyciela",
@@ -121,9 +121,9 @@ namespace Backend.Data
                 var rezerwacja4 = new Rezerwacja
                 {
                     Id = 1004,
-                    DataStart = DateTime.SpecifyKind(new DateTime(2025, 7, 25, 15, 0, 0), DateTimeKind.Utc),
-                    DataKoniec = DateTime.SpecifyKind(new DateTime(2025, 6, 27, 19, 0, 0), DateTimeKind.Utc),
-                    DataUtworzenia = DateTime.Now.ToUniversalTime(),
+                    DataStart = DateTime.SpecifyKind(new DateTime(2025, 7, 25, 15, 0, 0), DateTimeKind.Unspecified),
+                    DataKoniec = DateTime.SpecifyKind(new DateTime(2025, 6, 27, 19, 0, 0), DateTimeKind.Unspecified),
+                    DataUtworzenia = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified),
                     SalaId = sala1.Id,
                     UzytkownikId = "test-nauczyciel",
                     Opis = "3 Rezerwacja sali testowa dla nauczyciela",

@@ -32,6 +32,6 @@ namespace Backend.Models
         [Required, MaxLength(20)]
         public string Status { get; set; } = "oczekujące";
 
-        public DateTime DataUtworzenia { get; set; } = DateTime.Now.ToUniversalTime();
+        public DateTime DataUtworzenia { get; set; }
     }
 }

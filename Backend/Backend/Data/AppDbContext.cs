@@ -15,6 +15,23 @@ namespace Backend.Data
 
         public DbSet<ApplicationUser> Uzytkownicy { get; set; } = null!;
 
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            // Konfiguracja DateTime bez strefy czasowej dla PostgreSQL
+            modelBuilder.Entity<Rezerwacja>(entity =>
+            {
+                entity.Property(e => e.DataStart)
+                    .HasColumnType("timestamp"); // bez time zone
+
+                entity.Property(e => e.DataKoniec)
+                    .HasColumnType("timestamp"); // bez time zone
+
+                entity.Property(e => e.DataUtworzenia)
+                    .HasColumnType("timestamp"); // bez time zone
+            });
+        }
 
         // Walidacja rezerwacji (tylko jedno z pól SalaId lub StanowiskoId może być ustawione)
         public override int SaveChanges()

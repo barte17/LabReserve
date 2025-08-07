@@ -76,6 +76,7 @@ namespace Backend.Controllers
             var authClaims = new List<Claim>
         {
             new Claim(ClaimTypes.Name, user.UserName),
+            new Claim(ClaimTypes.NameIdentifier, user.Id), // Dodaj ID użytkownika
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(ClaimTypes.Role, roles.FirstOrDefault() ?? "Niezatwierdzony")
         };

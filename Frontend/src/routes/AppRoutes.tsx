@@ -7,6 +7,8 @@ import UserPanel from "../pages/AccountPanel";
 import Login from '../pages/Login';
 import Register from '../pages/Register';
 import Home from '../pages/Home';
+import ReservationPage from '../pages/ReservationPage';
+import MyReservations from '../pages/MyReservations';
 import PublicRoute from "../routes/PublicRoute";
 import { AdminRoute } from "../routes/AdminRoute";
 
@@ -17,7 +19,8 @@ export function AppRoutes() {
       <Route path="/stanowiska" element={<Stanowiska />} />
       <Route path="/sale" element={<Sale />} />
       <Route path="/account" element={<UserPanel />} />
-
+      <Route path="/reservation" element={<ReservationPage />} />
+      <Route path="/my-reservations" element={<MyReservations />} />
 
       <Route path="/panel-admina" element={
         <AdminRoute>

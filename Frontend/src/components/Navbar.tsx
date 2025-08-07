@@ -34,7 +34,7 @@ export function Navbar() {
           {/* Logo/Brand */}
           <div className="flex-shrink-0">
             <Link to="/" className="navbar-brand">
-              🎓 System Rezerwacji Uczelni
+              🎓 LabReserve
             </Link>
           </div>
 
@@ -59,6 +59,14 @@ export function Navbar() {
               >
                 Sale
               </Link>
+              {isLogged && (
+                <Link 
+                  to="/my-reservations" 
+                  className={isActiveLink("/my-reservations") ? "navbar-link-active" : "navbar-link"}
+                >
+                  Moje Rezerwacje
+                </Link>
+              )}
               {isLogged && roles.includes("Admin") && (
                 <Link 
                   to="/panel-admina" 
@@ -142,6 +150,19 @@ export function Navbar() {
               >
                 Sale Wykładowe
               </Link>
+              {isLogged && (
+                <Link 
+                  to="/my-reservations" 
+                  className={`block px-3 py-2 rounded-lg text-base font-medium transition-all duration-200 ${
+                    isActiveLink("/my-reservations") 
+                      ? "bg-primary-100 text-primary-700" 
+                      : "text-neutral-700 hover:text-primary-600 hover:bg-primary-50"
+                  }`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Moje Rezerwacje
+                </Link>
+              )}
               {isLogged && roles.includes("Admin") && (
                 <Link 
                   to="/panel-admina" 
