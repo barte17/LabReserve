@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { fetchMyReservations, deleteRezerwacja } from '../services/rezerwacjaService';
 import type { ReservationDetailsDto } from '../services/rezerwacjaService';
 
@@ -37,10 +38,10 @@ export default function MyReservations() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'zatwierdzone': return 'bg-green-100 text-green-800';
+      case 'zaakceptowano': return 'bg-green-100 text-green-800';
       case 'oczekujące': return 'bg-yellow-100 text-yellow-800';
+      case 'odrzucono': return 'bg-red-100 text-red-800';
       case 'anulowane': return 'bg-red-100 text-red-800';
-      case 'odrzucone': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -82,12 +83,12 @@ export default function MyReservations() {
             {reservations.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-gray-500 text-lg">Nie masz jeszcze żadnych rezerwacji</p>
-                <a 
-                  href="/sale" 
+                <Link 
+                  to="/sale" 
                   className="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
                   Przeglądaj sale
-                </a>
+                </Link>
               </div>
             ) : (
               <div className="space-y-4">

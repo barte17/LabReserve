@@ -17,21 +17,8 @@ const Login = () => {
     try {
       const result = await login(email, password);
       localStorage.setItem('accessToken', result.token);
-      // Po zalogowaniu pobierz dane użytkownika, aby uzyskać rolę
-      const userRes = await fetch('/api/account/me', {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${result.token}`,
-        },
-      });
-      if (userRes.ok) {
-        const userData = await userRes.json();
-        localStorage.setItem('userRoles', JSON.stringify(userData.roles || []));
-      } else {
-        localStorage.setItem('userRoles', JSON.stringify([]));
-      }
       navigate('/');
-      window.location.reload();
+      window.location.reload(); // Odśwież stronę, aby zaktualizować stan autoryzacji
     } catch {
       setError('Nieprawidłowy email lub hasło. Spróbuj ponownie.');
     } finally {

@@ -1,5 +1,6 @@
 ﻿using Backend.Dto;
 using Backend.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,6 +9,7 @@ namespace Backend.Controllers
 
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class UsersController : Controller
     {
 
@@ -37,6 +39,7 @@ namespace Backend.Controllers
 
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
         {
             var users = _userManager.Users.ToList();
@@ -60,6 +63,7 @@ namespace Backend.Controllers
 
 
         [HttpPut("{id}/roles")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ChangeUserRoles(string id, [FromBody] ChangeRolesDto dto)
         {
             var user = await _userManager.FindByIdAsync(id);

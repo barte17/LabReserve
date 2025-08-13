@@ -1,18 +1,17 @@
 import { Navigate } from "react-router-dom";
+import { getUserFromToken } from "../services/authService";
 
 interface Props {
   children: React.ReactNode;
 }
 
 const PublicRoute = ({ children }: Props) => {
-  const token = localStorage.getItem("accessToken");
+  const user = getUserFromToken();
 
-  // Jeśli użytkownik jest zalogowany – przekieruj go na stronę główną
-  if (token) {
+  if (user) {
     return <Navigate to="/" replace />;
   }
 
-  // Jeśli nie jest zalogowany – pokaż stronę (np. login lub register)
   return <>{children}</>;
 };
 

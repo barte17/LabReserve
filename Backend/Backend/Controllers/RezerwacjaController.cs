@@ -87,14 +87,6 @@ namespace Backend.Controllers
         [Authorize]
         public async Task<IActionResult> Create([FromBody] CreateRezerwacjaDto dto)
         {
-            //do debugowania - sprawdzanie w konsoli
-            Console.WriteLine($"=== CREATE RESERVATION ===");
-            Console.WriteLine($"SalaId: {dto.SalaId}, StanowiskoId: {dto.StanowiskoId}");
-            Console.WriteLine($"DataStart otrzymana: {dto.DataStart} (Kind: {dto.DataStart.Kind})");
-            Console.WriteLine($"DataKoniec otrzymana: {dto.DataKoniec} (Kind: {dto.DataKoniec.Kind})");
-            Console.WriteLine($"Current Local: {DateTime.Now}");
-            Console.WriteLine($"Current UTC: {DateTime.UtcNow}");
-            
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized();
@@ -136,35 +128,6 @@ namespace Backend.Controllers
                 return BadRequest("Termin jest już zajęty.");
             }
 
-            // TYMCZASOWO: Wyłącz sprawdzenie godzin otwarcia dla debugowania
-            /*
-            // Sprawdzenie godzin otwarcia
-            if (dto.SalaId.HasValue)
-            {
-                var sala = await _context.Sale.FindAsync(dto.SalaId.Value);
-                if (sala == null)
-                    return BadRequest("Sala nie istnieje.");
-
-                if (!IsWithinOpeningHours(sala, dto.DataStart, dto.DataKoniec))
-                {
-                    return BadRequest("Rezerwacja poza godzinami otwarcia sali.");
-                }
-            }
-            else if (dto.StanowiskoId.HasValue)
-            {
-                var stanowisko = await _context.Stanowiska
-                    .Include(s => s.Sala)
-                    .FirstOrDefaultAsync(s => s.Id == dto.StanowiskoId.Value);
-                
-                if (stanowisko == null)
-                    return BadRequest("Stanowisko nie istnieje.");
-
-                if (!IsWithinOpeningHours(stanowisko.Sala, dto.DataStart, dto.DataKoniec))
-                {
-                    return BadRequest("Rezerwacja poza godzinami otwarcia sali.");
-                }
-            }
-            */
 
             var rezerwacja = new Rezerwacja
             {
@@ -181,7 +144,7 @@ namespace Backend.Controllers
             _context.Rezerwacje.Add(rezerwacja);
             await _context.SaveChangesAsync();
 
-            // Zwróć tylko podstawowe dane bez cyklicznych referencji
+            // Zwróć tylko podstawowe
             var result = new RezerwacjaDetailsDto
             {
                 Id = rezerwacja.Id,
@@ -268,13 +231,10 @@ namespace Backend.Controllers
                     {
                         try
                         {
-                            // Sprawdź czy są dostępne godziny w tym dniu
                             hasAvailableHours = await CheckDayAvailability(dto.SalaId, dto.StanowiskoId, date);
                         }
-                        catch (Exception ex)
+                        catch
                         {
-                            // Loguj błąd ale kontynuuj dla innych dni
-                            Console.WriteLine($"Błąd sprawdzania dostępności dla {date:yyyy-MM-dd}: {ex.Message}");
                             hasAvailableHours = false;
                         }
                     }
@@ -288,10 +248,8 @@ namespace Backend.Controllers
 
                 return Ok(availableDays);
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Błąd w GetAvailableDays: {ex.Message}");
-                Console.WriteLine($"StackTrace: {ex.StackTrace}");
                 return StatusCode(500, "Błąd serwera podczas pobierania dostępnych dni.");
             }
         }
@@ -354,7 +312,6 @@ namespace Backend.Controllers
                     isPast = true;
                 }
 
-                Console.WriteLine($"Godzina {hour}: startTime={startTime:yyyy-MM-dd HH:mm}, endTime={endTime:yyyy-MM-dd HH:mm}, isAvailable={isAvailable}, isPast={isPast}, DateTime.Now={DateTime.Now:yyyy-MM-dd HH:mm}");
 
                 availableHours.Add(new AvailableHoursDto
                 {
@@ -408,11 +365,6 @@ namespace Backend.Controllers
 
         private async Task<bool> CheckAvailability(int? salaId, int? stanowiskoId, DateTime start, DateTime end)
         {
-            Console.WriteLine($"=== CheckAvailability ===");
-            Console.WriteLine($"SalaId: {salaId}, StanowiskoId: {stanowiskoId}");
-            Console.WriteLine($"Sprawdzam okres: {start:yyyy-MM-dd HH:mm} - {end:yyyy-MM-dd HH:mm}");
-
-            // Konwertuj daty na Unspecified przed zapytaniem do bazy
             var startUnspecified = DateTime.SpecifyKind(start, DateTimeKind.Unspecified);
             var endUnspecified = DateTime.SpecifyKind(end, DateTimeKind.Unspecified);
             
@@ -420,93 +372,63 @@ namespace Backend.Controllers
                 .Where(r => r.Status != "anulowane" && r.DataStart < endUnspecified && r.DataKoniec > startUnspecified)
                 .ToListAsync();
 
-            Console.WriteLine($"Zapytanie: DataStart < {endUnspecified:yyyy-MM-dd HH:mm} AND DataKoniec > {startUnspecified:yyyy-MM-dd HH:mm}");
-
-            Console.WriteLine($"Wszystkie konflikty w okresie: {allConflicts.Count}");
-            foreach (var conflict in allConflicts)
-            {
-                Console.WriteLine($"  - ID: {conflict.Id}, SalaId: {conflict.SalaId}, StanowiskoId: {conflict.StanowiskoId}, {conflict.DataStart:yyyy-MM-dd HH:mm}-{conflict.DataKoniec:yyyy-MM-dd HH:mm}");
-            }
-
             if (salaId.HasValue)
             {
-                // Sprawdź konflikty dla sali
                 var salaConflicts = allConflicts.Where(r => r.SalaId == salaId.Value).ToList();
-                Console.WriteLine($"Konflikty sali {salaId}: {salaConflicts.Count}");
 
                 if (salaConflicts.Any()) 
                 {
-                    Console.WriteLine($"❌ Sala {salaId} zajęta przez rezerwacje sal");
                     return false;
                 }
                 
-                // Sprawdź też czy nie ma rezerwacji stanowisk w tej sali
                 var stanowiskaWsali = await _context.Stanowiska
                     .Where(s => s.SalaId == salaId.Value)
                     .Select(s => s.Id)
                     .ToListAsync();
-                
-                Console.WriteLine($"Stanowiska w sali {salaId}: [{string.Join(", ", stanowiskaWsali)}]");
 
                 var stanowiskaConflicts = allConflicts
                     .Where(r => r.StanowiskoId.HasValue && stanowiskaWsali.Contains(r.StanowiskoId.Value))
                     .ToList();
 
-                Console.WriteLine($"Konflikty stanowisk w sali {salaId}: {stanowiskaConflicts.Count}");
-
                 if (stanowiskaConflicts.Any())
                 {
-                    Console.WriteLine($"❌ Sala {salaId} zajęta przez rezerwacje stanowisk");
                     return false;
                 }
 
-                Console.WriteLine($"✅ Sala {salaId} dostępna");
                 return true;
             }
             else if (stanowiskoId.HasValue)
             {
-                // Sprawdź konflikty dla stanowiska
                 var stanowiskoConflicts = allConflicts.Where(r => r.StanowiskoId == stanowiskoId.Value).ToList();
-                Console.WriteLine($"Konflikty stanowiska {stanowiskoId}: {stanowiskoConflicts.Count}");
 
                 if (stanowiskoConflicts.Any())
                 {
-                    Console.WriteLine($"❌ Stanowisko {stanowiskoId} zajęte przez rezerwacje stanowiska");
                     return false;
                 }
                 
-                // Sprawdź też czy nie ma rezerwacji całej sali
                 var stanowisko = await _context.Stanowiska.FindAsync(stanowiskoId.Value);
                 if (stanowisko != null)
                 {
                     var salaConflicts = allConflicts.Where(r => r.SalaId == stanowisko.SalaId).ToList();
-                    Console.WriteLine($"Konflikty sali {stanowisko.SalaId} dla stanowiska {stanowiskoId}: {salaConflicts.Count}");
 
                     if (salaConflicts.Any())
                     {
-                        Console.WriteLine($"❌ Stanowisko {stanowiskoId} zajęte przez rezerwacje sali");
                         return false;
                     }
                 }
 
-                Console.WriteLine($"✅ Stanowisko {stanowiskoId} dostępne");
                 return true;
             }
 
-            Console.WriteLine("❌ Brak salaId ani stanowiskoId");
             return false;
         }
 
         private async Task<bool> CheckDayAvailability(int? salaId, int? stanowiskoId, DateTime date)
         {
-            // TYMCZASOWO: Uproszczona logika bez sprawdzania godzin otwarcia
-            Console.WriteLine($"=== CheckDayAvailability dla salaId: {salaId}, stanowiskoId: {stanowiskoId}, data: {date:yyyy-MM-dd} ===");
-            
             Sala? sala = null;
             if (salaId.HasValue)
             {
                 sala = await _context.Sale.FindAsync(salaId.Value);
-                Console.WriteLine($"Znaleziono salę: {sala?.Numer} (ID: {sala?.Id})");
             }
             else if (stanowiskoId.HasValue)
             {
@@ -514,53 +436,41 @@ namespace Backend.Controllers
                     .Include(s => s.Sala)
                     .FirstOrDefaultAsync(s => s.Id == stanowiskoId.Value);
                 sala = stanowisko?.Sala;
-                Console.WriteLine($"Znaleziono stanowisko w sali: {sala?.Numer}");
             }
 
             if (sala == null) 
             {
-                Console.WriteLine($"❌ Sala nie znaleziona!");
                 return false;
             }
 
-            // Sprawdź czy dzień nie jest w przeszłości
-            if (date.Date < DateTime.Now.Date) // DateTime.Now zamiast UtcNow
+            if (date.Date < DateTime.Now.Date)
             {
-                Console.WriteLine($"❌ Data {date:yyyy-MM-dd} jest w przeszłości");
                 return false;
             }
 
-            // TYMCZASOWO: Sprawdź tylko kilka standardowych godzin bez ograniczeń sal
             var hoursToCheck = new[] { 9, 10, 11, 14, 15, 16, 17 };
-            Console.WriteLine($"Sprawdzam godziny: {string.Join(", ", hoursToCheck)}");
             
             foreach (int hour in hoursToCheck)
             {
                 var startTime = date.Date.AddHours(hour);
                 var endTime = startTime.AddHours(1);
 
-                // Sprawdź czy nie jest w przeszłości
                 if (startTime <= DateTime.Now)
                 {
-                    Console.WriteLine($"Godzina {hour}: pomijam - w przeszłości");
                     continue;
                 }
 
-                // Konwertuj na Unspecified przed sprawdzaniem dostępności
                 var startTimeUnspecified = DateTime.SpecifyKind(startTime, DateTimeKind.Unspecified);
                 var endTimeUnspecified = DateTime.SpecifyKind(endTime, DateTimeKind.Unspecified);
 
                 var isAvailable = await CheckAvailability(salaId, stanowiskoId, startTimeUnspecified, endTimeUnspecified);
-                Console.WriteLine($"Godzina {hour}: dostępna = {isAvailable}");
                 
                 if (isAvailable) 
                 {
-                    Console.WriteLine($"✅ Znaleziono dostępną godzinę {hour} dla dnia {date:yyyy-MM-dd}");
                     return true;
                 }
             }
 
-            Console.WriteLine($"❌ Brak dostępnych godzin dla dnia {date:yyyy-MM-dd}");
             return false;
         }
 

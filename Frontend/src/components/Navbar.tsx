@@ -1,6 +1,6 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { logout } from "../services/authService";
+import { logout, getUserFromToken } from "../services/authService";
 
 export function Navbar() {
   const [isLogged, setIsLogged] = useState(false);
@@ -10,16 +10,14 @@ export function Navbar() {
   const location = useLocation();
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    setIsLogged(!!token);
-    const userRoles = localStorage.getItem("userRoles");
-    setRoles(userRoles ? JSON.parse(userRoles) : []);
+    const user = getUserFromToken();
+    setIsLogged(!!user);
+    setRoles(user?.roles || []);
   }, []);
 
   const handleLogout = async () => {
     await logout();
     localStorage.removeItem("accessToken");
-    localStorage.removeItem("userRoles");
     setIsLogged(false);
     setRoles([]);
     navigate("/login");

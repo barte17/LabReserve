@@ -34,7 +34,7 @@ export const getUserFromToken = (): User | null => {
       : [];
 
     const user: User = {
-      id: decoded.id,
+      id: decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] || decoded.id,
       email: decoded.email,
       roles: roleArray,
       exp: decoded.exp,

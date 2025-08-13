@@ -1,20 +1,8 @@
 import { useEffect, useState } from "react";
-import { fetchRezerwacje, updateStatus, deleteRezerwacja } from "../services/rezerwacjaService";
-
-type Rezerwacja = {
-  id: number;
-  salaId: number | null;
-  stanowiskoId: number | null;
-  uzytkownikId: string;
-  dataStart: string;
-  dataKoniec: string;
-  dataUtworzenia: string;
-  opis?: string;
-  status: string;
-};
+import { fetchRezerwacje, updateStatus, deleteRezerwacja, type ReservationDetailsDto } from "../services/rezerwacjaService";
 
 export default function RezerwacjeList() {
-  const [rezerwacje, setRezerwacje] = useState<Rezerwacja[]>([]);
+  const [rezerwacje, setRezerwacje] = useState<ReservationDetailsDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -26,15 +14,18 @@ export default function RezerwacjeList() {
       .finally(() => setLoading(false));
   }, []);
 
+  const [error, setError] = useState<string>("");
+
   const handleStatusChange = async (id: number, newStatus: string) => {
     try {
       await updateStatus(id, newStatus);
       setRezerwacje(prev => 
         prev.map(rez => rez.id === id ? { ...rez, status: newStatus } : rez)
       );
+      setError("");
     } catch (error) {
       console.error("Błąd podczas zmiany statusu:", error);
-      alert("Nie udało się zmienić statusu rezerwacji");
+      setError("Nie udało się zmienić statusu rezerwacji");
     }
   };
 
@@ -44,9 +35,10 @@ export default function RezerwacjeList() {
     try {
       await deleteRezerwacja(id);
       setRezerwacje(prev => prev.filter(rez => rez.id !== id));
+      setError("");
     } catch (error) {
       console.error("Błąd podczas usuwania:", error);
-      alert("Nie udało się usunąć rezerwacji");
+      setError("Nie udało się usunąć rezerwacji");
     }
   };
 
@@ -179,6 +171,12 @@ export default function RezerwacjeList() {
           </div>
         </button>
       </div>
+
+      {error && (
+        <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+          {error}
+        </div>
+      )}
 
       {/* Lista rezerwacji */}
       {filteredRezerwacje.length === 0 ? (
