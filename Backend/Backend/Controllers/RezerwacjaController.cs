@@ -406,7 +406,10 @@ namespace Backend.Controllers
                     return false;
                 }
                 
-                var stanowisko = await _context.Stanowiska.FindAsync(stanowiskoId.Value);
+                var stanowisko = await _context.Stanowiska
+                    .Where(s => s.Id == stanowiskoId.Value)
+                    .Select(s => new { s.SalaId })
+                    .FirstOrDefaultAsync();
                 if (stanowisko != null)
                 {
                     var salaConflicts = allConflicts.Where(r => r.SalaId == stanowisko.SalaId).ToList();

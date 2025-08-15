@@ -22,6 +22,7 @@ namespace Backend.Controllers
         public async Task<ActionResult<IEnumerable<SalaDto>>> GetAll()
         {
             var sale = await _context.Sale
+                .Include(s => s.Opiekun)
                 .Select(s => new SalaDto
                 {
                     Id = s.Id,

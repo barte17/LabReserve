@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useToastContext } from "../ToastProvider";
 
 type StanowiskoFormData = {
   salaId: number;
@@ -24,6 +25,7 @@ export default function AddStationForm({ onSubmit, initialData, submitLabel = "D
   const [nazwa, setNazwa] = useState(initialData?.nazwa ?? "");
   const [typ, setTyp] = useState(initialData?.typ ?? "");
   const [opis, setOpis] = useState(initialData?.opis ?? "");
+  const { showWarning } = useToastContext();
 
   useEffect(() => {
     fetch("/api/sala/stanowiska-dozwolone")
@@ -34,7 +36,10 @@ export default function AddStationForm({ onSubmit, initialData, submitLabel = "D
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (salaId === "") return alert("Wybierz salę");
+    if (salaId === "") {
+      showWarning("Wybierz salę");
+      return;
+    }
 
     onSubmit({
       salaId: Number(salaId),

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import AddStationForm from "./forms/AddStationForm";
 import { fetchStanowiska, editStanowisko, deleteStanowisko } from "../services/stanowiskoService";
+import { useToastContext } from "./ToastProvider";
 
 type Stanowisko = {
   id: number;
@@ -17,6 +18,7 @@ export default function StanowiskaListAdmin() {
   const [sortKey, setSortKey] = useState<"id" | "nazwa" | "salaId">("id");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [editingStanowisko, setEditingStanowisko] = useState<Stanowisko | null>(null);
+  const { showSuccess, showError } = useToastContext();
 
   useEffect(() => {
     fetchStanowiska()
@@ -45,9 +47,10 @@ export default function StanowiskaListAdmin() {
       await editStanowisko(editingStanowisko.id, data);
       setStanowiska((prev) => prev.map((s) => (s.id === editingStanowisko.id ? { ...s, ...data } : s)));
       setEditingStanowisko(null);
+      showSuccess("Pomyślnie zaktualizowano stanowisko");
     } catch (e) {
       console.error(e);
-      alert("Błąd podczas edycji stanowiska");
+      showError("Błąd podczas edycji stanowiska");
     }
   };
 

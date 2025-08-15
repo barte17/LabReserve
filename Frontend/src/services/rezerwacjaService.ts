@@ -31,7 +31,7 @@ export interface AvailableDayDto {
   maDostepneGodziny: boolean;
 }
 
-export interface ReservationDetailsDto {
+export interface RezerwacjaDetailsDto {
   id: number;
   salaId?: number;
   salaNumer?: string;
@@ -48,7 +48,7 @@ export interface ReservationDetailsDto {
   opis?: string;
 }
 
-export const fetchRezerwacje = async (): Promise<ReservationDetailsDto[]> => {
+export const fetchRezerwacje = async (): Promise<RezerwacjaDetailsDto[]> => {
   const res = await fetch("/api/rezerwacja", {
     headers: { "Authorization": `Bearer ${getToken()}` }
   });
@@ -56,7 +56,7 @@ export const fetchRezerwacje = async (): Promise<ReservationDetailsDto[]> => {
   return await res.json();
 };
 
-export const fetchMyReservations = async (): Promise<ReservationDetailsDto[]> => {
+export const fetchMyReservations = async (): Promise<RezerwacjaDetailsDto[]> => {
   const res = await fetch("/api/rezerwacja/my", {
     headers: { "Authorization": `Bearer ${getToken()}` }
   });
@@ -64,9 +64,7 @@ export const fetchMyReservations = async (): Promise<ReservationDetailsDto[]> =>
   return await res.json();
 };
 
-export const createReservation = async (data: CreateReservationDto): Promise<ReservationDetailsDto> => {
-  console.log('Sending reservation data:', data);
-  
+export const createReservation = async (data: CreateReservationDto): Promise<RezerwacjaDetailsDto> => {
   const res = await fetch("/api/rezerwacja", {
     method: "POST",
     headers: {
@@ -78,7 +76,6 @@ export const createReservation = async (data: CreateReservationDto): Promise<Res
   
   if (!res.ok) {
     const errorText = await res.text();
-    console.error('Reservation error:', res.status, errorText);
     throw new Error(errorText || "Błąd tworzenia rezerwacji");
   }
   

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchSale, editSala, deleteSala } from "../services/salaService";
 import AddSalaForm from "./forms/AddRoomForm";
+import { useToastContext } from "./ToastProvider";
 
 type Sala = {
   id: number;
@@ -28,6 +29,7 @@ export default function SaleListAdmin({ onEdit }: Props) {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [stanowiskaFilter, setStanowiskaFilter] = useState<"" | "tak" | "nie">("");
   const [editingSala, setEditingSala] = useState<Sala | null>(null);
+  const { showSuccess, showError } = useToastContext();
 
   useEffect(() => {
     fetchSale()
@@ -62,9 +64,10 @@ export default function SaleListAdmin({ onEdit }: Props) {
       const updatedSale = await fetchSale();
       setSale(updatedSale);
       setEditingSala(null);
+      showSuccess("Pomyślnie zaktualizowano salę");
     } catch (e) {
       console.error(e);
-      alert("Błąd podczas edycji sali");
+      showError("Błąd podczas edycji sali");
     }
   };
 

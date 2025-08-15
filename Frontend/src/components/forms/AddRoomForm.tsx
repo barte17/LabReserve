@@ -34,8 +34,18 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
   const [nauczyciele, setNauczyciele] = useState<User[]>([]);
 
   useEffect(() => {
-    fetch("/api/users/opiekunowie")
-      .then(res => res.json())
+    const token = localStorage.getItem("accessToken");
+    fetch("/api/users/opiekunowie", {
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    })
+      .then(res => {
+        if (res.ok) {
+          return res.json();
+        }
+        throw new Error('Unauthorized');
+      })
       .then(setNauczyciele)
       .catch(console.error);
   }, []);

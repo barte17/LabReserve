@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { fetchRezerwacje, updateStatus, deleteRezerwacja, type ReservationDetailsDto } from "../services/rezerwacjaService";
+import { fetchRezerwacje, updateStatus, deleteRezerwacja, type RezerwacjaDetailsDto } from "../services/rezerwacjaService";
 
 export default function RezerwacjeList() {
-  const [rezerwacje, setRezerwacje] = useState<ReservationDetailsDto[]>([]);
+  const [rezerwacje, setRezerwacje] = useState<RezerwacjaDetailsDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   useEffect(() => {
     fetchRezerwacje()
@@ -55,6 +57,16 @@ export default function RezerwacjeList() {
     
     return matchesSearch && matchesStatus;
   });
+
+  // Paginacja
+  const totalPages = Math.ceil(filteredRezerwacje.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedRezerwacje = filteredRezerwacje.slice(startIndex, startIndex + itemsPerPage);
+
+  // Reset strony gdy zmienia się filtr
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -195,7 +207,7 @@ export default function RezerwacjeList() {
         </div>
       ) : (
         <div className="space-y-4">
-          {filteredRezerwacje.map((rez) => (
+          {paginatedRezerwacje.map((rez) => (
             <div key={rez.id} className="list-item animate-in">
               <div className="list-item-header">
                 <div>
@@ -271,6 +283,46 @@ export default function RezerwacjeList() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Paginacja */}
+      {totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-between">
+          <div className="text-sm text-neutral-600">
+            Wyświetlanie {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredRezerwacje.length)} z {filteredRezerwacje.length} rezerwacji
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="btn btn-secondary btn-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Poprzednia
+            </button>
+            
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`btn btn-sm ${
+                  currentPage === page 
+                    ? 'btn-primary' 
+                    : 'btn-secondary'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+            
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="btn btn-secondary btn-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Następna
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -8,6 +8,7 @@ import AdminNavbar from "../components/AdminNavbar";
 import SaleListAdmin from "../components/SaleListAdmin";
 import StanowiskaListAdmin from "../components/StanowiskaListAdmin";
 import UsersListAdmin from "../components/UsersListAdmin";
+import { useToastContext } from "../components/ToastProvider";
 
 type PanelView =
   | "default"
@@ -21,6 +22,7 @@ type PanelView =
 export default function PanelAdmina() {
   const [view, setView] = useState<PanelView>("default");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const { showSuccess, showError } = useToastContext();
 
   useEffect(() => {
     document.title = "Panel admina";
@@ -29,20 +31,22 @@ export default function PanelAdmina() {
   const handleAddRoom = async (data: any) => {
     try {
       await addSala(data);
-      alert("Dodano salę!");
+      showSuccess("Dodano salę!");
+      setView("sale");
     } catch (err) {
       console.error(err);
-      alert("Nie udało się dodać sali");
+      showError("Nie udało się dodać sali");
     }
   };
 
   const handleAddStation = async (data: any) => {
     try {
       await addStanowisko(data);
-      alert("Dodano stanowisko!");
+      showSuccess("Dodano stanowisko!");
+      setView("stanowiska");
     } catch (err) {
       console.error(err);
-      alert("Nie udało się dodać stanowiska");
+      showError("Nie udało się dodać stanowiska");
     }
   };
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchUsers, changeUserRoles } from "../services/userService";
+import { useToastContext } from "./ToastProvider";
 
 export type User = {
   id: string;
@@ -18,6 +19,7 @@ export default function UsersListAdmin() {
   const [changingRoleId, setChangingRoleId] = useState<string | null>(null);
   const [editRolesUserId, setEditRolesUserId] = useState<string | null>(null);
   const [editRoles, setEditRoles] = useState<string[]>([]);
+  const { showSuccess, showError } = useToastContext();
 
   const allRoles = ["Student", "Nauczyciel", "Opiekun", "Admin", "Niezatwierdzony"];
   useEffect(() => {
@@ -52,8 +54,9 @@ export default function UsersListAdmin() {
         )
       );
       setEditRolesUserId(null);
+      showSuccess("Pomyślnie zmieniono role użytkownika");
     } catch {
-      alert("Błąd podczas zmiany ról");
+      showError("Błąd podczas zmiany ról");
     } finally {
       setChangingRoleId(null);
     }

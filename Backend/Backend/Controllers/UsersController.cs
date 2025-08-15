@@ -3,6 +3,7 @@ using Backend.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Controllers
 {
@@ -42,7 +43,7 @@ namespace Backend.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
         {
-            var users = _userManager.Users.ToList();
+            var users = await _userManager.Users.ToListAsync();
             var result = new List<UserDto>();
 
             foreach (var u in users)

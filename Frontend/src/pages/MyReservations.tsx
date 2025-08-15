@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchMyReservations, deleteRezerwacja } from '../services/rezerwacjaService';
-import type { ReservationDetailsDto } from '../services/rezerwacjaService';
+import type { RezerwacjaDetailsDto } from '../services/rezerwacjaService';
 
 export default function MyReservations() {
-  const [reservations, setReservations] = useState<ReservationDetailsDto[]>([]);
+  const [reservations, setReservations] = useState<RezerwacjaDetailsDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
 
@@ -46,7 +46,7 @@ export default function MyReservations() {
     }
   };
 
-  const canCancel = (reservation: ReservationDetailsDto) => {
+  const canCancel = (reservation: RezerwacjaDetailsDto) => {
     const startDate = new Date(reservation.dataStart);
     const now = new Date();
     return startDate > now && reservation.status !== 'anulowane';
