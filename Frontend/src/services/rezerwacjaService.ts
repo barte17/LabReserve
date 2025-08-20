@@ -1,4 +1,4 @@
-const getToken = () => localStorage.getItem("accessToken");
+// Usunięto getToken - używamy authenticatedFetch z authService
 
 export interface CreateReservationDto {
   salaId?: number;
@@ -49,27 +49,25 @@ export interface RezerwacjaDetailsDto {
 }
 
 export const fetchRezerwacje = async (): Promise<RezerwacjaDetailsDto[]> => {
-  const res = await fetch("/api/rezerwacja", {
-    headers: { "Authorization": `Bearer ${getToken()}` }
-  });
+  const { authenticatedFetch } = await import('./authService');
+  const res = await authenticatedFetch("/api/rezerwacja");
   if (!res.ok) throw new Error("Błąd pobierania rezerwacji");
   return await res.json();
 };
 
 export const fetchMyReservations = async (): Promise<RezerwacjaDetailsDto[]> => {
-  const res = await fetch("/api/rezerwacja/my", {
-    headers: { "Authorization": `Bearer ${getToken()}` }
-  });
+  const { authenticatedFetch } = await import('./authService');
+  const res = await authenticatedFetch("/api/rezerwacja/my");
   if (!res.ok) throw new Error("Błąd pobierania moich rezerwacji");
   return await res.json();
 };
 
 export const createReservation = async (data: CreateReservationDto): Promise<RezerwacjaDetailsDto> => {
-  const res = await fetch("/api/rezerwacja", {
+  const { authenticatedFetch } = await import('./authService');
+  const res = await authenticatedFetch("/api/rezerwacja", {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${getToken()}`
+      "Content-Type": "application/json"
     },
     body: JSON.stringify(data)
   });
@@ -88,9 +86,8 @@ export const getAvailableHours = async (params: AvailabilityCheckDto): Promise<A
   if (params.stanowiskoId) searchParams.append('stanowiskoId', params.stanowiskoId.toString());
   searchParams.append('data', params.data);
 
-  const res = await fetch(`/api/rezerwacja/available-hours?${searchParams}`, {
-    headers: { "Authorization": `Bearer ${getToken()}` }
-  });
+  const { authenticatedFetch } = await import('./authService');
+  const res = await authenticatedFetch(`/api/rezerwacja/available-hours?${searchParams}`);
   
   if (!res.ok) throw new Error("Błąd pobierania dostępnych godzin");
   return await res.json();
@@ -103,9 +100,8 @@ export const getAvailableDays = async (params: MonthAvailabilityDto): Promise<Av
   searchParams.append('year', params.year.toString());
   searchParams.append('month', params.month.toString());
 
-  const res = await fetch(`/api/rezerwacja/available-days?${searchParams}`, {
-    headers: { "Authorization": `Bearer ${getToken()}` }
-  });
+  const { authenticatedFetch } = await import('./authService');
+  const res = await authenticatedFetch(`/api/rezerwacja/available-days?${searchParams}`);
   
   if (!res.ok) {
     throw new Error(`Błąd pobierania dostępnych dni: ${res.status} ${res.statusText}`);
@@ -115,11 +111,11 @@ export const getAvailableDays = async (params: MonthAvailabilityDto): Promise<Av
 };
 
 export const updateStatus = async (id: number, status: string) => {
-  const res = await fetch(`/api/rezerwacja/${id}/status`, {
+  const { authenticatedFetch } = await import('./authService');
+  const res = await authenticatedFetch(`/api/rezerwacja/${id}/status`, {
     method: "PATCH",
     headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${getToken()}`
+      "Content-Type": "application/json"
     },
     body: JSON.stringify({ status }),
   });
@@ -127,9 +123,9 @@ export const updateStatus = async (id: number, status: string) => {
 };
 
 export const deleteRezerwacja = async (id: number) => {
-  const res = await fetch(`/api/rezerwacja/${id}`, {
-    method: "DELETE",
-    headers: { "Authorization": `Bearer ${getToken()}` }
+  const { authenticatedFetch } = await import('./authService');
+  const res = await authenticatedFetch(`/api/rezerwacja/${id}`, {
+    method: "DELETE"
   });
   if (!res.ok) throw new Error("Błąd usuwania rezerwacji");
 };

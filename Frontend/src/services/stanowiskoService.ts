@@ -1,19 +1,16 @@
-const getToken = () => localStorage.getItem("accessToken");
-
 export const fetchStanowiska = async () => {
-  const res = await fetch("/api/stanowisko", {
-    headers: { "Authorization": `Bearer ${getToken()}` }
-  });
+  const { authenticatedFetch } = await import('./authService');
+  const res = await authenticatedFetch("/api/stanowisko");
   if (!res.ok) throw new Error("Błąd pobierania stanowisk");
   return await res.json();
 };
 
 export const addStanowisko = async (data: any) => {
-  const res = await fetch("/api/stanowisko", {
+  const { authenticatedFetch } = await import('./authService');
+  const res = await authenticatedFetch("/api/stanowisko", {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${getToken()}`
+      "Content-Type": "application/json"
     },
     body: JSON.stringify(data),
   });
@@ -22,11 +19,11 @@ export const addStanowisko = async (data: any) => {
 };
 
 export const editStanowisko = async (id: number, data: any) => {
-  const res = await fetch(`/api/stanowisko/${id}`, {
+  const { authenticatedFetch } = await import('./authService');
+  const res = await authenticatedFetch(`/api/stanowisko/${id}`, {
     method: "PUT",
     headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${getToken()}`
+      "Content-Type": "application/json"
     },
     body: JSON.stringify(data),
   });
@@ -34,9 +31,9 @@ export const editStanowisko = async (id: number, data: any) => {
 };
 
 export const deleteStanowisko = async (id: number) => {
-  const res = await fetch(`/api/stanowisko/${id}`, {
-    method: "DELETE",
-    headers: { "Authorization": `Bearer ${getToken()}` }
+  const { authenticatedFetch } = await import('./authService');
+  const res = await authenticatedFetch(`/api/stanowisko/${id}`, {
+    method: "DELETE"
   });
   if (!res.ok) throw new Error("Błąd usuwania stanowiska");
 };

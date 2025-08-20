@@ -16,15 +16,15 @@ interface User {
 }
 
 let cachedUser: User | null = null;
+let accessToken: string | null = null; // In-memory storage - OWASP compliant
 
 export const getUserFromToken = (): User | null => {
   if (cachedUser) return cachedUser;
 
-  const token = localStorage.getItem("accessToken");
-  if (!token) return null;
+  if (!accessToken) return null;
 
   try {
-    const decoded: DecodedToken = jwtDecode(token);
+    const decoded: DecodedToken = jwtDecode(accessToken);
 
     const roleClaim = decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
     const roleArray = Array.isArray(roleClaim)
@@ -57,7 +57,7 @@ export const login = async (email: string, password: string) => {
   const response = await fetch(`api/account/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    credentials: 'include', 
+    credentials: 'include', // Ważne: pozwala backendowi ustawić httpOnly cookie
     body: JSON.stringify({ email, password }),
   });
 
@@ -65,8 +65,16 @@ export const login = async (email: string, password: string) => {
     throw new Error('Logowanie nie powiodło się');
   }
 
+  const data = await response.json();
+  
+  // Zapisz access token w pamięci - OWASP compliant
+  accessToken = data.accessToken;
   cachedUser = null; // wyczyść cache po nowym loginie
-  return await response.json();
+  
+  return {
+    token: data.accessToken,
+    expiration: data.expiration
+  };
 };
 
 export const register = async (
@@ -90,23 +98,105 @@ export const register = async (
 };
 
 export const refreshToken = async () => {
-  const response = await fetch(`api/refresh-token`, {
+  console.log("=== refreshToken called ===");
+  console.log("Current accessToken:", accessToken);
+  
+  const response = await fetch(`api/account/refresh-token`, {
     method: 'POST',
-    credentials: 'include',
+    credentials: 'include', // Ważne: wysyła cookies z refresh tokenem
   });
 
   if (!response.ok) {
+    // Jeśli refresh token jest nieprawidłowy, wyloguj użytkownika
+    accessToken = null;
+    cachedUser = null;
     throw new Error('Odświeżenie tokena nie powiodło się');
   }
 
+  const data = await response.json();
+  
+  // Zapisz nowy access token w pamięci - OWASP compliant
+  accessToken = data.accessToken;
+  
   cachedUser = null; // wyczyść cache przy odświeżeniu
-  return await response.json();
+  return data;
 };
 
 export const logout = async () => {
   await fetch(`api/account/logout`, {
     method: 'POST',
-    credentials: 'include',
+    credentials: 'include', // Ważne: wysyła cookies żeby backend mógł usunąć refresh token
   });
+  // Wyczyść access token z pamięci - OWASP compliant
+  accessToken = null;
   cachedUser = null;
+};
+
+// Sprawdź czy token wygasł
+export const isTokenExpired = (): boolean => {
+  const user = getUserFromToken();
+  if (!user) return true;
+  
+  const currentTime = Date.now() / 1000;
+  return user.exp < currentTime;
+};
+
+// Automatyczne odświeżanie tokenu
+export const ensureValidToken = async (): Promise<string | null> => {
+  if (!accessToken) return null;
+  
+  if (isTokenExpired()) {
+    try {
+      await refreshToken();
+      return accessToken;
+    } catch (error) {
+      console.error("Nie udało się odświeżyć tokenu:", error);
+      return null;
+    }
+  }
+  
+  return accessToken;
+};
+
+// Wrapper dla fetch z automatycznym odświeżaniem tokenu
+export const authenticatedFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
+  const token = await ensureValidToken();
+  
+  if (!token) {
+    throw new Error("Brak ważnego tokenu autoryzacji");
+  }
+  
+  const headers = {
+    ...options.headers,
+    "Authorization": `Bearer ${token}`
+  };
+  
+  const response = await fetch(url, { 
+    ...options, 
+    headers,
+    credentials: 'include' // Ważne: wysyła cookies z refresh tokenem
+  });
+  
+  // Jeśli dostajemy 401, spróbuj odświeżyć token i powtórz request
+  if (response.status === 401) {
+    try {
+      await refreshToken();
+      
+      if (accessToken) {
+        const newHeaders = {
+          ...options.headers,
+          "Authorization": `Bearer ${accessToken}`
+        };
+        return await fetch(url, { 
+          ...options, 
+          headers: newHeaders,
+          credentials: 'include'
+        });
+      }
+    } catch (error) {
+      console.error("Nie udało się odświeżyć tokenu po 401:", error);
+    }
+  }
+  
+  return response;
 };

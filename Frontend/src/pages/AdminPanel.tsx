@@ -22,6 +22,7 @@ type PanelView =
 export default function PanelAdmina() {
   const [view, setView] = useState<PanelView>("default");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const { showSuccess, showError } = useToastContext();
 
   useEffect(() => {
@@ -29,6 +30,7 @@ export default function PanelAdmina() {
   }, []);
 
   const handleAddRoom = async (data: any) => {
+    setIsLoading(true);
     try {
       await addSala(data);
       showSuccess("Dodano salę!");
@@ -36,10 +38,13 @@ export default function PanelAdmina() {
     } catch (err) {
       console.error(err);
       showError("Nie udało się dodać sali");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleAddStation = async (data: any) => {
+    setIsLoading(true);
     try {
       await addStanowisko(data);
       showSuccess("Dodano stanowisko!");
@@ -47,6 +52,8 @@ export default function PanelAdmina() {
     } catch (err) {
       console.error(err);
       showError("Nie udało się dodać stanowiska");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -79,8 +86,8 @@ export default function PanelAdmina() {
         {/* Content */}
         <div className="card min-h-[500px]">
           <div className="card-body">
-            {view === "addRoom" && <AddSalaForm onSubmit={handleAddRoom} />}
-            {view === "addStation" && <AddStanowiskoForm onSubmit={handleAddStation} />}
+            {view === "addRoom" && <AddSalaForm onSubmit={handleAddRoom} isLoading={isLoading} />}
+            {view === "addStation" && <AddStanowiskoForm onSubmit={handleAddStation} isLoading={isLoading} />}
             {view === "rezerwacje" && <RezerwacjeList />}
             {view === "users" && <UsersListAdmin />}
             {view === "sale" && <SaleListAdmin />}

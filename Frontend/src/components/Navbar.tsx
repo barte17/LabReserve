@@ -1,25 +1,16 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { logout, getUserFromToken } from "../services/authService";
+import { useState } from "react";
+import { logout as authLogout } from "../services/authService";
+import { useAuth } from "../contexts/AuthContext";
 
 export function Navbar() {
-  const [isLogged, setIsLogged] = useState(false);
-  const [roles, setRoles] = useState<string[]>([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-
-  useEffect(() => {
-    const user = getUserFromToken();
-    setIsLogged(!!user);
-    setRoles(user?.roles || []);
-  }, []);
+  const { isLogged, hasRole, logout } = useAuth();
 
   const handleLogout = async () => {
-    await logout();
-    localStorage.removeItem("accessToken");
-    setIsLogged(false);
-    setRoles([]);
+    await logout(); // AuthContext logout już wywołuje authLogout
     navigate("/login");
   };
 
@@ -65,7 +56,7 @@ export function Navbar() {
                   Moje Rezerwacje
                 </Link>
               )}
-              {isLogged && roles.includes("Admin") && (
+              {isLogged && hasRole("Admin") && (
                 <Link 
                   to="/panel-admina" 
                   className={isActiveLink("/panel-admina") ? "navbar-link-active" : "navbar-link"}
@@ -161,7 +152,7 @@ export function Navbar() {
                   Moje Rezerwacje
                 </Link>
               )}
-              {isLogged && roles.includes("Admin") && (
+              {isLogged && hasRole("Admin") && (
                 <Link 
                   to="/panel-admina" 
                   className={`block px-3 py-2 rounded-lg text-base font-medium transition-all duration-200 ${

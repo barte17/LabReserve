@@ -19,17 +19,12 @@ export default function Account() {
 
     const fetchUserData = async () => {
       try {
-        const token = localStorage.getItem("accessToken");
-        if (!token) {
-          navigate("/login");
-          return;
-        }
-
-        const response = await fetch("/api/account/me", {
+        const { authenticatedFetch } = await import('../services/authService');
+        
+        const response = await authenticatedFetch("/api/account/me", {
           headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+            "Content-Type": "application/json"
+          }
         });
 
         if (!response.ok) {

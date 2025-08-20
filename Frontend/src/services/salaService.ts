@@ -1,19 +1,16 @@
-const getToken = () => localStorage.getItem("accessToken");
-
 export const fetchSale = async () => {
-  const res = await fetch("/api/sala", {
-    headers: { "Authorization": `Bearer ${getToken()}` }
-  });
+  const { authenticatedFetch } = await import('./authService');
+  const res = await authenticatedFetch("/api/sala");
   if (!res.ok) throw new Error("Błąd pobierania sal");
   return await res.json();
 };
 
 export const addSala = async (data: any) => {
-  const res = await fetch("/api/sala", {
+  const { authenticatedFetch } = await import('./authService');
+  const res = await authenticatedFetch("/api/sala", {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${getToken()}`
+      "Content-Type": "application/json"
     },
     body: JSON.stringify(data),
   });
@@ -22,11 +19,11 @@ export const addSala = async (data: any) => {
 };
 
 export const editSala = async (id: number, data: any) => {
-  const res = await fetch(`/api/sala/${id}`, {
+  const { authenticatedFetch } = await import('./authService');
+  const res = await authenticatedFetch(`/api/sala/${id}`, {
     method: "PUT",
     headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${getToken()}`
+      "Content-Type": "application/json"
     },
     body: JSON.stringify(data),
   });
@@ -34,9 +31,9 @@ export const editSala = async (id: number, data: any) => {
 };
 
 export const deleteSala = async (id: number) => {
-  const res = await fetch(`/api/sala/${id}`, {
-    method: "DELETE",
-    headers: { "Authorization": `Bearer ${getToken()}` }
+  const { authenticatedFetch } = await import('./authService');
+  const res = await authenticatedFetch(`/api/sala/${id}`, {
+    method: "DELETE"
   });
   if (!res.ok) throw new Error("Błąd usuwania sali");
 };

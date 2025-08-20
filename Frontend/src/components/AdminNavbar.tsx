@@ -26,7 +26,6 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({
   const handleDropdownClick = (dropdownName: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log(`${dropdownName} clicked, current dropdown:`, openDropdown);
     setOpenDropdown(openDropdown === dropdownName ? null : dropdownName);
   };
 

@@ -34,20 +34,19 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
   const [nauczyciele, setNauczyciele] = useState<User[]>([]);
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    fetch("/api/users/opiekunowie", {
-      headers: {
-        "Authorization": `Bearer ${token}`
-      }
-    })
-      .then(res => {
+    const fetchOpiekunowie = async () => {
+      try {
+        const { authenticatedFetch } = await import('../../services/authService');
+        const res = await authenticatedFetch("/api/users/opiekunowie");
         if (res.ok) {
-          return res.json();
+          const data = await res.json();
+          setNauczyciele(data);
         }
-        throw new Error('Unauthorized');
-      })
-      .then(setNauczyciele)
-      .catch(console.error);
+      } catch (error) {
+        console.error("Błąd podczas pobierania opiekunów:", error);
+      }
+    };
+    fetchOpiekunowie();
   }, []);
 
   const formatTimeToTimeSpan = (time: string): string | null => {

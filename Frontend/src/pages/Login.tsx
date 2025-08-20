@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { login } from '../services/authService';
+import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -8,6 +9,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { refreshAuth } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,9 +18,9 @@ const Login = () => {
     
     try {
       const result = await login(email, password);
-      localStorage.setItem('accessToken', result.token);
+      // Token jest już zapisany w pamięci przez authService - OWASP compliant
+      refreshAuth(); // Odśwież stan autoryzacji
       navigate('/');
-      window.location.reload(); // Odśwież stronę, aby zaktualizować stan autoryzacji
     } catch {
       setError('Nieprawidłowy email lub hasło. Spróbuj ponownie.');
     } finally {

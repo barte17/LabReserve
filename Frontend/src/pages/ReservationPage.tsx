@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { createReservation, getAvailableHours, getAvailableDays } from '../services/rezerwacjaService';
 import type { AvailableDayDto } from '../services/rezerwacjaService';
+import { getUserFromToken } from '../services/authService';
 
 interface AvailableHour {
   godzina: string;
@@ -33,7 +34,6 @@ export default function ReservationPage() {
   const stanowiskoId = searchParams.get('stanowiskoId') ? parseInt(searchParams.get('stanowiskoId')!) : undefined;
   const resourceName = searchParams.get('name') || '';
   
-  // Sprawdź autoryzację używając localStorage (tak jak w Navbar)
   const [isLogged, setIsLogged] = useState(false);
   
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -58,15 +58,15 @@ export default function ReservationPage() {
 
   useEffect(() => {
     // Sprawdź autoryzację
-    const token = localStorage.getItem("accessToken");
-    setIsLogged(!!token);
+    const user = getUserFromToken();
+    setIsLogged(!!user);
     
     if (!salaId && !stanowiskoId) {
       navigate('/');
       return;
     }
     
-    if (!token) {
+    if (!user) {
       navigate('/login');
       return;
     }
@@ -79,8 +79,8 @@ export default function ReservationPage() {
   }, [selectedDate]);
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    if (token && (salaId || stanowiskoId)) {
+    const user = getUserFromToken();
+    if (user && (salaId || stanowiskoId)) {
       fetchAvailableDays();
     }
   }, [currentMonth, salaId, stanowiskoId]);
@@ -97,7 +97,6 @@ export default function ReservationPage() {
       const day = String(selectedDate.getDate()).padStart(2, '0');
       const formattedDate = `${year}-${month}-${day}`;
       
-      console.log('Fetching hours for date:', { selectedDate: selectedDate.toDateString(), formattedDate });
       
       const hours = await getAvailableHours({
         salaId,
@@ -301,15 +300,6 @@ export default function ReservationPage() {
         return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
       };
 
-      console.log('Frontend wysyła:', {
-        selectedDate: selectedDate.toDateString(),
-        selectedStartHour,
-        selectedEndHour,
-        startDateTime: startDateTime,
-        endDateTime: endDateTime,
-        startDateTimeFormatted: formatDateTimeLocal(startDateTime),
-        endDateTimeFormatted: formatDateTimeLocal(endDateTime)
-      });
 
       const reservationData: ReservationData = {
         salaId,
@@ -355,7 +345,7 @@ export default function ReservationPage() {
                 Wybierz datę rezerwacji *
               </label>
               
-              {!localStorage.getItem("accessToken") && (
+              {!isLogged && (
                 <div className="mb-4 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
                   Musisz być zalogowany, aby zobaczyć dostępne terminy.
                 </div>

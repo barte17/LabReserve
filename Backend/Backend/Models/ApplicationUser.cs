@@ -11,6 +11,9 @@ namespace Backend.Models
         [Required, MaxLength(50)]
         public string Nazwisko { get; set; }
 
+        public string? RefreshToken { get; set; }
+        public DateTime RefreshTokenExpiryTime { get; set; }
+
         public ICollection<Rezerwacja> Rezerwacje { get; set; } = new List<Rezerwacja>();
     }
 }

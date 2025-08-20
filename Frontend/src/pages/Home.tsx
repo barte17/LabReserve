@@ -1,15 +1,8 @@
 import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useAuth } from "../contexts/AuthContext";
 
 const Home = () => {
-  const [isLogged, setIsLogged] = useState(false);
-  const [userName, setUserName] = useState("");
-
-  useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    setIsLogged(!!token);
-    
-  }, []);
+  const { isLogged } = useAuth();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-neutral-50 to-primary-50">
