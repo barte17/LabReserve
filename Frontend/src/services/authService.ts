@@ -17,6 +17,7 @@ interface User {
 
 let cachedUser: User | null = null;
 let accessToken: string | null = null; // In-memory storage - OWASP compliant
+let refreshPromise: Promise<any> | null = null; // Mutex dla refresh token
 
 export const getUserFromToken = (): User | null => {
   if (cachedUser) return cachedUser;
@@ -54,7 +55,7 @@ export const hasRole = (roles: string): boolean => {
 };
 
 export const login = async (email: string, password: string) => {
-  const response = await fetch(`api/account/login`, {
+  const response = await fetch(`/api/account/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', // Ważne: pozwala backendowi ustawić httpOnly cookie
@@ -83,7 +84,7 @@ export const register = async (
   imie: string,
   nazwisko: string
 ) => {
-  const response = await fetch(`api/account/register`, {
+  const response = await fetch(`/api/account/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password, imie, nazwisko }),
@@ -101,29 +102,44 @@ export const refreshToken = async () => {
   console.log("=== refreshToken called ===");
   console.log("Current accessToken:", accessToken);
   
-  const response = await fetch(`api/account/refresh-token`, {
-    method: 'POST',
-    credentials: 'include', // Ważne: wysyła cookies z refresh tokenem
-  });
-
-  if (!response.ok) {
-    // Jeśli refresh token jest nieprawidłowy, wyloguj użytkownika
-    accessToken = null;
-    cachedUser = null;
-    throw new Error('Odświeżenie tokena nie powiodło się');
+  // Jeśli już trwa refresh, czekaj na jego zakończenie
+  if (refreshPromise) {
+    console.log("Refresh already in progress, waiting...");
+    return await refreshPromise;
   }
+  
+  // Utwórz nowy refresh promise
+  refreshPromise = (async () => {
+    const response = await fetch(`/api/account/refresh-token`, {
+      method: 'POST',
+      credentials: 'include',
+    });
 
-  const data = await response.json();
-  
-  // Zapisz nowy access token w pamięci - OWASP compliant
-  accessToken = data.accessToken;
-  
-  cachedUser = null; // wyczyść cache przy odświeżeniu
-  return data;
+    if (!response.ok) {
+      // Jeśli refresh token jest nieprawidłowy, wyloguj użytkownika
+      accessToken = null;
+      cachedUser = null;
+      throw new Error('Odświeżenie tokena nie powiodło się');
+    }
+
+    const data = await response.json();
+    
+    // Zapisz nowy access token w pamięci - OWASP compliant
+    accessToken = data.accessToken;
+    
+    cachedUser = null; // wyczyść cache przy odświeżeniu
+    return data;
+  })();
+
+  try {
+    return await refreshPromise;
+  } finally {
+    refreshPromise = null;
+  }
 };
 
 export const logout = async () => {
-  await fetch(`api/account/logout`, {
+  await fetch(`/api/account/logout`, {
     method: 'POST',
     credentials: 'include', // Ważne: wysyła cookies żeby backend mógł usunąć refresh token
   });
@@ -141,21 +157,27 @@ export const isTokenExpired = (): boolean => {
   return user.exp < currentTime;
 };
 
-// Automatyczne odświeżanie tokenu
+// Automatyczne odświeżanie tokenu - LAZY LOADING
 export const ensureValidToken = async (): Promise<string | null> => {
-  if (!accessToken) return null;
+  console.log("=== ensureValidToken called ===");
+  console.log("Current accessToken:", !!accessToken);
   
-  if (isTokenExpired()) {
-    try {
-      await refreshToken();
-      return accessToken;
-    } catch (error) {
-      console.error("Nie udało się odświeżyć tokenu:", error);
-      return null;
-    }
+  // Jeśli mamy ważny token, zwróć go
+  if (accessToken && !isTokenExpired()) {
+    console.log("Token is valid, returning");
+    return accessToken;
   }
   
-  return accessToken;
+  // Jeśli nie ma tokenu lub wygasł, spróbuj odświeżyć
+  console.log("Token missing or expired, trying to refresh...");
+  try {
+    await refreshToken();
+    console.log("Token refreshed successfully");
+    return accessToken;
+  } catch (error) {
+    console.error("Nie udało się odświeżyć tokenu:", error);
+    return null;
+  }
 };
 
 // Wrapper dla fetch z automatycznym odświeżaniem tokenu

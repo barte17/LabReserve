@@ -21,6 +21,7 @@ namespace Backend.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IConfiguration _config;
         private readonly SignInManager<ApplicationUser> _signInManager;
+        private static readonly SemaphoreSlim _refreshSemaphore = new(1, 1); // Mutex dla refresh
 
         public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IConfiguration config)
         {
@@ -111,15 +112,17 @@ namespace Backend.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginDto dto)
         {
+            Console.WriteLine("=== LOGIN ENDPOINT CALLED ===");
             var user = await _userManager.FindByEmailAsync(dto.Email);
             if (user == null || !await _userManager.CheckPasswordAsync(user, dto.Password))
                 return Unauthorized("Nieprawidłowe dane logowania");
 
             var accessToken = await GenerateJwtToken(user);
             var refreshToken = GenerateRefreshToken();
+            Console.WriteLine($"Generated refresh token: {refreshToken}");
 
             user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7); // Refresh token ważny 7 dni
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
 
             await _userManager.UpdateAsync(user);
 
@@ -127,11 +130,23 @@ namespace Backend.Controllers
             var cookieOptions = new CookieOptions
             {
                 HttpOnly = true,
-                Secure = false, // Development: false dla HTTP, true dla HTTPS w produkcji
-                SameSite = SameSiteMode.Lax, // Lax dla development, Strict dla produkcji
+                Secure = Request.IsHttps, // Automatycznie true dla HTTPS
+                SameSite = SameSiteMode.Strict, // Lepsza ochrona CSRF
+                Path = "/",
+                Domain = null,
                 Expires = DateTime.UtcNow.AddDays(7)
             };
+            Console.WriteLine($"Setting refresh token cookie with options: HttpOnly={cookieOptions.HttpOnly}, Path={cookieOptions.Path}, SameSite={cookieOptions.SameSite}");
             Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
+            
+            // TEST: Dodaj też zwykły cookie do testów
+            Response.Cookies.Append("testCookie", "testValue", new CookieOptions
+            {
+                HttpOnly = false, // Żeby było widoczne w JavaScript
+                Path = "/",
+                Expires = DateTime.UtcNow.AddDays(1)
+            });
+            Console.WriteLine("Added test cookie for debugging");
 
             return Ok(new
             {
@@ -144,47 +159,90 @@ namespace Backend.Controllers
         public async Task<IActionResult> RefreshToken()
         {
             Console.WriteLine("=== REFRESH TOKEN ENDPOINT CALLED ===");
-            var refreshTokenFromCookie = Request.Cookies["refreshToken"];
-            Console.WriteLine($"Refresh token from cookie: {refreshTokenFromCookie}");
-            if (string.IsNullOrEmpty(refreshTokenFromCookie))
+            
+            // Czekaj na dostęp do sekcji krytycznej (max 10 sekund)
+            if (!await _refreshSemaphore.WaitAsync(TimeSpan.FromSeconds(10)))
             {
-                Console.WriteLine("ERROR: Refresh token not found in cookies");
-                return BadRequest("Refresh token not found");
+                Console.WriteLine("ERROR: Timeout waiting for refresh semaphore");
+                return StatusCode(503, "Server busy, try again later");
             }
 
-            // Znajdź użytkownika po refresh token zamiast access token
-            var user = await _userManager.Users
-                .FirstOrDefaultAsync(u => u.RefreshToken == refreshTokenFromCookie && u.RefreshTokenExpiryTime > DateTime.UtcNow);
-
-            if (user == null)
+            try
             {
-                Console.WriteLine("ERROR: User not found or refresh token expired");
-                return BadRequest("Invalid refresh token");
+                var refreshTokenFromCookie = Request.Cookies["refreshToken"];
+                Console.WriteLine($"Refresh token from cookie (raw): {refreshTokenFromCookie}");
+                
+                if (string.IsNullOrEmpty(refreshTokenFromCookie))
+                {
+                    Console.WriteLine("ERROR: Refresh token not found in cookies");
+                    Console.WriteLine("Available cookies:");
+                    foreach (var cookie in Request.Cookies)
+                    {
+                        Console.WriteLine($"  {cookie.Key}: {cookie.Value}");
+                    }
+                    return BadRequest("Refresh token not found");
+                }
+                
+                // Użyj tokenu bezpośrednio - nie dekoduj URL
+                var refreshTokenToUse = refreshTokenFromCookie;
+                Console.WriteLine($"Refresh token to use: {refreshTokenToUse}");
+
+                // Znajdź użytkownika po refresh token zamiast access token
+                var user = await _userManager.Users
+                    .FirstOrDefaultAsync(u => u.RefreshToken == refreshTokenToUse && u.RefreshTokenExpiryTime > DateTime.UtcNow);
+
+                if (user == null)
+                {
+                    Console.WriteLine("ERROR: User not found or refresh token expired");
+                    Console.WriteLine($"Searched for token: {refreshTokenToUse}");
+                    Console.WriteLine($"Current UTC time: {DateTime.UtcNow}");
+                    
+                    // Sprawdź czy użytkownik w ogóle istnieje
+                    var allUsers = await _userManager.Users.CountAsync();
+                    Console.WriteLine($"Total users in database: {allUsers}");
+                    
+                    // Sprawdź czy istnieje użytkownik z tym tokenem (bez sprawdzania daty)
+                    var userWithToken = await _userManager.Users
+                        .FirstOrDefaultAsync(u => u.RefreshToken == refreshTokenToUse);
+                    if (userWithToken != null)
+                    {
+                        Console.WriteLine($"Found user with token but expired. Expiry: {userWithToken.RefreshTokenExpiryTime}");
+                    }
+                    
+                    return BadRequest("Invalid refresh token");
+                }
+
+                var newAccessToken = await GenerateJwtToken(user);
+                var newRefreshToken = GenerateRefreshToken();
+
+                user.RefreshToken = newRefreshToken;
+                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+
+                await _userManager.UpdateAsync(user);
+
+                // Ustaw nowy refresh token w cookie
+                var cookieOptions = new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = Request.IsHttps,
+                    SameSite = SameSiteMode.Strict,
+                    Path = "/",
+                    Domain = null,
+                    Expires = DateTime.UtcNow.AddDays(7)
+                };
+                Response.Cookies.Append("refreshToken", newRefreshToken, cookieOptions);
+
+                Console.WriteLine("✅ Token refreshed successfully");
+                return Ok(new
+                {
+                    AccessToken = newAccessToken,
+                    Expiration = DateTime.UtcNow.AddMinutes(15)
+                });
             }
-
-            var newAccessToken = await GenerateJwtToken(user);
-            var newRefreshToken = GenerateRefreshToken();
-
-            user.RefreshToken = newRefreshToken;
-            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
-
-            await _userManager.UpdateAsync(user);
-
-            // Ustaw nowy refresh token w cookie
-            var cookieOptions = new CookieOptions
+            finally
             {
-                HttpOnly = true,
-                Secure = false, // Development: false dla HTTP, true dla HTTPS w produkcji
-                SameSite = SameSiteMode.Lax, // Lax dla development, Strict dla produkcji
-                Expires = DateTime.UtcNow.AddDays(7)
-            };
-            Response.Cookies.Append("refreshToken", newRefreshToken, cookieOptions);
-
-            return Ok(new
-            {
-                AccessToken = newAccessToken,
-                Expiration = DateTime.UtcNow.AddMinutes(15)
-            });
+                _refreshSemaphore.Release();
+            }
         }
 
         private ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
