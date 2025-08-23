@@ -83,12 +83,20 @@ export default function MyReservations() {
             {reservations.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-gray-500 text-lg">Nie masz jeszcze żadnych rezerwacji</p>
-                <Link 
-                  to="/sale" 
-                  className="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  Przeglądaj sale
-                </Link>
+                <div className="mt-4 flex gap-4 justify-center">
+                  <Link 
+                    to="/sale" 
+                    className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  >
+                    Przeglądaj sale
+                  </Link>
+                  <Link 
+                    to="/stanowiska" 
+                    className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                  >
+                    Przeglądaj stanowiska
+                  </Link>
+                </div>
               </div>
             ) : (
               <div className="space-y-4">

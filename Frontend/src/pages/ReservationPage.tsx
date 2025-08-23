@@ -250,19 +250,29 @@ export default function ReservationPage() {
     const endHours = [];
     
     // Sprawdź kolejne godziny po godzinie rozpoczęcia
-    // Uwzględnij wszystkie godziny z availableHours (włącznie z godziną zamknięcia)
     for (let hour = startHourNum + 1; hour <= 20; hour++) {
       const hourStr = `${hour.toString().padStart(2, '0')}:00`;
       
-      // Sprawdź czy ta godzina istnieje w availableHours
-      const availableHour = availableHours.find(h => formatHour(h.godzina) === hourStr);
+      // Sprawdź czy wszystkie godziny od startu do tej godziny są dostępne
+      let allHoursAvailable = true;
       
-      if (availableHour) {
-        // Jeśli godzina istnieje w availableHours, dodaj ją (niezależnie od dostępności)
-        // Godzina zakończenia nie musi być "dostępna" - to tylko punkt końcowy
+      for (let checkHour = startHourNum; checkHour < hour; checkHour++) {
+        const checkHourStr = `${checkHour.toString().padStart(2, '0')}:00`;
+        const availableHour = availableHours.find(h => formatHour(h.godzina) === checkHourStr);
+        
+        if (!availableHour || !availableHour.dostepna) {
+          allHoursAvailable = false;
+          break;
+        }
+      }
+      
+      // Sprawdź czy godzina zakończenia istnieje w availableHours (może być niedostępna - to tylko punkt końcowy)
+      const endHourExists = availableHours.find(h => formatHour(h.godzina) === hourStr);
+      
+      if (allHoursAvailable && endHourExists) {
         endHours.push(hourStr);
-      } else {
-        // Jeśli godzina nie istnieje w availableHours, przerwij
+      } else if (!allHoursAvailable) {
+        // Jeśli jakaś godzina w przedziale jest niedostępna, przerwij
         break;
       }
     }
@@ -430,15 +440,11 @@ export default function ReservationPage() {
                 <div className="mt-4 flex flex-wrap gap-4 text-xs text-gray-600">
                   <div className="flex items-center gap-1">
                     <div className="w-3 h-3 bg-green-50 border border-green-200 rounded"></div>
-                    <span>Dostępne terminy</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-red-50 border border-red-200 rounded"></div>
-                    <span>Brak dostępnych terminów</span>
+                    <span>Dostępne dni</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <div className="w-3 h-3 bg-gray-100 rounded"></div>
-                    <span>Niedostępne (przeszłość)</span>
+                    <span>Niedostępne dni</span>
                   </div>
                 </div>
                 

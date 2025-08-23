@@ -32,6 +32,16 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
   const [opis, setOpis] = useState(initialData?.opis ?? "");
   const [idOpiekuna, setIdOpiekuna] = useState(initialData?.idOpiekuna ?? "");
   const [nauczyciele, setNauczyciele] = useState<User[]>([]);
+  
+  // Validation states
+  const [validationErrors, setValidationErrors] = useState({
+    numer: '',
+    budynek: '',
+    maxOsob: '',
+    czynnaOd: '',
+    czynnaDo: '',
+    opis: ''
+  });
 
   useEffect(() => {
     const fetchOpiekunowie = async () => {
@@ -53,8 +63,105 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
     return time ? `${time}:00` : null;
   };
 
+  // Validation functions
+  const validateNumer = (value: string) => {
+    if (!value.trim()) return 'Numer sali jest wymagany';
+    const num = parseInt(value);
+    if (isNaN(num)) return 'Numer sali musi być liczbą';
+    if (num <= 0) return 'Numer sali musi być większy od 0';
+    if (num > 9999) return 'Numer sali nie może być większy niż 9999';
+    return '';
+  };
+
+  const validateBudynek = (value: string) => {
+    if (!value.trim()) return 'Nazwa budynku jest wymagana';
+    if (value.length < 1) return 'Nazwa budynku musi mieć co najmniej 1 znak';
+    if (value.length > 50) return 'Nazwa budynku nie może być dłuższa niż 50 znaków';
+    return '';
+  };
+
+  const validateMaxOsob = (value: string) => {
+    if (!value) return ''; // Optional field
+    const num = parseInt(value);
+    if (isNaN(num)) return 'Maksymalna liczba osób musi być liczbą';
+    if (num <= 0) return 'Maksymalna liczba osób musi być większa od 0';
+    if (num > 1000) return 'Maksymalna liczba osób nie może być większa niż 1000';
+    return '';
+  };
+
+  const validateTime = (value: string, fieldName: string) => {
+    if (!value) return ''; // Optional field
+    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    if (!timeRegex.test(value)) return `${fieldName} musi być w formacie HH:MM`;
+    return '';
+  };
+
+  const validateOpis = (value: string) => {
+    if (value.length > 500) return 'Opis nie może być dłuższy niż 500 znaków';
+    return '';
+  };
+
+  // Real-time validation handlers
+  const handleNumerChange = (value: string) => {
+    setNumer(value);
+    setValidationErrors(prev => ({ ...prev, numer: validateNumer(value) }));
+  };
+
+  const handleBudynekChange = (value: string) => {
+    setBudynek(value);
+    setValidationErrors(prev => ({ ...prev, budynek: validateBudynek(value) }));
+  };
+
+  const handleMaxOsobChange = (value: string) => {
+    setMaxOsob(value);
+    setValidationErrors(prev => ({ ...prev, maxOsob: validateMaxOsob(value) }));
+  };
+
+  const handleCzynnaOdChange = (value: string) => {
+    setCzynnaOd(value);
+    setValidationErrors(prev => ({ 
+      ...prev, 
+      czynnaOd: validateTime(value, 'Godzina otwarcia'),
+      czynnaDo: czynnaDo && value && czynnaDo <= value ? 'Godzina zamknięcia musi być późniejsza niż godzina otwarcia' : validateTime(czynnaDo, 'Godzina zamknięcia')
+    }));
+  };
+
+  const handleCzynnaDoChange = (value: string) => {
+    setCzynnaDo(value);
+    setValidationErrors(prev => ({ 
+      ...prev, 
+      czynnaDo: czynnaOd && value && value <= czynnaOd ? 'Godzina zamknięcia musi być późniejsza niż godzina otwarcia' : validateTime(value, 'Godzina zamknięcia')
+    }));
+  };
+
+  const handleOpisChange = (value: string) => {
+    setOpis(value);
+    setValidationErrors(prev => ({ ...prev, opis: validateOpis(value) }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Final validation
+    const errors = {
+      numer: validateNumer(numer),
+      budynek: validateBudynek(budynek),
+      maxOsob: validateMaxOsob(maxOsob),
+      czynnaOd: validateTime(czynnaOd, 'Godzina otwarcia'),
+      czynnaDo: validateTime(czynnaDo, 'Godzina zamknięcia'),
+      opis: validateOpis(opis)
+    };
+
+    // Additional validation for time range
+    if (czynnaOd && czynnaDo && czynnaDo <= czynnaOd) {
+      errors.czynnaDo = 'Godzina zamknięcia musi być późniejsza niż godzina otwarcia';
+    }
+
+    setValidationErrors(errors);
+
+    if (Object.values(errors).some(error => error !== '')) {
+      return;
+    }
 
     const parsedData: SalaFormData = {
       numer: parseInt(numer),
@@ -88,22 +195,28 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
             <input
               type="number"
               value={numer}
-              onChange={(e) => setNumer(e.target.value)}
+              onChange={(e) => handleNumerChange(e.target.value)}
               required
-              className="form-input"
+              className={`form-input ${validationErrors.numer ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
               placeholder="Wprowadź numer sali"
             />
+            {validationErrors.numer && (
+              <p className="mt-1 text-sm text-red-600">{validationErrors.numer}</p>
+            )}
           </div>
 
           <div className="form-group">
             <label className="form-label">Budynek</label>
             <input
               value={budynek}
-              onChange={(e) => setBudynek(e.target.value)}
+              onChange={(e) => handleBudynekChange(e.target.value)}
               required
-              className="form-input"
+              className={`form-input ${validationErrors.budynek ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
               placeholder="Nazwa budynku"
             />
+            {validationErrors.budynek && (
+              <p className="mt-1 text-sm text-red-600">{validationErrors.budynek}</p>
+            )}
           </div>
         </div>
 
@@ -113,10 +226,13 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
             <input
               type="number"
               value={maxOsob}
-              onChange={(e) => setMaxOsob(e.target.value)}
-              className="form-input"
+              onChange={(e) => handleMaxOsobChange(e.target.value)}
+              className={`form-input ${validationErrors.maxOsob ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
               placeholder="Pojemność sali"
             />
+            {validationErrors.maxOsob && (
+              <p className="mt-1 text-sm text-red-600">{validationErrors.maxOsob}</p>
+            )}
           </div>
 
           <div className="form-group">
@@ -157,8 +273,8 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
             <div className="relative">
               <select
                 value={czynnaOd}
-                onChange={(e) => setCzynnaOd(e.target.value)}
-                className="form-input pr-10"
+                onChange={(e) => handleCzynnaOdChange(e.target.value)}
+                className={`form-input pr-10 ${validationErrors.czynnaOd ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
               >
                 <option value="">Wybierz godzinę otwarcia</option>
                 {Array.from({ length: 24 }, (_, i) => {
@@ -183,8 +299,8 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
             <div className="relative">
               <select
                 value={czynnaDo}
-                onChange={(e) => setCzynnaDo(e.target.value)}
-                className="form-input pr-10"
+                onChange={(e) => handleCzynnaDoChange(e.target.value)}
+                className={`form-input pr-10 ${validationErrors.czynnaDo ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
               >
                 <option value="">Wybierz godzinę zamknięcia</option>
                 {Array.from({ length: 24 }, (_, i) => {
@@ -202,6 +318,9 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
                 </svg>
               </div>
             </div>
+            {validationErrors.czynnaDo && (
+              <p className="mt-1 text-sm text-red-600">{validationErrors.czynnaDo}</p>
+            )}
           </div>
         </div>
 
@@ -209,11 +328,20 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
           <label className="form-label">Opis sali</label>
           <textarea
             value={opis}
-            onChange={(e) => setOpis(e.target.value)}
-            className="form-input"
+            onChange={(e) => handleOpisChange(e.target.value)}
+            className={`form-input ${validationErrors.opis ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
             placeholder="Dodatkowe informacje o sali..."
             rows={4}
+            maxLength={500}
           />
+          <div className="flex justify-between items-center mt-1">
+            {validationErrors.opis ? (
+              <p className="text-sm text-red-600">{validationErrors.opis}</p>
+            ) : (
+              <div></div>
+            )}
+            <p className="text-xs text-gray-500">{opis.length}/500 znaków</p>
+          </div>
         </div>
 
         <div className="flex items-center space-x-4 pt-6 border-t border-neutral-200">

@@ -11,37 +11,111 @@ const Register = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  
+  // Real-time validation states
+  const [validationErrors, setValidationErrors] = useState({
+    imie: '',
+    nazwisko: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
+  
   const navigate = useNavigate();
+
+  // Real-time validation functions
+  const validateImie = (value: string) => {
+    const onlyLettersRegex = /^[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż\s-]*$/;
+    if (!value.trim()) return 'Imię jest wymagane';
+    if (value.length < 2) return 'Imię musi mieć co najmniej 2 znaki';
+    if (value.length > 50) return 'Imię nie może być dłuższe niż 50 znaków';
+    if (!onlyLettersRegex.test(value)) return 'Imię może zawierać tylko litery, spacje i myślniki';
+    return '';
+  };
+
+  const validateNazwisko = (value: string) => {
+    const onlyLettersRegex = /^[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż\s-]*$/;
+    if (!value.trim()) return 'Nazwisko jest wymagane';
+    if (value.length < 2) return 'Nazwisko musi mieć co najmniej 2 znaki';
+    if (value.length > 50) return 'Nazwisko nie może być dłuższe niż 50 znaków';
+    if (!onlyLettersRegex.test(value)) return 'Nazwisko może zawierać tylko litery, spacje i myślniki';
+    return '';
+  };
+
+  const validateEmail = (value: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!value.trim()) return 'Email jest wymagany';
+    if (!emailRegex.test(value)) return 'Podaj prawidłowy adres email';
+    if (value.length > 100) return 'Email nie może być dłuższy niż 100 znaków';
+    return '';
+  };
+
+  const validatePassword = (value: string) => {
+    if (!value) return 'Hasło jest wymagane';
+    if (value.length < 8) return 'Hasło musi mieć co najmniej 8 znaków';
+    if (value.length > 128) return 'Hasło nie może być dłuższe niż 128 znaków';
+    if (!/(?=.*[a-z])/.test(value)) return 'Hasło musi zawierać małą literę';
+    if (!/(?=.*[A-Z])/.test(value)) return 'Hasło musi zawierać dużą literę';
+    if (!/(?=.*\d)/.test(value)) return 'Hasło musi zawierać cyfrę';
+    if (!/(?=.*[\W_])/.test(value)) return 'Hasło musi zawierać znak specjalny';
+    return '';
+  };
+
+  const validateConfirmPassword = (value: string, originalPassword: string) => {
+    if (!value) return 'Potwierdzenie hasła jest wymagane';
+    if (value !== originalPassword) return 'Hasła nie są identyczne';
+    return '';
+  };
+
+  // Real-time validation handlers
+  const handleImieChange = (value: string) => {
+    setImie(value);
+    setValidationErrors(prev => ({ ...prev, imie: validateImie(value) }));
+  };
+
+  const handleNazwiskoChange = (value: string) => {
+    setNazwisko(value);
+    setValidationErrors(prev => ({ ...prev, nazwisko: validateNazwisko(value) }));
+  };
+
+  const handleEmailChange = (value: string) => {
+    setEmail(value);
+    setValidationErrors(prev => ({ ...prev, email: validateEmail(value) }));
+  };
+
+  const handlePasswordChange = (value: string) => {
+    setPassword(value);
+    setValidationErrors(prev => ({ 
+      ...prev, 
+      password: validatePassword(value),
+      confirmPassword: confirmPassword ? validateConfirmPassword(confirmPassword, value) : ''
+    }));
+  };
+
+  const handleConfirmPasswordChange = (value: string) => {
+    setConfirmPassword(value);
+    setValidationErrors(prev => ({ ...prev, confirmPassword: validateConfirmPassword(value, password) }));
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
-    // Walidacja frontendowa
-    const onlyLettersRegex = /^[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż\s-]+$/;
-    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+    // Final validation
+    const errors = {
+      imie: validateImie(imie),
+      nazwisko: validateNazwisko(nazwisko),
+      email: validateEmail(email),
+      password: validatePassword(password),
+      confirmPassword: validateConfirmPassword(confirmPassword, password)
+    };
 
-    if (!onlyLettersRegex.test(imie)) {
-      setError('Imię może zawierać tylko litery.');
-      setIsLoading(false);
-      return;
-    }
+    setValidationErrors(errors);
 
-    if (!onlyLettersRegex.test(nazwisko)) {
-      setError('Nazwisko może zawierać tylko litery.');
-      setIsLoading(false);
-      return;
-    }
-
-    if (!strongPasswordRegex.test(password)) {
-      setError('Hasło musi mieć minimum 8 znaków, w tym dużą i małą literę, cyfrę oraz znak specjalny.');
-      setIsLoading(false);
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('Hasła nie są identyczne.');
+    // Check if there are any validation errors
+    if (Object.values(errors).some(error => error !== '')) {
+      setError('Proszę poprawić błędy w formularzu');
       setIsLoading(false);
       return;
     }
@@ -116,11 +190,14 @@ const Register = () => {
                     type="text"
                     placeholder="Jan"
                     value={imie}
-                    onChange={(e) => setImie(e.target.value)}
+                    onChange={(e) => handleImieChange(e.target.value)}
                     required
-                    className="form-input"
+                    className={`form-input ${validationErrors.imie ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                     disabled={isLoading}
                   />
+                  {validationErrors.imie && (
+                    <p className="mt-1 text-sm text-red-600">{validationErrors.imie}</p>
+                  )}
                 </div>
 
                 <div className="form-group">
@@ -132,11 +209,14 @@ const Register = () => {
                     type="text"
                     placeholder="Kowalski"
                     value={nazwisko}
-                    onChange={(e) => setNazwisko(e.target.value)}
+                    onChange={(e) => handleNazwiskoChange(e.target.value)}
                     required
-                    className="form-input"
+                    className={`form-input ${validationErrors.nazwisko ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                     disabled={isLoading}
                   />
+                  {validationErrors.nazwisko && (
+                    <p className="mt-1 text-sm text-red-600">{validationErrors.nazwisko}</p>
+                  )}
                 </div>
               </div>
 
@@ -149,11 +229,14 @@ const Register = () => {
                   type="email"
                   placeholder="jan.kowalski@email.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => handleEmailChange(e.target.value)}
                   required
-                  className="form-input"
+                  className={`form-input ${validationErrors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                   disabled={isLoading}
                 />
+                {validationErrors.email && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>
+                )}
               </div>
 
               <div className="form-group">
@@ -165,14 +248,18 @@ const Register = () => {
                   type="password"
                   placeholder="Minimum 8 znaków"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => handlePasswordChange(e.target.value)}
                   required
-                  className="form-input"
+                  className={`form-input ${validationErrors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                   disabled={isLoading}
                 />
-                <p className="text-xs text-neutral-500 mt-1">
-                  Hasło musi zawierać: małą literę, dużą literę, cyfrę i znak specjalny
-                </p>
+                {validationErrors.password ? (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.password}</p>
+                ) : (
+                  <p className="text-xs text-neutral-500 mt-1">
+                    Hasło musi zawierać: małą literę, dużą literę, cyfrę i znak specjalny
+                  </p>
+                )}
               </div>
 
               <div className="form-group">
@@ -184,11 +271,14 @@ const Register = () => {
                   type="password"
                   placeholder="Powtórz hasło"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(e) => handleConfirmPasswordChange(e.target.value)}
                   required
-                  className="form-input"
+                  className={`form-input ${validationErrors.confirmPassword ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                   disabled={isLoading}
                 />
+                {validationErrors.confirmPassword && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.confirmPassword}</p>
+                )}
               </div>
 
               {error && (

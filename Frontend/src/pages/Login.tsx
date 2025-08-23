@@ -8,13 +8,56 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({
+    email: '',
+    password: ''
+  });
   const navigate = useNavigate();
   const { refreshAuth } = useAuth();
+
+  // Validation functions
+  const validateEmail = (value: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!value.trim()) return 'Email jest wymagany';
+    if (!emailRegex.test(value)) return 'Podaj prawidłowy adres email';
+    return '';
+  };
+
+  const validatePassword = (value: string) => {
+    if (!value) return 'Hasło jest wymagane';
+    if (value.length < 1) return 'Hasło nie może być puste';
+    return '';
+  };
+
+  // Real-time validation handlers
+  const handleEmailChange = (value: string) => {
+    setEmail(value);
+    setValidationErrors(prev => ({ ...prev, email: validateEmail(value) }));
+  };
+
+  const handlePasswordChange = (value: string) => {
+    setPassword(value);
+    setValidationErrors(prev => ({ ...prev, password: validatePassword(value) }));
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+
+    // Final validation
+    const errors = {
+      email: validateEmail(email),
+      password: validatePassword(password)
+    };
+
+    setValidationErrors(errors);
+
+    if (Object.values(errors).some(error => error !== '')) {
+      setError('Proszę poprawić błędy w formularzu');
+      setIsLoading(false);
+      return;
+    }
     
     try {
       const result = await login(email, password);
@@ -59,11 +102,14 @@ const Login = () => {
                   type="email"
                   placeholder="twoj@email.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => handleEmailChange(e.target.value)}
                   required
-                  className="form-input"
+                  className={`form-input ${validationErrors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                   disabled={isLoading}
                 />
+                {validationErrors.email && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>
+                )}
               </div>
 
               <div className="form-group">
@@ -75,11 +121,14 @@ const Login = () => {
                   type="password"
                   placeholder="Wprowadź hasło"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => handlePasswordChange(e.target.value)}
                   required
-                  className="form-input"
+                  className={`form-input ${validationErrors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                   disabled={isLoading}
                 />
+                {validationErrors.password && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.password}</p>
+                )}
               </div>
 
               {error && (
