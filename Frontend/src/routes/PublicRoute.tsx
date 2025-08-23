@@ -1,14 +1,14 @@
 import { Navigate } from "react-router-dom";
-import { getUserFromToken } from "../services/authService";
+import { useAuth } from "../contexts/AuthContext";
 
 interface Props {
   children: React.ReactNode;
 }
 
 const PublicRoute = ({ children }: Props) => {
-  const user = getUserFromToken();
+  const { isLogged } = useAuth();
 
-  if (user) {
+  if (isLogged) {
     return <Navigate to="/" replace />;
   }
 

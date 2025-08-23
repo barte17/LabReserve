@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Backend.Data;
 
 namespace Backend.Controllers
 {
@@ -15,18 +16,21 @@ namespace Backend.Controllers
     {
 
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly AppDbContext _context;
 
-        public UsersController(UserManager<ApplicationUser> userManager)
+        public UsersController(UserManager<ApplicationUser> userManager, AppDbContext context)
         {
             _userManager = userManager;
+            _context = context;
         }
 
         [HttpGet("opiekunowie")]
         public async Task<ActionResult<IEnumerable<UserDto>>> GetOpiekunowie()
         {
-            var nauczyciele = await _userManager.GetUsersInRoleAsync("Opiekun");
+            // Użyj UserManager - jest bezpieczny i zoptymalizowany przez Microsoft
+            var opiekunowie = await _userManager.GetUsersInRoleAsync("Opiekun");
 
-            var result = nauczyciele.Select(u => new UserDto
+            var result = opiekunowie.Select(u => new UserDto
             {
                 Id = u.Id,
                 Imie = u.Imie,
@@ -43,21 +47,25 @@ namespace Backend.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
         {
-            var users = await _userManager.Users.ToListAsync();
-            var result = new List<UserDto>();
+            // Pobierz użytkowników
+            var users = await _context.Users.ToListAsync();
+            
+            // Pobierz wszystkie role użytkowników w jednym zapytaniu
+            var userRolesData = await _context.UserRoles
+                .Join(_context.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => new { ur.UserId, r.Name })
+                .ToListAsync();
 
-            foreach (var u in users)
+            // Grupuj role po UserId w pamięci (ToLookup działa tylko na IEnumerable, nie IQueryable)
+            var userRolesLookup = userRolesData.ToLookup(x => x.UserId, x => x.Name);
+
+            var result = users.Select(u => new UserDto
             {
-                var roles = await _userManager.GetRolesAsync(u);
-                result.Add(new UserDto
-                {
-                    Id = u.Id,
-                    Email = u.Email,
-                    Imie = u.Imie,
-                    Nazwisko = u.Nazwisko,
-                    Roles = roles.ToList()
-                });
-            }
+                Id = u.Id,
+                Email = u.Email,
+                Imie = u.Imie,
+                Nazwisko = u.Nazwisko,
+                Roles = userRolesLookup[u.Id].ToList()
+            });
 
             return Ok(result);
         }

@@ -11,6 +11,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isLogged: boolean;
+  isLoading: boolean;
   hasRole: (role: string) => boolean;
   refreshAuth: () => void;
   logout: () => void;
@@ -21,6 +22,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLogged, setIsLogged] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const refreshAuth = async () => {
@@ -32,6 +34,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return;
     }
     
+    setIsLoading(true);
     const currentUser = getUserFromToken();
     console.log("Current user from token:", currentUser);
     
@@ -50,17 +53,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setIsLogged(!!newUser);
         setIsRefreshing(false);
         console.log("AuthContext state updated after refresh");
+        setIsLoading(false);
         return;
       } catch (error) {
         console.log("Failed to refresh token:", error);
         // To jest OK - oznacza że nie ma ważnego refresh token
       } finally {
         setIsRefreshing(false);
+        setIsLoading(false);
       }
     }
     
     setUser(currentUser);
     setIsLogged(!!currentUser);
+    setIsLoading(false);
     console.log("Auth state updated, isLogged:", !!currentUser);
   };
 
@@ -86,7 +92,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isLogged, hasRole, refreshAuth, logout }}>
+    <AuthContext.Provider value={{ user, isLogged, isLoading, hasRole, refreshAuth, logout }}>
       {children}
     </AuthContext.Provider>
   );

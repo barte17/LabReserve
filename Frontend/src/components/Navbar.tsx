@@ -7,7 +7,7 @@ export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { isLogged, hasRole, logout } = useAuth();
+  const { isLogged, hasRole, logout, isLoading } = useAuth();
 
   const handleLogout = async () => {
     await logout(); // AuthContext logout już wywołuje authLogout
@@ -69,7 +69,13 @@ export function Navbar() {
 
           {/* User Menu */}
           <div className="hidden md:flex items-center space-x-2">
-            {!isLogged ? (
+            {isLoading ? (
+              // Placeholder podczas ładowania
+              <div className="flex items-center space-x-2">
+                <div className="w-32 h-8 bg-gray-200 rounded animate-pulse"></div>
+                <div className="w-16 h-8 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            ) : !isLogged ? (
               <Link to="/login" className="btn btn-primary">
                 Zaloguj się
               </Link>
@@ -168,7 +174,13 @@ export function Navbar() {
               
               {/* Mobile User Menu */}
               <div className="border-t border-neutral-200 pt-3 mt-3">
-                {!isLogged ? (
+                {isLoading ? (
+                  // Placeholder podczas ładowania w mobile
+                  <div className="space-y-2">
+                    <div className="w-full h-10 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="w-full h-10 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                ) : !isLogged ? (
                   <Link 
                     to="/login" 
                     className="block w-full text-center btn btn-primary"
