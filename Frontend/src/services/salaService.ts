@@ -37,3 +37,10 @@ export const deleteSala = async (id: number) => {
   });
   if (!res.ok) throw new Error("Błąd usuwania sali");
 };
+
+export const fetchSalaById = async (id: number) => {
+  const { authenticatedFetch } = await import('./authService');
+  const res = await authenticatedFetch(`/api/sala/${id}`);
+  if (!res.ok) throw new Error("Błąd pobierania szczegółów sali");
+  return await res.json();
+};

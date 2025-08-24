@@ -2,6 +2,8 @@
 import { Routes, Route } from "react-router-dom";
 import Stanowiska from "../pages/ShowStations";
 import Sale from "../pages/ShowRooms";
+import SalaDetails from "../pages/SalaDetails";
+import StanowiskoDetails from "../pages/StanowiskoDetails";
 import PanelAdmina from "../pages/AdminPanel";
 import UserPanel from "../pages/AccountPanel";
 import Login from '../pages/Login';
@@ -17,7 +19,9 @@ export function AppRoutes() {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/stanowiska" element={<Stanowiska />} />
+      <Route path="/stanowisko/:id" element={<StanowiskoDetails />} />
       <Route path="/sale" element={<Sale />} />
+      <Route path="/sala/:id" element={<SalaDetails />} />
       <Route path="/account" element={<UserPanel />} />
       <Route path="/reservation" element={<ReservationPage />} />
       <Route path="/my-reservations" element={<MyReservations />} />

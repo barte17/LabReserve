@@ -37,3 +37,10 @@ export const deleteStanowisko = async (id: number) => {
   });
   if (!res.ok) throw new Error("Błąd usuwania stanowiska");
 };
+
+export const fetchStanowiskoById = async (id: number) => {
+  const { authenticatedFetch } = await import('./authService');
+  const res = await authenticatedFetch(`/api/stanowisko/${id}`);
+  if (!res.ok) throw new Error("Błąd pobierania szczegółów stanowiska");
+  return await res.json();
+};
