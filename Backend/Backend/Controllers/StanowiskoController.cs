@@ -44,7 +44,10 @@ namespace Backend.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Stanowisko>> GetById(int id)
         {
-            var stanowisko = await _context.Stanowiska.FindAsync(id);
+            var stanowisko = await _context.Stanowiska
+                .Include(s => s.Sala)
+                .Include(s => s.Zdjecia)
+                .FirstOrDefaultAsync(s => s.Id == id);
             if (stanowisko == null) return NotFound();
             return stanowisko;
         }

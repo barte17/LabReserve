@@ -99,12 +99,12 @@ export default function SalaDetails() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 lg:items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 lg:items-stretch">
           {/* Zdjęcia */}
-          <div className="lg:col-span-3 flex flex-col">
-            <div className="card mb-6">
+          <div className="lg:col-span-3">
+            <div className="card mb-6 h-full flex flex-col">
               <div className="card-header flex items-center justify-between bg-gradient-to-br from-primary-50 to-white border-b border-primary-200">
-                <h2 className="text-lg font-semibold">Sala {sala.numer}</h2>
+                <h2 className="text-xl font-semibold">Sala {sala.numer}</h2>
                 <div className="flex space-x-2">
                   {sala.maStanowiska && (
                     <span className="badge badge-info">
@@ -116,7 +116,7 @@ export default function SalaDetails() {
                   </span>
                 </div>
               </div>
-              <div className="card-body">
+              <div className="card-body flex-1">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {sala.zdjecia && sala.zdjecia.length > 0 ? (
                     sala.zdjecia.map((zdjecie) => (
@@ -148,108 +148,85 @@ export default function SalaDetails() {
           </div>
 
           {/* Szczegóły */}
-          <div className="flex flex-col h-full">
-            <div className="card mb-4">
+          <div className="h-full flex flex-col">
+            <div className="card mb-2">
               <div className="card-header bg-gradient-to-br from-primary-50 to-white border-b border-primary-200">
-                <h2 className="text-lg font-semibold">Podstawowe informacje</h2>
+                <h2 className="text-xl font-semibold">Podstawowe informacje</h2>
               </div>
-              <div className="card-body space-y-6">
-                <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                    <svg className="h-4 w-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="card-body space-y-5">
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                     </svg>
                   </div>
-                  <div className="flex-1">
-                    <span className="text-sm font-medium text-neutral-600 block mb-1">Numer sali</span>
-                    <p className="text-neutral-900 text-xl font-bold">{sala.numer}</p>
-                  </div>
+                  <p className="text-neutral-900 font-semibold text-sm">Numer sali: {sala.numer}</p>
                 </div>
                 
-                <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                    <svg className="h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
                   </div>
-                  <div className="flex-1">
-                    <span className="text-sm font-medium text-neutral-600 block mb-1">Budynek</span>
-                    <p className="text-neutral-900 font-semibold">{sala.budynek}</p>
-                  </div>
+                  <p className="text-neutral-900 font-semibold text-sm">Budynek: {sala.budynek}</p>
                 </div>
                 
-                <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                    <svg className="h-4 w-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="h-5 w-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 515.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
                   </div>
-                  <div className="flex-1">
-                    <span className="text-sm font-medium text-neutral-600 block mb-1">Maksymalna liczba osób</span>
-                    <p className="text-neutral-900 font-semibold">
-                      {sala.maxOsob ? `${sala.maxOsob} osób` : "Nie podano"}
-                    </p>
-                  </div>
+                  <p className="text-neutral-900 font-semibold text-sm">
+                    Maks. osób: {sala.maxOsob ? sala.maxOsob : "Nie podano"}
+                  </p>
                 </div>
                 
-                <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                    <svg className="h-4 w-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="h-5 w-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                   </div>
-                  <div className="flex-1">
-                    <span className="text-sm font-medium text-neutral-600 block mb-1">Stanowiska laboratoryjne</span>
-                    <div className="flex items-center space-x-2">
-                      <p className="text-neutral-900 font-semibold">
-                        {sala.maStanowiska ? "Tak" : "Nie"}
-                      </p>
-                      {sala.maStanowiska && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          Dostępne
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                  <p className="text-neutral-900 font-semibold text-sm">
+                    Stanowiska: {sala.maStanowiska ? "Tak" : "Nie"}
+                  </p>
                 </div>
                 
-                <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                    <svg className="h-4 w-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div className="flex-1">
-                    <span className="text-sm font-medium text-neutral-600 block mb-1">Godziny pracy</span>
-                    <p className="text-neutral-900 font-semibold">
-                      {sala.czynnaOd && sala.czynnaDo 
-                        ? `${sala.czynnaOd} - ${sala.czynnaDo}`
-                        : "Nie podano"
-                      }
+                {sala.czynnaOd && sala.czynnaDo && (
+                  <div className="flex items-center space-x-4">
+                    <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <svg className="h-5 w-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <p className="text-neutral-900 font-semibold text-sm">
+                      {sala.czynnaOd.substring(0, 5)} - {sala.czynnaDo.substring(0, 5)}
                     </p>
                   </div>
-                </div>
+                )}
               </div>
             </div>
 
             {/* Opiekun */}
             {sala.opiekun && (
-              <div className="card mb-4">
-                <div className="card-header">
+              <div className="card mb-2">
+                <div className="card-header bg-gradient-to-br from-primary-50 to-white border-b border-primary-200 py-2">
                   <h2 className="text-lg font-semibold">Opiekun sali</h2>
                 </div>
-                <div className="card-body">
+                <div className="card-body py-2">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                      <svg className="h-5 w-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                      <svg className="h-4 w-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                     </div>
                     <div>
-                      <p className="font-medium text-neutral-900">
+                      <p className="font-medium text-neutral-900 text-sm">
                         {sala.opiekun.imie} {sala.opiekun.nazwisko}
                       </p>
-                      <p className="text-sm text-neutral-600">{sala.opiekun.email}</p>
+                      <p className="text-xs text-neutral-600">{sala.opiekun.email}</p>
                     </div>
                   </div>
                 </div>
@@ -266,7 +243,9 @@ export default function SalaDetails() {
                   <svg className="h-6 w-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  Zarezerwuj salę
+                  <span className="text-center">
+                    Zarezerwuj<br />salę
+                  </span>
                 </button>
               </div>
             </div>

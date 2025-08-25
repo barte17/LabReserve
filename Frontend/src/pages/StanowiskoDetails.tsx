@@ -95,12 +95,12 @@ export default function StanowiskoDetails() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 lg:items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 lg:items-stretch">
           {/* Zdjęcia */}
-          <div className="lg:col-span-3 flex flex-col">
-            <div className="card mb-6">
+          <div className="lg:col-span-3">
+            <div className="card mb-6 h-full flex flex-col">
               <div className="card-header flex items-center justify-between bg-gradient-to-br from-primary-50 to-white border-b border-primary-200">
-                <h2 className="text-lg font-semibold">{stanowisko.nazwa}</h2>
+                <h2 className="text-xl font-semibold">{stanowisko.nazwa}</h2>
                 <div className="flex space-x-2">
                   {stanowisko.typ && (
                     <span className="badge badge-info">
@@ -112,7 +112,7 @@ export default function StanowiskoDetails() {
                   </span>
                 </div>
               </div>
-              <div className="card-body">
+              <div className="card-body flex-1">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {stanowisko.zdjecia && stanowisko.zdjecia.length > 0 ? (
                     stanowisko.zdjecia.map((zdjecie) => (
@@ -144,96 +144,93 @@ export default function StanowiskoDetails() {
           </div>
 
           {/* Szczegóły */}
-          <div className="flex flex-col h-full">
+          <div className="h-full flex flex-col">
             <div className="card mb-4">
               <div className="card-header bg-gradient-to-br from-primary-50 to-white border-b border-primary-200">
-                <h2 className="text-lg font-semibold">Podstawowe informacje</h2>
+                <h2 className="text-xl font-semibold">Podstawowe informacje</h2>
               </div>
-              <div className="card-body space-y-6">
-                <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                    <svg className="h-4 w-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="card-body space-y-5">
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                   </div>
-                  <div className="flex-1">
-                    <span className="text-sm font-medium text-neutral-600 block mb-1">Nazwa stanowiska</span>
-                    <p className="text-neutral-900 text-xl font-bold">{stanowisko.nazwa}</p>
-                  </div>
+                  <p className="text-neutral-900 font-semibold text-sm">{stanowisko.nazwa}</p>
                 </div>
                 
-                <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                    <svg className="h-4 w-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="h-5 w-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                     </svg>
                   </div>
-                  <div className="flex-1">
-                    <span className="text-sm font-medium text-neutral-600 block mb-1">Typ stanowiska</span>
-                    <p className="text-neutral-900 font-semibold">
-                      {stanowisko.typ || "Nie określono"}
-                    </p>
-                  </div>
+                  <p className="text-neutral-900 font-semibold text-sm">
+                    Typ: {stanowisko.typ || "Nie określono"}
+                  </p>
                 </div>
                 
-                <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                    <svg className="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-                    </svg>
-                  </div>
-                  <div className="flex-1">
-                    <span className="text-sm font-medium text-neutral-600 block mb-1">ID stanowiska</span>
-                    <p className="text-neutral-900 font-semibold">{stanowisko.id}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                    <svg className="h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
                   </div>
-                  <div className="flex-1">
-                    <span className="text-sm font-medium text-neutral-600 block mb-1">Lokalizacja</span>
-                    <p className="text-neutral-900 font-semibold">
-                      {stanowisko.sala 
-                        ? `Sala ${stanowisko.sala.numer} (${stanowisko.sala.budynek})`
-                        : `Sala ID: ${stanowisko.salaId}`
-                      }
+                  <p className="text-neutral-900 font-semibold text-sm">
+                    W sali: {stanowisko.sala 
+                      ? `${stanowisko.sala.numer}${stanowisko.sala.budynek}`
+                      : `${stanowisko.salaId}`
+                    }
+                  </p>
+                </div>
+                
+                {stanowisko.sala && stanowisko.sala.czynnaOd && stanowisko.sala.czynnaDo && (
+                  <div className="flex items-center space-x-4">
+                    <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <svg className="h-5 w-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <p className="text-neutral-900 font-semibold text-sm">
+                      {stanowisko.sala.czynnaOd.substring(0, 5)} - {stanowisko.sala.czynnaDo.substring(0, 5)}
                     </p>
                   </div>
-                </div>
+                )}
                 
               </div>
             </div>
 
             {/* Informacje o sali */}
             {stanowisko.sala && (
-              <div className="card mb-4">
+              <div className="card mb-2">
                 <div className="card-header">
                   <h2 className="text-lg font-semibold">Lokalizacja</h2>
                 </div>
                 <div className="card-body">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <svg className="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <svg className="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="font-medium text-neutral-900">
+                          Sala {stanowisko.sala.numer}
+                        </p>
+                        <p className="text-sm text-neutral-600">Budynek {stanowisko.sala.budynek}</p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => navigate(`/sala/${stanowisko.sala!.id}`)}
+                      className="w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors duration-200"
+                      title="Zobacz szczegóły sali"
+                    >
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                    </div>
-                    <div>
-                      <p className="font-medium text-neutral-900">
-                        Sala {stanowisko.sala.numer}
-                      </p>
-                      <p className="text-sm text-neutral-600">Budynek {stanowisko.sala.budynek}</p>
-                    </div>
+                    </button>
                   </div>
-                  <button 
-                    onClick={() => navigate(`/sala/${stanowisko.sala!.id}`)}
-                    className="btn btn-secondary btn-sm mt-3 w-full"
-                  >
-                    Zobacz szczegóły sali
-                  </button>
                 </div>
               </div>
             )}
