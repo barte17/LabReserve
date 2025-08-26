@@ -407,6 +407,12 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 
+# Uploaded images - exclude from git to avoid large repo size
+wwwroot/uploads/sale/*/
+wwwroot/uploads/stanowiska/*/
+!wwwroot/uploads/sale/.gitkeep
+!wwwroot/uploads/stanowiska/.gitkeep
+
 # Inne
 bin/
 obj/

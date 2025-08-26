@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { useToastContext } from "../ToastProvider";
+import ImageUpload from "../ImageUpload";
 
 type StanowiskoFormData = {
   salaId: number;
   nazwa: string;
   typ: string;
   opis: string;
+  zdjecia?: File[];
 };
 
 type SalaTyp = {
@@ -25,6 +27,7 @@ export default function AddStationForm({ onSubmit, initialData, submitLabel = "D
   const [nazwa, setNazwa] = useState(initialData?.nazwa ?? "");
   const [typ, setTyp] = useState(initialData?.typ ?? "");
   const [opis, setOpis] = useState(initialData?.opis ?? "");
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const { showWarning } = useToastContext();
 
   useEffect(() => {
@@ -46,6 +49,7 @@ export default function AddStationForm({ onSubmit, initialData, submitLabel = "D
       nazwa,
       typ,
       opis,
+      zdjecia: selectedImages,
     });
   };
 
@@ -109,6 +113,19 @@ export default function AddStationForm({ onSubmit, initialData, submitLabel = "D
             className="form-input"
             placeholder="Dodatkowe informacje o laboratorium, wyposażenie, specyfikacja..."
             rows={4}
+          />
+        </div>
+
+        {/* Sekcja zdjęć */}
+        <div className="form-group">
+          <label className="form-label">Zdjęcia laboratorium</label>
+          <p className="text-sm text-gray-600 mb-3">
+            Dodaj zdjęcia laboratorium, aby pokazać jego wyposażenie i możliwości
+          </p>
+          <ImageUpload 
+            onFilesChange={setSelectedImages}
+            maxFiles={8}
+            maxSizeInMB={5}
           />
         </div>
 

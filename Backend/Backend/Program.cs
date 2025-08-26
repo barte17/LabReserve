@@ -80,6 +80,9 @@ app.UseHttpsRedirection();
 
 app.UseCors("AllowAll");
 
+// Serwowanie plikow statycznych (zdjecia)
+app.UseStaticFiles();
+
 app.UseAuthentication();
 app.UseAuthorization();
 

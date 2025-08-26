@@ -44,7 +44,7 @@ namespace Backend.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> CreateSala(CreateSalaDto dto)
+        public async Task<IActionResult> CreateSala([FromForm] CreateSalaDto dto, [FromForm] List<IFormFile>? zdjecia)
         {
             var sala = new Sala
             {
@@ -56,12 +56,56 @@ namespace Backend.Controllers
                 CzynnaDo = dto.CzynnaDo,
                 Opis = dto.Opis,
                 IdOpiekuna = dto.IdOpiekuna
-
             };
 
             _context.Sale.Add(sala);
             await _context.SaveChangesAsync();
+
+            // Obsługa zdjęć
+            if (zdjecia != null && zdjecia.Count > 0)
+            {
+                await SaveZdjeciaForSala(sala.Id, zdjecia);
+            }
+
             return CreatedAtAction(nameof(GetById), new { id = sala.Id }, sala);
+        }
+
+        private async Task SaveZdjeciaForSala(int salaId, List<IFormFile> zdjecia)
+        {
+            var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "sale", $"sala-{salaId}");
+            Directory.CreateDirectory(uploadsPath);
+
+            foreach (var (file, index) in zdjecia.Select((f, i) => (f, i)))
+            {
+                if (file.Length > 0)
+                {
+                    // Walidacja typu pliku
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+                    var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+                    
+                    if (!allowedExtensions.Contains(extension))
+                        continue;
+
+                    // Generowanie unikalnej nazwy
+                    var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                    var fileName = $"{timestamp}_img-{index + 1}{extension}";
+                    var filePath = Path.Combine(uploadsPath, fileName);
+
+                    // Zapisanie pliku
+                    using var stream = new FileStream(filePath, FileMode.Create);
+                    await file.CopyToAsync(stream);
+
+                    // Dodanie rekordu do bazy
+                    var zdjecie = new Zdjecie
+                    {
+                        Url = $"/uploads/sale/sala-{salaId}/{fileName}",
+                        SalaId = salaId
+                    };
+                    _context.Zdjecia.Add(zdjecie);
+                }
+            }
+
+            await _context.SaveChangesAsync();
         }
 
         [HttpGet("{id}")]

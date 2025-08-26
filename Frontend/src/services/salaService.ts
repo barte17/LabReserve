@@ -7,12 +7,25 @@ export const fetchSale = async () => {
 
 export const addSala = async (data: any) => {
   const { authenticatedFetch } = await import('./authService');
+  
+  // Przygotowanie FormData dla plików
+  const formData = new FormData();
+  
+  // Dodanie danych formularza
+  Object.keys(data).forEach(key => {
+    if (key === 'zdjecia' && data[key]) {
+      // Dodanie plików
+      data[key].forEach((file: File) => {
+        formData.append('zdjecia', file);
+      });
+    } else if (data[key] !== null && data[key] !== undefined) {
+      formData.append(key, data[key].toString());
+    }
+  });
+
   const res = await authenticatedFetch("/api/sala", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(data),
+    body: formData, // Bez Content-Type - browser ustawi automatycznie z boundary
   });
   if (!res.ok) throw new Error("Błąd dodawania sali");
   return await res.json();

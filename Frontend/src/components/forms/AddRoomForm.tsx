@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import ImageUpload from "../ImageUpload";
 
 type SalaFormData = {
   numer: number;
@@ -9,6 +10,7 @@ type SalaFormData = {
   czynnaDo: string | null;
   opis: string;
   idOpiekuna: string | null;
+  zdjecia?: File[];
 };
 
 type User = {
@@ -32,6 +34,7 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
   const [opis, setOpis] = useState(initialData?.opis ?? "");
   const [idOpiekuna, setIdOpiekuna] = useState(initialData?.idOpiekuna ?? "");
   const [nauczyciele, setNauczyciele] = useState<User[]>([]);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
   
   // Validation states
   const [validationErrors, setValidationErrors] = useState({
@@ -171,7 +174,8 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
       czynnaOd: formatTimeToTimeSpan(czynnaOd),
       czynnaDo: formatTimeToTimeSpan(czynnaDo),
       opis,
-      idOpiekuna: idOpiekuna || null
+      idOpiekuna: idOpiekuna || null,
+      zdjecia: selectedImages
     };
 
     onSubmit(parsedData);
@@ -342,6 +346,19 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
             )}
             <p className="text-xs text-gray-500">{opis.length}/500 znaków</p>
           </div>
+        </div>
+
+        {/* Sekcja zdjęć */}
+        <div className="form-group">
+          <label className="form-label">Zdjęcia sali</label>
+          <p className="text-sm text-gray-600 mb-3">
+            Dodaj zdjęcia sali, aby ułatwić użytkownikom jej identyfikację
+          </p>
+          <ImageUpload 
+            onFilesChange={setSelectedImages}
+            maxFiles={8}
+            maxSizeInMB={5}
+          />
         </div>
 
         <div className="flex items-center space-x-4 pt-6 border-t border-neutral-200">

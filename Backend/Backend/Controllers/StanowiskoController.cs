@@ -26,7 +26,7 @@ namespace Backend.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> CreateStanowisko(CreateStanowiskoDto dto)
+        public async Task<IActionResult> CreateStanowisko([FromForm] CreateStanowiskoDto dto, [FromForm] List<IFormFile>? zdjecia)
         {
             var stanowisko = new Stanowisko
             {
@@ -38,7 +38,52 @@ namespace Backend.Controllers
 
             _context.Stanowiska.Add(stanowisko);
             await _context.SaveChangesAsync();
+
+            // Obsługa zdjęć
+            if (zdjecia != null && zdjecia.Count > 0)
+            {
+                await SaveZdjeciaForStanowisko(stanowisko.Id, zdjecia);
+            }
+
             return CreatedAtAction(nameof(GetById), new { id = stanowisko.Id }, stanowisko);
+        }
+
+        private async Task SaveZdjeciaForStanowisko(int stanowiskoId, List<IFormFile> zdjecia)
+        {
+            var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "stanowiska", $"stanowisko-{stanowiskoId}");
+            Directory.CreateDirectory(uploadsPath);
+
+            foreach (var (file, index) in zdjecia.Select((f, i) => (f, i)))
+            {
+                if (file.Length > 0)
+                {
+                    // Walidacja typu pliku
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+                    var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+                    
+                    if (!allowedExtensions.Contains(extension))
+                        continue;
+
+                    // Generowanie unikalnej nazwy
+                    var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                    var fileName = $"{timestamp}_img-{index + 1}{extension}";
+                    var filePath = Path.Combine(uploadsPath, fileName);
+
+                    // Zapisanie pliku
+                    using var stream = new FileStream(filePath, FileMode.Create);
+                    await file.CopyToAsync(stream);
+
+                    // Dodanie rekordu do bazy
+                    var zdjecie = new Zdjecie
+                    {
+                        Url = $"/uploads/stanowiska/stanowisko-{stanowiskoId}/{fileName}",
+                        StanowiskoId = stanowiskoId
+                    };
+                    _context.Zdjecia.Add(zdjecie);
+                }
+            }
+
+            await _context.SaveChangesAsync();
         }
 
         [HttpGet("{id}")]
