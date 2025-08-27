@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { fetchStanowiskoById } from "../services/stanowiskoService";
 import imgPlaceholder from "../images/img-placeholder.png";
+import ImageGallery from "../components/ImageGallery";
 
 type StanowiskoDetails = {
   id: number;
@@ -113,32 +114,10 @@ export default function StanowiskoDetails() {
                 </div>
               </div>
               <div className="card-body flex-1">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {stanowisko.zdjecia && stanowisko.zdjecia.length > 0 ? (
-                    stanowisko.zdjecia.map((zdjecie) => (
-                      <div key={zdjecie.id} className="aspect-video bg-neutral-100 rounded-lg overflow-hidden">
-                        <img 
-                          src={zdjecie.url} 
-                          alt={stanowisko.nazwa}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = imgPlaceholder;
-                          }}
-                        />
-                      </div>
-                    ))
-                  ) : (
-                    <div className="md:col-span-2 aspect-video bg-gradient-to-br from-neutral-50 to-neutral-100 border-2 border-dashed border-neutral-200 rounded-lg flex items-center justify-center">
-                      <div className="text-center text-neutral-400">
-                        <svg className="w-16 h-16 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <p className="text-sm font-medium text-neutral-500">Brak zdjęć stanowiska</p>
-                        <p className="text-xs text-neutral-400 mt-1">Zdjęcia będą dostępne wkrótce</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <ImageGallery 
+                  zdjecia={stanowisko.zdjecia || []} 
+                  altText={`Stanowisko ${stanowisko.nazwa}`}
+                />
               </div>
             </div>
           </div>

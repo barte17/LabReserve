@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { fetchSalaById } from "../services/salaService";
 import imgPlaceholder from "../images/img-placeholder.png";
+import ImageGallery from "../components/ImageGallery";
 
 type SalaDetails = {
   id: number;
@@ -117,32 +118,10 @@ export default function SalaDetails() {
                 </div>
               </div>
               <div className="card-body flex-1">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {sala.zdjecia && sala.zdjecia.length > 0 ? (
-                    sala.zdjecia.map((zdjecie) => (
-                      <div key={zdjecie.id} className="aspect-video bg-neutral-100 rounded-lg overflow-hidden">
-                        <img 
-                          src={zdjecie.url} 
-                          alt={`Sala ${sala.numer}`}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = imgPlaceholder;
-                          }}
-                        />
-                      </div>
-                    ))
-                  ) : (
-                    <div className="md:col-span-2 aspect-video bg-gradient-to-br from-neutral-50 to-neutral-100 border-2 border-dashed border-neutral-200 rounded-lg flex items-center justify-center">
-                      <div className="text-center text-neutral-400">
-                        <svg className="w-16 h-16 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <p className="text-sm font-medium text-neutral-500">Brak zdjęć sali</p>
-                        <p className="text-xs text-neutral-400 mt-1">Zdjęcia będą dostępne wkrótce</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <ImageGallery 
+                  zdjecia={sala.zdjecia || []} 
+                  altText={`Sala ${sala.numer} w budynku ${sala.budynek}`}
+                />
               </div>
             </div>
           </div>
@@ -175,9 +154,13 @@ export default function SalaDetails() {
                 <div className="flex items-center space-x-4">
                   <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
                     <svg className="h-5 w-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 515.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
                     </svg>
                   </div>
+
+
+
+
                   <p className="text-neutral-900 font-semibold text-sm">
                     Maks. osób: {sala.maxOsob ? sala.maxOsob : "Nie podano"}
                   </p>
