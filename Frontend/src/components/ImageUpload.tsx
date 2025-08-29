@@ -96,7 +96,6 @@ export default function ImageUpload({
     if (files && files.length > 0) {
       processFiles(files);
     }
-    // Reset input value to allow selecting the same file again
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }

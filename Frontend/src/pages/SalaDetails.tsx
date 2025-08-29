@@ -194,7 +194,7 @@ export default function SalaDetails() {
                         <p className="text-xs text-neutral-600">{sala.opiekun.email}</p>
                       </>
                     ) : (
-                      <p className="font-medium text-neutral-500 text-ms">
+                      <p className="font-medium text-neutral-500 text-sm">
                         Brak opiekuna
                       </p>
                     )}
@@ -208,7 +208,7 @@ export default function SalaDetails() {
               <div className="card-body p-0">
                 <button 
                   onClick={() => navigate(`/reservation?salaId=${sala.id}&name=Sala ${sala.numer} (${sala.budynek})`)}
-                  className="btn btn-primary w-full py-6 px-6 text-base font-sm transform hover:scale-105 transition-all duration-200 focus:outline-none border border-red-600/20 hover:border-red-500/30"
+                  className="btn btn-primary w-full py-6 px-6 text-base font-semibold transform hover:scale-105 transition-all duration-200 focus:outline-none border border-red-600/20 hover:border-red-500/30"
                 >
                   <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />

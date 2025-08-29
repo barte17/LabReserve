@@ -99,7 +99,7 @@ namespace Backend.Controllers
                     }
                     catch (Exception ex)
                     {
-                        // Log error but continue with other images
+                        
                         Console.WriteLine($"Error processing image {file.FileName}: {ex.Message}");
                     }
                 }

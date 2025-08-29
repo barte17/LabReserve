@@ -22,7 +22,6 @@ export default function ImageGallery({ zdjecia, altText = "Zdjęcie" }: ImageGal
             alt="Brak zdjęć" 
             className="mx-auto h-16 w-16 opacity-40 mb-4"
             onError={(e) => {
-              // Fallback to SVG if image not found
               const target = e.target as HTMLImageElement;
               target.style.display = 'none';
               target.nextElementSibling?.classList.remove('hidden');
@@ -112,14 +111,13 @@ export default function ImageGallery({ zdjecia, altText = "Zdjęcie" }: ImageGal
           </>
         )}
 
-        {/* Modern Image Counter */}
         {zdjecia.length > 1 && (
           <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm font-medium">
             {currentImageIndex + 1} / {zdjecia.length}
           </div>
         )}
 
-        {/* Progress Dots */}
+        {/* Dots */}
         {zdjecia.length > 1 && (
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-3">
             {zdjecia.map((_, index) => (
