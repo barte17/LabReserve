@@ -12,10 +12,12 @@ namespace Backend.Controllers
     public class SalaController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly Backend.Services.IImageProcessingService _imageProcessingService;
 
-        public SalaController(AppDbContext context)
+        public SalaController(AppDbContext context, Backend.Services.IImageProcessingService imageProcessingService)
         {
             _context = context;
+            _imageProcessingService = imageProcessingService;
         }
 
         [HttpGet]
@@ -73,35 +75,33 @@ namespace Backend.Controllers
         private async Task SaveZdjeciaForSala(int salaId, List<IFormFile> zdjecia)
         {
             var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "sale", $"sala-{salaId}");
-            Directory.CreateDirectory(uploadsPath);
 
             foreach (var (file, index) in zdjecia.Select((f, i) => (f, i)))
             {
-                if (file.Length > 0)
+                if (file.Length > 0 && _imageProcessingService.IsValidImageFile(file))
                 {
-                    // Walidacja typu pliku
-                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
-                    var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-                    
-                    if (!allowedExtensions.Contains(extension))
-                        continue;
-
-                    // Generowanie unikalnej nazwy
-                    var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                    var fileName = $"{timestamp}_img-{index + 1}{extension}";
-                    var filePath = Path.Combine(uploadsPath, fileName);
-
-                    // Zapisanie pliku
-                    using var stream = new FileStream(filePath, FileMode.Create);
-                    await file.CopyToAsync(stream);
-
-                    // Dodanie rekordu do bazy
-                    var zdjecie = new Zdjecie
+                    try
                     {
-                        Url = $"/uploads/sale/sala-{salaId}/{fileName}",
-                        SalaId = salaId
-                    };
-                    _context.Zdjecia.Add(zdjecie);
+                        // Generowanie unikalnej nazwy
+                        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                        var fileName = $"{timestamp}_img-{index + 1}";
+
+                        // Przetwarzanie i zapisanie obrazu (automatycznie jako WebP 1920x1080)
+                        var processedFileName = await _imageProcessingService.ProcessAndSaveImageAsync(file, uploadsPath, fileName);
+
+                        // Dodanie rekordu do bazy
+                        var zdjecie = new Zdjecie
+                        {
+                            Url = $"/uploads/sale/sala-{salaId}/{processedFileName}",
+                            SalaId = salaId
+                        };
+                        _context.Zdjecia.Add(zdjecie);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log error but continue with other images
+                        Console.WriteLine($"Error processing image {file.FileName}: {ex.Message}");
+                    }
                 }
             }
 

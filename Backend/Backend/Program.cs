@@ -63,6 +63,10 @@ builder.Services.AddControllers()
         // Zapobiegaj cyklicznym referencjom w JSON
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
     });
+
+// Register Image Processing Service
+builder.Services.AddScoped<Backend.Services.IImageProcessingService, Backend.Services.ImageProcessingService>();
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

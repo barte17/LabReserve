@@ -15,19 +15,30 @@ export default function ImageGallery({ zdjecia, altText = "Zdjęcie" }: ImageGal
 
   if (!zdjecia || zdjecia.length === 0) {
     return (
-      <div className="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+      <div className="w-full bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex items-center justify-center aspect-video">
         <div className="text-center">
-          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          <img 
+            src="/placeholder-image.png" 
+            alt="Brak zdjęć" 
+            className="mx-auto h-16 w-16 opacity-40 mb-4"
+            onError={(e) => {
+              // Fallback to SVG if image not found
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+              target.nextElementSibling?.classList.remove('hidden');
+            }}
+          />
+          <svg className="mx-auto h-16 w-16 text-gray-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <p className="mt-2 text-sm text-gray-500">Brak zdjęć</p>
+          <p className="mt-4 text-lg font-medium text-gray-600">Brak zdjęć</p>
+          <p className="mt-1 text-sm text-gray-400">Zdjęcia będą dostępne wkrótce</p>
         </div>
       </div>
     );
   }
 
   const currentImage = zdjecia[currentImageIndex];
-  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5165';
 
   const goToPrevious = () => {
     setCurrentImageIndex((prev) => 
@@ -62,16 +73,15 @@ export default function ImageGallery({ zdjecia, altText = "Zdjęcie" }: ImageGal
   }, [zdjecia.length, currentImageIndex]);
 
   return (
-    <div className="w-full space-y-4">
-      {/* Main Image Display - Modern Carousel */}
-      <div className="relative w-full aspect-video bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden shadow-lg group" style={{ height: '360px' }}>
+    <div className="w-full pt-0">
+      <div className="relative w-full bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden shadow-lg group aspect-video flex items-center justify-center">
         <img
-          src={`${baseUrl}${currentImage.url}`}
+          src={currentImage.url}
           alt={`${altText} ${currentImageIndex + 1}`}
-          className="w-full h-full object-cover transition-all duration-500 ease-out"
+          className="max-w-full max-h-full object-contain transition-all duration-500 ease-out"
           onError={(e) => {
             const target = e.target as HTMLImageElement;
-            target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTQgMTZsNC41ODYtNC41ODZhMiAyIDAgMDEyLjgyOCAwTDE2IDE2bS0yLTJsMS41ODYtMS41ODZhMiAyIDAgMDEyLjgyOCAwTDIwIDE0bS02LTZoLjAxTTYgMjBoMTJhMiAyIDAgMDAyLTJWNmEyIDIgMCAwMC0yLTJINmEyIDIgMCAwMC0yIDJ2MTJhMiAyIDAgMDAyIDJ6IiBzdHJva2U9IiM5Q0E3QjciIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi/+Cjwvc3ZnPgo=';
+            target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTQgMTZsNC41ODYtNC41ODZhMiAyIDAgMDEyLjgyOCAwTDE2IDE2bS0yLTJsMS41ODYtMS41ODZhMiAyIDAgMDEyLjgyOCAwTDIwIDE0bS02LTZoLjAxTTYgMjBoMTJhMiAyIDAgMDAyLTJWNmEyIDIgMCAwMC0yLTJINmEyIDIgMCAwMC0yIDJ2MTJhMiAyIDAgMDAyIDJ6IiBzdHJva2U9IiM5Q0E3QjciIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPgo=';
           }}
         />
         
@@ -110,49 +120,22 @@ export default function ImageGallery({ zdjecia, altText = "Zdjęcie" }: ImageGal
         )}
 
         {/* Progress Dots */}
-        {zdjecia.length > 1 && zdjecia.length <= 5 && (
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+        {zdjecia.length > 1 && (
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-3">
             {zdjecia.map((_, index) => (
               <button
                 key={index}
                 onClick={() => goToImage(index)}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${
                   index === currentImageIndex 
-                    ? 'bg-white scale-125' 
-                    : 'bg-white/50 hover:bg-white/75'
+                    ? 'bg-red-500 scale-125 shadow-lg' 
+                    : 'bg-red-300/70 hover:bg-red-400/80 hover:scale-110'
                 }`}
               />
             ))}
           </div>
         )}
       </div>
-
-      {/* Enhanced Thumbnail Navigation */}
-      {zdjecia.length > 1 && (
-        <div className="flex space-x-3 overflow-x-auto pb-2 scrollbar-hide justify-center">
-          {zdjecia.map((zdjecie, index) => (
-            <button
-              key={zdjecie.id}
-              onClick={() => goToImage(index)}
-              className={`flex-shrink-0 w-20 h-12 rounded-lg overflow-hidden border-2 transition-all duration-300 ${
-                index === currentImageIndex 
-                  ? 'border-blue-500 ring-2 ring-blue-200 scale-105 shadow-md' 
-                  : 'border-gray-200 hover:border-gray-400 hover:scale-102'
-              }`}
-            >
-              <img
-                src={`${baseUrl}${zdjecie.url}`}
-                alt={`${altText} miniatura ${index + 1}`}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTQgMTZsNC41ODYtNC41ODZhMiAyIDAgMDEyLjgyOCAwTDE2IDE2bS0yLTJsMS41ODYtMS41ODZhMiAyIDAgMDEyLjgyOCAwTDIwIDE0bS02LTZoLj01TDYgMjBoMTJhMiAyIDAgMDAyLTJWNmEyIDIgMCAwMC0yLTJINmEyIDIgMCAwMC0yIDJ2MTJhMiAyIDAgMDAyIDJ6IiBzdHJva2U9IiM5Q0E3QjciIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPgo=';
-                }}
-              />
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

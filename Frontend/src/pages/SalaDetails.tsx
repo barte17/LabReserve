@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { fetchSalaById } from "../services/salaService";
-import imgPlaceholder from "../images/img-placeholder.png";
 import ImageGallery from "../components/ImageGallery";
 
 type SalaDetails = {
@@ -73,12 +72,6 @@ export default function SalaDetails() {
           </svg>
           <h2 className="text-xl font-semibold text-neutral-900 mb-2">Błąd</h2>
           <p className="text-neutral-600 mb-4">{error}</p>
-          <button 
-            onClick={() => navigate("/sale")}
-            className="btn btn-primary"
-          >
-            Powrót do listy sal
-          </button>
         </div>
       </div>
     );
@@ -87,18 +80,6 @@ export default function SalaDetails() {
   return (
     <div className="min-h-screen bg-neutral-50 py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header z nawigacją */}
-        <div className="mb-4">
-          <button 
-            onClick={() => navigate("/sale")}
-            className="btn btn-secondary btn-sm mb-2"
-          >
-            <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Powrót do sal
-          </button>
-        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 lg:items-stretch">
           {/* Zdjęcia */}
@@ -193,42 +174,46 @@ export default function SalaDetails() {
             </div>
 
             {/* Opiekun */}
-            {sala.opiekun && (
-              <div className="card mb-2">
-                <div className="card-header bg-gradient-to-br from-primary-50 to-white border-b border-primary-200 py-2">
-                  <h2 className="text-lg font-semibold">Opiekun sali</h2>
-                </div>
-                <div className="card-body py-2">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                      <svg className="h-4 w-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="font-medium text-neutral-900 text-sm">
-                        {sala.opiekun.imie} {sala.opiekun.nazwisko}
+            <div className="card mb-2">
+              <div className="card-header bg-gradient-to-br from-primary-50 to-white border-b border-primary-200 py-2">
+                <h2 className="text-lg font-semibold py-1">Opiekun sali</h2>
+              </div>
+              <div className="card-body py-5">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                    <svg className="h-5 w-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <div>
+                    {sala.opiekun ? (
+                      <>
+                        <p className="font-medium text-neutral-900 text-sm">
+                          {sala.opiekun.imie} {sala.opiekun.nazwisko}
+                        </p>
+                        <p className="text-xs text-neutral-600">{sala.opiekun.email}</p>
+                      </>
+                    ) : (
+                      <p className="font-medium text-neutral-500 text-ms">
+                        Brak opiekuna
                       </p>
-                      <p className="text-xs text-neutral-600">{sala.opiekun.email}</p>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>
-            )}
+            </div>
 
             {/* Akcje */}
             <div className="card border-primary-200 bg-gradient-to-br from-primary-50 to-white mt-auto">
-              <div className="card-body">
+              <div className="card-body p-0">
                 <button 
                   onClick={() => navigate(`/reservation?salaId=${sala.id}&name=Sala ${sala.numer} (${sala.budynek})`)}
-                  className="btn btn-primary w-full py-4 text-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                  className="btn btn-primary w-full py-6 px-6 text-base font-sm transform hover:scale-105 transition-all duration-200 focus:outline-none border border-red-600/20 hover:border-red-500/30"
                 >
-                  <svg className="h-6 w-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  <span className="text-center">
-                    Zarezerwuj<br />salę
-                  </span>
+                  Zarezerwuj
                 </button>
               </div>
             </div>
