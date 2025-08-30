@@ -196,12 +196,12 @@ export default function Sale() {
                     </div>
                   </div>
                   
-                  {sala.opis && (
-                    <div className="mt-3">
-                      <span className="font-medium text-neutral-700">Opis:</span>
-                      <p className="text-neutral-600 mt-1">{sala.opis}</p>
-                    </div>
-                  )}
+                  <div className="mt-3">
+                    <span className="font-medium text-neutral-700">Opis:</span>
+                    <p className="text-neutral-600 mt-1">
+                      {sala.opis || "brak"}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="list-item-actions">

@@ -112,47 +112,71 @@ namespace Backend.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginDto dto)
         {
-            Console.WriteLine("=== LOGIN ENDPOINT CALLED ===");
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            // Timing attack protection - always wait ~200ms
+            var delay = Task.Delay(Random.Shared.Next(150, 250));
+
             var user = await _userManager.FindByEmailAsync(dto.Email);
-            if (user == null || !await _userManager.CheckPasswordAsync(user, dto.Password))
-                return Unauthorized("Nieprawidłowe dane logowania");
-
-            var accessToken = await GenerateJwtToken(user);
-            var refreshToken = GenerateRefreshToken();
-            Console.WriteLine($"Generated refresh token: {refreshToken}");
-
-            user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
-
-            await _userManager.UpdateAsync(user);
-
-            // Ustaw refresh token w httpOnly cookie
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = Request.IsHttps, // Automatycznie true dla HTTPS
-                SameSite = SameSiteMode.Strict, // Lepsza ochrona CSRF
-                Path = "/",
-                Domain = null,
-                Expires = DateTime.UtcNow.AddDays(7)
-            };
-            Console.WriteLine($"Setting refresh token cookie with options: HttpOnly={cookieOptions.HttpOnly}, Path={cookieOptions.Path}, SameSite={cookieOptions.SameSite}");
-            Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
             
-            // TEST: Dodaj też zwykły cookie do testów
-            Response.Cookies.Append("testCookie", "testValue", new CookieOptions
+            if (user == null)
             {
-                HttpOnly = false, // Żeby było widoczne w JavaScript
-                Path = "/",
-                Expires = DateTime.UtcNow.AddDays(1)
-            });
-            Console.WriteLine("Added test cookie for debugging");
+                await delay;
+                return Unauthorized("Nieprawidłowe dane logowania");
+            }
 
-            return Ok(new
+            // Check if account is locked out
+            if (await _userManager.IsLockedOutAsync(user))
             {
-                AccessToken = accessToken,
-                Expiration = DateTime.UtcNow.AddMinutes(15)
-            });
+                await delay;
+                return Unauthorized("Konto zostało tymczasowo zablokowane. Spróbuj ponownie później.");
+            }
+
+            // Check password with lockout on failure enabled
+            var result = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, lockoutOnFailure: true);
+            
+            if (result.Succeeded)
+            {
+                // Reset failed access attempts on successful login
+                await _userManager.ResetAccessFailedCountAsync(user);
+                
+                var accessToken = await GenerateJwtToken(user);
+                var refreshToken = GenerateRefreshToken();
+
+                user.RefreshToken = refreshToken;
+                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+                await _userManager.UpdateAsync(user);
+
+                // Set refresh token in httpOnly cookie
+                var cookieOptions = new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = Request.IsHttps,
+                    SameSite = SameSiteMode.Strict,
+                    Path = "/",
+                    Domain = null,
+                    Expires = DateTime.UtcNow.AddDays(7)
+                };
+                Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
+
+                await delay;
+                return Ok(new
+                {
+                    AccessToken = accessToken,
+                    Expiration = DateTime.UtcNow.AddMinutes(15)
+                });
+            }
+            
+            if (result.IsLockedOut)
+            {
+                await delay;
+                return Unauthorized("Konto zostało zablokowane na 15 minut z powodu zbyt wielu nieudanych prób logowania.");
+            }
+
+            // For any other failure, the failed attempt count is already incremented by CheckPasswordSignInAsync
+            await delay;
+            return Unauthorized("Nieprawidłowe dane logowania");
         }
 
         [HttpPost("refresh-token")]

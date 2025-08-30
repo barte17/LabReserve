@@ -258,65 +258,95 @@ namespace Backend.Controllers
         [Authorize]
         public async Task<ActionResult<IEnumerable<AvailableHoursDto>>> GetAvailableHours([FromQuery] AvailabilityCheckDto dto)
         {
+            // Walidacja
             if ((dto.SalaId == null && dto.StanowiskoId == null) || 
                 (dto.SalaId != null && dto.StanowiskoId != null))
             {
                 return BadRequest("Należy podać albo SalaId albo StanowiskoId, ale nie oba.");
             }
 
-            Sala? sala = null;
+            // KROK 1: Pobierz metadane o godzinach otwarcia i SalaId (1 zapytanie)
+            TimeSpan? czynnaOd = null, czynnaDo = null;
+            int? targetSalaId = null;
+            
             if (dto.SalaId.HasValue)
             {
-                sala = await _context.Sale.FindAsync(dto.SalaId.Value);
-                if (sala == null)
-                    return BadRequest("Sala nie istnieje.");
+                var sala = await _context.Sale
+                    .Where(s => s.Id == dto.SalaId.Value)
+                    .Select(s => new { s.CzynnaOd, s.CzynnaDo })
+                    .FirstOrDefaultAsync();
+                    
+                if (sala == null) return BadRequest("Sala nie istnieje.");
+                czynnaOd = sala.CzynnaOd;
+                czynnaDo = sala.CzynnaDo;
+                targetSalaId = dto.SalaId.Value;
             }
-            else if (dto.StanowiskoId.HasValue)
+            else // dto.StanowiskoId.HasValue
             {
                 var stanowisko = await _context.Stanowiska
-                    .Include(s => s.Sala)
-                    .FirstOrDefaultAsync(s => s.Id == dto.StanowiskoId.Value);
-                
-                if (stanowisko == null)
-                    return BadRequest("Stanowisko nie istnieje.");
-                
-                sala = stanowisko.Sala;
+                    .Where(s => s.Id == dto.StanowiskoId.Value)
+                    .Select(s => new { s.Sala.CzynnaOd, s.Sala.CzynnaDo, s.SalaId })
+                    .FirstOrDefaultAsync();
+                    
+                if (stanowisko == null) return BadRequest("Stanowisko nie istnieje.");
+                czynnaOd = stanowisko.CzynnaOd;
+                czynnaDo = stanowisko.CzynnaDo;
+                targetSalaId = stanowisko.SalaId;
             }
 
-            var availableHours = new List<AvailableHoursDto>();
-            var startHour = sala?.CzynnaOd?.Hours ?? 8;
-            var endHour = sala?.CzynnaDo?.Hours ?? 20;
+            // KROK 2: Pobierz WSZYSTKIE konflikty dla całego dnia (1 zapytanie)
+            var dayStart = DateTime.SpecifyKind(dto.Data.Date, DateTimeKind.Unspecified);
+            var dayEnd = DateTime.SpecifyKind(dto.Data.Date.AddDays(1), DateTimeKind.Unspecified);
+            
+            var allConflicts = await _context.Rezerwacje
+                .Where(r => r.Status != "anulowane" && 
+                           r.DataStart < dayEnd && 
+                           r.DataKoniec > dayStart)
+                .Where(r => 
+                    // Konflikty dla sali
+                    (dto.SalaId.HasValue && r.SalaId == dto.SalaId.Value) ||
+                    // Konflikty stanowisk w tej sali
+                    (dto.SalaId.HasValue && r.StanowiskoId.HasValue && r.Stanowisko.SalaId == dto.SalaId.Value) ||
+                    // Konflikty konkretnego stanowiska
+                    (dto.StanowiskoId.HasValue && r.StanowiskoId == dto.StanowiskoId.Value) ||
+                    // Konflikty całej sali dla stanowiska
+                    (dto.StanowiskoId.HasValue && r.SalaId == targetSalaId))
+                .Select(r => new { r.DataStart, r.DataKoniec })
+                .ToListAsync();
 
-            // dodanie też godziny zakończenia jako możliwą godzinę zakończenia
-            for (int hour = startHour; hour <= endHour; hour++) // <= zamiast < żeby uwzględnić godzinę zamknięcia
+            // KROK 3: Sprawdź dostępność w pamięci (0 zapytań do bazy)
+            var availableHours = new List<AvailableHoursDto>();
+            var startHour = czynnaOd?.Hours ?? 8;
+            var endHour = czynnaDo?.Hours ?? 20;
+
+            for (int hour = startHour; hour <= endHour; hour++)
             {
                 var startTime = dto.Data.Date.AddHours(hour);
                 var endTime = startTime.AddHours(1);
-
-                // Konwertuj na Unspecified przed sprawdzaniem dostępności
+                
                 var startTimeUnspecified = DateTime.SpecifyKind(startTime, DateTimeKind.Unspecified);
                 var endTimeUnspecified = DateTime.SpecifyKind(endTime, DateTimeKind.Unspecified);
-
-                var isAvailable = await CheckAvailability(dto.SalaId, dto.StanowiskoId, startTimeUnspecified, endTimeUnspecified);
                 
-                // Sprawdź czy godzina jest w przeszłości - porównaj tylko jeśli to dzisiaj
+                // Sprawdź w pamięci - bez zapytań do bazy!
+                var hasConflict = allConflicts.Any(c => 
+                    c.DataStart < endTimeUnspecified && 
+                    c.DataKoniec > startTimeUnspecified);
+                    
+                // Sprawdź czy godzina jest w przeszłości
                 var isPast = false;
                 if (startTime.Date == DateTime.Now.Date)
                 {
-                    // Jeśli to dzisiaj, sprawdź czy godzina już minęła
                     isPast = startTime <= DateTime.Now;
                 }
                 else if (startTime.Date < DateTime.Now.Date)
                 {
-                    // Jeśli to wczoraj lub wcześniej
                     isPast = true;
                 }
-
 
                 availableHours.Add(new AvailableHoursDto
                 {
                     Godzina = TimeSpan.FromHours(hour),
-                    Dostepna = isAvailable && !isPast
+                    Dostepna = !hasConflict && !isPast
                 });
             }
 
@@ -368,59 +398,35 @@ namespace Backend.Controllers
             var startUnspecified = DateTime.SpecifyKind(start, DateTimeKind.Unspecified);
             var endUnspecified = DateTime.SpecifyKind(end, DateTimeKind.Unspecified);
             
-            var allConflicts = await _context.Rezerwacje
-                .Where(r => r.Status != "anulowane" && r.DataStart < endUnspecified && r.DataKoniec > startUnspecified)
-                .ToListAsync();
-
-            if (salaId.HasValue)
+            if (stanowiskoId.HasValue)
             {
-                var salaConflicts = allConflicts.Where(r => r.SalaId == salaId.Value).ToList();
-
-                if (salaConflicts.Any()) 
-                {
-                    return false;
-                }
-                
-                var stanowiskaWsali = await _context.Stanowiska
-                    .Where(s => s.SalaId == salaId.Value)
-                    .Select(s => s.Id)
-                    .ToListAsync();
-
-                var stanowiskaConflicts = allConflicts
-                    .Where(r => r.StanowiskoId.HasValue && stanowiskaWsali.Contains(r.StanowiskoId.Value))
-                    .ToList();
-
-                if (stanowiskaConflicts.Any())
-                {
-                    return false;
-                }
-
-                return true;
-            }
-            else if (stanowiskoId.HasValue)
-            {
-                var stanowiskoConflicts = allConflicts.Where(r => r.StanowiskoId == stanowiskoId.Value).ToList();
-
-                if (stanowiskoConflicts.Any())
-                {
-                    return false;
-                }
-                
-                var stanowisko = await _context.Stanowiska
+                // Najpierw pobierz SalaId dla stanowiska
+                var targetSalaId = await _context.Stanowiska
                     .Where(s => s.Id == stanowiskoId.Value)
-                    .Select(s => new { s.SalaId })
+                    .Select(s => s.SalaId)
                     .FirstOrDefaultAsync();
-                if (stanowisko != null)
-                {
-                    var salaConflicts = allConflicts.Where(r => r.SalaId == stanowisko.SalaId).ToList();
-
-                    if (salaConflicts.Any())
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
+                    
+                // Potem sprawdź konflikty w jednym zapytaniu
+                var hasConflicts = await _context.Rezerwacje
+                    .Where(r => r.Status != "anulowane" && 
+                               r.DataStart < endUnspecified && 
+                               r.DataKoniec > startUnspecified)
+                    .Where(r => r.StanowiskoId == stanowiskoId.Value || r.SalaId == targetSalaId)
+                    .AnyAsync();
+                    
+                return !hasConflicts;
+            }
+            else if (salaId.HasValue)
+            {
+                // Dla sali - jedno zapytanie sprawdzające konflikty sali i wszystkich stanowisk w tej sali
+                var hasConflicts = await _context.Rezerwacje
+                    .Where(r => r.Status != "anulowane" && 
+                               r.DataStart < endUnspecified && 
+                               r.DataKoniec > startUnspecified)
+                    .Where(r => r.SalaId == salaId.Value || r.Stanowisko.SalaId == salaId.Value)
+                    .AnyAsync();
+                    
+                return !hasConflicts;
             }
 
             return false;

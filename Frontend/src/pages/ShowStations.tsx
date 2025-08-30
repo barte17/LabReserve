@@ -161,7 +161,7 @@ export default function Stanowiska() {
                       {stanowisko.nazwa}
                     </h3>
                     <p className="list-item-subtitle">
-                      ID: {stanowisko.id} • Sala: {stanowisko.salaId}
+                      ID: {stanowisko.id} | Sala: {stanowisko.salaId}
                     </p>
                   </div>
                   {stanowisko.typ && (
@@ -187,12 +187,12 @@ export default function Stanowiska() {
                     </div>
                   </div>
                   
-                  {stanowisko.opis && (
-                    <div className="mt-3">
-                      <span className="font-medium text-neutral-700">Opis:</span>
-                      <p className="text-neutral-600 mt-1">{stanowisko.opis}</p>
-                    </div>
-                  )}
+                  <div className="mt-3">
+                    <span className="font-medium text-neutral-700">Opis:</span>
+                    <p className="text-neutral-600 mt-1">
+                      {stanowisko.opis || "brak"}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="list-item-actions">

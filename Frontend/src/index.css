@@ -127,6 +127,7 @@
   /* ----- LISTY I ELEMENTY ----- */
   .list-item {
     @apply bg-white p-6 rounded-xl shadow-soft border border-neutral-200 mb-4 hover:shadow-medium transition-all duration-200;
+    list-style: none;
   }
 
   .list-item-header {
