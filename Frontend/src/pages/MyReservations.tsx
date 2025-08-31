@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchMyReservations, deleteRezerwacja } from '../services/rezerwacjaService';
+import { fetchMyReservations, cancelReservation } from '../services/rezerwacjaService';
 import type { RezerwacjaDetailsDto } from '../services/rezerwacjaService';
 
 export default function MyReservations() {
@@ -25,11 +25,11 @@ export default function MyReservations() {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleCancel = async (id: number) => {
     if (!confirm('Czy na pewno chcesz anulować tę rezerwację?')) return;
     
     try {
-      await deleteRezerwacja(id);
+      await cancelReservation(id);
       await loadReservations(); // Odśwież listę
     } catch (err: any) {
       setError(err.message || 'Błąd podczas anulowania rezerwacji');
@@ -47,9 +47,18 @@ export default function MyReservations() {
   };
 
   const canCancel = (reservation: RezerwacjaDetailsDto) => {
+    // Nie można anulować już anulowanych rezerwacji
+    if (reservation.status === 'anulowane') {
+      return false;
+    }
+    
+    // Sprawdź czy rezerwacja jeszcze się nie rozpoczęła
     const startDate = new Date(reservation.dataStart);
     const now = new Date();
-    return startDate > now && reservation.status !== 'anulowane';
+    
+    // Można anulować jeśli data rozpoczęcia jest w przyszłości
+    // Przykład: dziś 31.08.2025 12:00 - można anulować rezerwację z 31.08.2025 13:00
+    return startDate > now;
   };
 
   if (loading) {
@@ -101,53 +110,90 @@ export default function MyReservations() {
             ) : (
               <div className="space-y-4">
                 {reservations.map((reservation) => (
-                  <div key={reservation.id} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {reservation.salaNumer ? 
-                              `Sala ${reservation.salaNumer} (${reservation.salaBudynek})` :
-                              `Stanowisko: ${reservation.stanowiskoNazwa}`
-                            }
-                          </h3>
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(reservation.status)}`}>
-                            {reservation.status}
-                          </span>
+                  <div key={reservation.id} className="bg-white border border-gray-200 rounded-lg p-5 hover:shadow-md transition-shadow">
+                    {/* Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {reservation.salaNumer ? 
+                          `Sala ${reservation.salaNumer} (${reservation.salaBudynek})` :
+                          `Stanowisko: ${reservation.stanowiskoNazwa}`
+                        }
+                      </h3>
+                      <span className={`px-3 py-1 text-sm font-medium rounded-full self-start ${getStatusColor(reservation.status)}`}>
+                        {reservation.status}
+                      </span>
+                    </div>
+
+                    {/* Główna zawartość */}
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                      {/* Informacje */}
+                      <div className="flex flex-col sm:flex-row gap-6">
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                          </svg>
+                          <div>
+                            <div className="text-xs text-gray-500 font-medium">Data</div>
+                            <div className="text-sm text-gray-900 font-medium">
+                              {new Date(reservation.dataStart).toLocaleDateString('pl-PL')}
+                            </div>
+                          </div>
                         </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
                           <div>
-                            <strong>Data:</strong> {new Date(reservation.dataStart).toLocaleDateString('pl-PL')}
-                          </div>
-                          <div>
-                            <strong>Godziny:</strong> {' '}
-                            {new Date(reservation.dataStart).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })} - {' '}
-                            {new Date(reservation.dataKoniec).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
-                          </div>
-                          <div>
-                            <strong>Utworzono:</strong> {new Date(reservation.dataUtworzenia).toLocaleDateString('pl-PL')}
+                            <div className="text-xs text-gray-500 font-medium">Godziny</div>
+                            <div className="text-sm text-gray-900 font-medium">
+                              {new Date(reservation.dataStart).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })} - {' '}
+                              {new Date(reservation.dataKoniec).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
+                            </div>
                           </div>
                         </div>
-                        
-                        {reservation.opis && (
-                          <div className="mt-2 text-sm text-gray-600">
-                            <strong>Opis:</strong> {reservation.opis}
+
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          <div>
+                            <div className="text-xs text-gray-500 font-medium">Utworzono</div>
+                            <div className="text-sm text-gray-900 font-medium">
+                              {new Date(reservation.dataUtworzenia).toLocaleDateString('pl-PL')}
+                            </div>
                           </div>
-                        )}
+                        </div>
                       </div>
-                      
-                      <div className="ml-4">
-                        {canCancel(reservation) && (
+
+                      {/* Przycisk/Status */}
+                      <div className="flex justify-start lg:justify-end">
+                        {canCancel(reservation) ? (
                           <button
-                            onClick={() => handleDelete(reservation.id)}
-                            className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+                            onClick={() => handleCancel(reservation.id)}
+                            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm"
                           >
                             Anuluj
                           </button>
+                        ) : (
+                          <span className={`px-3 py-2 rounded-lg text-sm font-medium ${
+                            reservation.status === 'anulowane' 
+                              ? 'bg-red-50 text-red-700 border border-red-200' 
+                              : 'bg-gray-50 text-gray-600 border border-gray-200'
+                          }`}>
+                            {reservation.status === 'anulowane' ? 'Anulowano rezerwację' : 'Nie można anulować'}
+                          </span>
                         )}
                       </div>
                     </div>
+
+                    {/* Opis */}
+                    {reservation.opis && (
+                      <div className="mt-4 pt-3 border-t border-gray-100">
+                        <div className="text-xs text-gray-500 font-medium mb-1">Opis</div>
+                        <p className="text-sm text-gray-700">{reservation.opis}</p>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

@@ -123,15 +123,30 @@ namespace Backend.Controllers
             if (user == null)
             {
                 await delay;
-                return Unauthorized("Nieprawidłowe dane logowania");
+                return BadRequest(new { 
+                    message = "Nieprawidłowy email lub hasło",
+                    type = "invalid_credentials"
+                });
             }
 
             // Check if account is locked out
             if (await _userManager.IsLockedOutAsync(user))
             {
+                var lockoutEnd = await _userManager.GetLockoutEndDateAsync(user);
+                var remainingTime = lockoutEnd?.Subtract(DateTimeOffset.UtcNow);
+                var remainingMinutes = Math.Ceiling(remainingTime?.TotalMinutes ?? 0);
+                
                 await delay;
-                return Unauthorized("Konto zostało tymczasowo zablokowane. Spróbuj ponownie później.");
+                return BadRequest(new { 
+                    message = $"Konto zostało zablokowane z powodu zbyt wielu nieudanych prób logowania. Spróbuj ponownie za {remainingMinutes} minut.",
+                    type = "account_locked",
+                    remainingMinutes = remainingMinutes,
+                    lockoutEnd = lockoutEnd?.ToString("yyyy-MM-dd HH:mm:ss")
+                });
             }
+
+            // Get current failed attempts before checking password
+            var currentFailedAttempts = await _userManager.GetAccessFailedCountAsync(user);
 
             // Check password with lockout on failure enabled
             var result = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, lockoutOnFailure: true);
@@ -171,12 +186,48 @@ namespace Backend.Controllers
             if (result.IsLockedOut)
             {
                 await delay;
-                return Unauthorized("Konto zostało zablokowane na 15 minut z powodu zbyt wielu nieudanych prób logowania.");
+                return BadRequest(new { 
+                    message = "Konto zostało zablokowane na 15 minut z powodu zbyt wielu nieudanych prób logowania.",
+                    type = "account_locked_now",
+                    remainingMinutes = 15
+                });
             }
 
-            // For any other failure, the failed attempt count is already incremented by CheckPasswordSignInAsync
+            // Get updated failed attempts count
+            var newFailedAttempts = await _userManager.GetAccessFailedCountAsync(user);
+            var maxAttempts = 5; // From Identity configuration
+            var remainingAttempts = maxAttempts - newFailedAttempts;
+
             await delay;
-            return Unauthorized("Nieprawidłowe dane logowania");
+
+            // Different messages based on remaining attempts
+            if (remainingAttempts <= 1)
+            {
+                return BadRequest(new { 
+                    message = "Nieprawidłowy email lub hasło. UWAGA: Kolejna nieudana próba spowoduje zablokowanie konta na 15 minut!",
+                    type = "last_attempt_warning",
+                    remainingAttempts = remainingAttempts,
+                    failedAttempts = newFailedAttempts
+                });
+            }
+            else if (remainingAttempts <= 2)
+            {
+                return BadRequest(new { 
+                    message = $"Nieprawidłowy email lub hasło. Pozostało {remainingAttempts} prób przed zablokowaniem konta.",
+                    type = "few_attempts_left",
+                    remainingAttempts = remainingAttempts,
+                    failedAttempts = newFailedAttempts
+                });
+            }
+            else
+            {
+                return BadRequest(new { 
+                    message = "Nieprawidłowy email lub hasło. Sprawdź wprowadzone dane.",
+                    type = "invalid_credentials",
+                    remainingAttempts = remainingAttempts,
+                    failedAttempts = newFailedAttempts
+                });
+            }
         }
 
         [HttpPost("refresh-token")]

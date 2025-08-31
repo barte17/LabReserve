@@ -129,3 +129,17 @@ export const deleteRezerwacja = async (id: number) => {
   });
   if (!res.ok) throw new Error("Błąd usuwania rezerwacji");
 };
+
+export const cancelReservation = async (id: number) => {
+  const { authenticatedFetch } = await import('./authService');
+  const res = await authenticatedFetch(`/api/rezerwacja/${id}/cancel`, {
+    method: "PATCH"
+  });
+  
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || "Błąd anulowania rezerwacji");
+  }
+  
+  return await res.json();
+};

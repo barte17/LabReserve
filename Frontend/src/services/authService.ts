@@ -63,6 +63,44 @@ export const login = async (email: string, password: string) => {
   });
 
   if (!response.ok) {
+    let errorData = null;
+    
+    try {
+      const responseText = await response.text();
+      console.log('Error response text:', responseText); // Debug log
+      
+      if (responseText) {
+        errorData = JSON.parse(responseText);
+        console.log('Parsed error data:', errorData); // Debug log
+      }
+    } catch (parseError) {
+      console.log('Failed to parse error response:', parseError);
+    }
+    
+    // Handle different error types from backend
+    if (errorData && errorData.message) {
+      console.log('Creating error with data:', errorData); // Debug log
+      const error = new Error(errorData.message) as any;
+      error.type = errorData.type;
+      error.remainingAttempts = errorData.remainingAttempts;
+      error.failedAttempts = errorData.failedAttempts;
+      error.remainingMinutes = errorData.remainingMinutes;
+      error.lockoutEnd = errorData.lockoutEnd;
+      throw error;
+    }
+    
+    // Handle rate limiting (HTTP 429)
+    if (response.status === 429) {
+      const error = new Error('Zbyt wiele prób logowania. Spróbuj ponownie za chwilę.') as any;
+      error.type = 'rate_limited';
+      throw error;
+    }
+    
+    // Fallback for old string responses
+    if (errorData && typeof errorData === 'string') {
+      throw new Error(errorData);
+    }
+    
     throw new Error('Logowanie nie powiodło się');
   }
 

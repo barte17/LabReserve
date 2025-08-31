@@ -7,6 +7,9 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [errorType, setErrorType] = useState('');
+  const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null);
+  const [lockoutInfo, setLockoutInfo] = useState<{remainingMinutes?: number, lockoutEnd?: string} | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState({
     email: '',
@@ -44,6 +47,9 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    setErrorType('');
+    setRemainingAttempts(null);
+    setLockoutInfo(null);
 
     // Final validation
     const errors = {
@@ -61,11 +67,32 @@ const Login = () => {
     
     try {
       const result = await login(email, password);
-      // Token jest już zapisany w pamięci przez authService - OWASP compliant
       refreshAuth(); // Odśwież stan autoryzacji
       navigate('/');
-    } catch {
-      setError('Nieprawidłowy email lub hasło. Spróbuj ponownie.');
+    } catch (loginError: any) {
+      console.log('Login error caught:', loginError); 
+      console.log('Error type:', loginError.type); 
+      console.log('Remaining attempts:', loginError.remainingAttempts); 
+      console.log('Failed attempts:', loginError.failedAttempts); 
+      
+      setError(loginError.message);
+      setErrorType(loginError.type || '');
+      
+      if (loginError.remainingAttempts !== undefined) {
+        setRemainingAttempts(loginError.remainingAttempts);
+        console.log('Set remaining attempts to:', loginError.remainingAttempts); 
+      }
+      
+      if (loginError.remainingMinutes || loginError.lockoutEnd) {
+        setLockoutInfo({
+          remainingMinutes: loginError.remainingMinutes,
+          lockoutEnd: loginError.lockoutEnd
+        });
+        console.log('Set lockout info:', {
+          remainingMinutes: loginError.remainingMinutes,
+          lockoutEnd: loginError.lockoutEnd
+        }); 
+      }
     } finally {
       setIsLoading(false);
     }
@@ -132,12 +159,65 @@ const Login = () => {
               </div>
 
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 animate-slide-up">
+                <div className={`border rounded-lg p-4 animate-slide-up ${
+                  errorType === 'rate_limited' ? 'bg-orange-50 border-orange-200' :
+                  errorType === 'account_locked' || errorType === 'account_locked_now' ? 'bg-red-50 border-red-200' :
+                  errorType === 'last_attempt_warning' ? 'bg-yellow-50 border-yellow-200' :
+                  errorType === 'few_attempts_left' ? 'bg-yellow-50 border-yellow-200' :
+                  'bg-red-50 border-red-200'
+                }`}>
                   <div className="flex">
-                    <svg className="h-5 w-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg className={`h-5 w-5 mr-2 ${
+                      errorType === 'rate_limited' ? 'text-orange-400' :
+                      errorType === 'account_locked' || errorType === 'account_locked_now' ? 'text-red-400' :
+                      errorType === 'last_attempt_warning' ? 'text-yellow-400' :
+                      errorType === 'few_attempts_left' ? 'text-yellow-400' :
+                      'text-red-400'
+                    }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      {errorType === 'rate_limited' ? (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      ) : errorType === 'account_locked' || errorType === 'account_locked_now' ? (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      ) : errorType === 'last_attempt_warning' || errorType === 'few_attempts_left' ? (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      ) : (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      )}
                     </svg>
-                    <p className="text-red-700 text-sm">{error}</p>
+                    <div className="flex-1">
+                      <p className={`text-sm font-medium ${
+                        errorType === 'rate_limited' ? 'text-orange-700' :
+                        errorType === 'account_locked' || errorType === 'account_locked_now' ? 'text-red-700' :
+                        errorType === 'last_attempt_warning' ? 'text-yellow-700' :
+                        errorType === 'few_attempts_left' ? 'text-yellow-700' :
+                        'text-red-700'
+                      }`}>{error}</p>
+                      
+                      {remainingAttempts !== null && remainingAttempts >= 0 && (
+                        <p className={`text-xs mt-1 ${
+                          errorType === 'last_attempt_warning' ? 'text-yellow-600' :
+                          errorType === 'few_attempts_left' ? 'text-yellow-600' :
+                          'text-red-600'
+                        }`}>
+                          {remainingAttempts === 0 ? 
+                            'Brak pozostałych prób' : 
+                            `Pozostało prób: ${remainingAttempts}`
+                          }
+                        </p>
+                      )}
+                      
+                      {lockoutInfo && lockoutInfo.remainingMinutes && (
+                        <p className="text-xs mt-1 text-red-600">
+                          Konto zostanie odblokowane za {lockoutInfo.remainingMinutes} minut
+                        </p>
+                      )}
+                      
+                      {errorType === 'rate_limited' && (
+                        <p className="text-xs mt-1 text-orange-600">
+                          Przekroczono limit prób logowania z tego adresu IP
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}

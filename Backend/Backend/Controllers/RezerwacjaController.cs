@@ -367,6 +367,37 @@ namespace Backend.Controllers
             return NoContent();
         }
 
+        [HttpPatch("{id}/cancel")]
+        [Authorize]
+        public async Task<IActionResult> CancelReservation(int id)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var isAdmin = User.IsInRole("Admin");
+
+            var rezerwacja = await _context.Rezerwacje
+                .FirstOrDefaultAsync(r => r.Id == id && (isAdmin || r.UzytkownikId == userId));
+
+            if (rezerwacja == null)
+                return NotFound("Rezerwacja nie istnieje lub nie masz do niej uprawnień");
+
+            // Sprawdź czy rezerwacja nie jest już anulowana
+            if (rezerwacja.Status == "anulowane")
+                return BadRequest("Rezerwacja jest już anulowana");
+
+            // Sprawdź czy można anulować (np. nie można anulować rezerwacji która już się rozpoczęła)
+            var nowUnspecified = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);
+            if (rezerwacja.DataStart <= nowUnspecified && !isAdmin)
+            {
+                return BadRequest("Nie można anulować rezerwacji która już się rozpoczęła");
+            }
+
+            // Zmień status na anulowane zamiast usuwać
+            rezerwacja.Status = "anulowane";
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Rezerwacja została anulowana", status = "anulowane" });
+        }
+
         [HttpDelete("{id}")]
         [Authorize]
         public async Task<IActionResult> Delete(int id)
