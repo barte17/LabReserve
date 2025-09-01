@@ -36,7 +36,7 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
   const [nauczyciele, setNauczyciele] = useState<User[]>([]);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   
-  // Validation states
+  
   const [validationErrors, setValidationErrors] = useState({
     numer: '',
     budynek: '',
@@ -66,7 +66,6 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
     return time ? `${time}:00` : null;
   };
 
-  // Validation functions
   const validateNumer = (value: string) => {
     if (!value.trim()) return 'Numer sali jest wymagany';
     const num = parseInt(value);
@@ -84,7 +83,7 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
   };
 
   const validateMaxOsob = (value: string) => {
-    if (!value) return ''; // Optional field
+    if (!value) return ''; // opcjonalne pole
     const num = parseInt(value);
     if (isNaN(num)) return 'Maksymalna liczba osób musi być liczbą';
     if (num <= 0) return 'Maksymalna liczba osób musi być większa od 0';
@@ -93,7 +92,7 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
   };
 
   const validateTime = (value: string, fieldName: string) => {
-    if (!value) return ''; // Optional field
+    if (!value) return ''; // opcjonalne pole
     const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
     if (!timeRegex.test(value)) return `${fieldName} musi być w formacie HH:MM`;
     return '';
@@ -104,7 +103,7 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
     return '';
   };
 
-  // Real-time validation handlers
+  // Real-time validation 
   const handleNumerChange = (value: string) => {
     setNumer(value);
     setValidationErrors(prev => ({ ...prev, numer: validateNumer(value) }));
@@ -145,7 +144,7 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Final validation
+    // Finalna walidacja przed wysłaniem
     const errors = {
       numer: validateNumer(numer),
       budynek: validateBudynek(budynek),

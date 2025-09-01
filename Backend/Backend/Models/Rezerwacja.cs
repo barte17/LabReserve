@@ -26,7 +26,7 @@ namespace Backend.Models
         [Required]
         public DateTime DataKoniec { get; set; }
 
-        [MaxLength(500)]
+        [MaxLength(60)]
         public string? Opis { get; set; }
 
         [Required, MaxLength(20)]

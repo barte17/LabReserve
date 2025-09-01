@@ -542,13 +542,13 @@ export default function ReservationPage() {
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-                maxLength={500}
+                rows={2}
+                maxLength={60}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Dodatkowe informacje o rezerwacji..."
               />
               <p className="mt-1 text-sm text-gray-500">
-                {description.length}/500 znaków
+                {description.length}/60 znaków
               </p>
             </div>
 
@@ -556,12 +556,17 @@ export default function ReservationPage() {
             {selectedDate && selectedStartHour && selectedEndHour && (
               <div className="bg-blue-50 p-4 rounded-md">
                 <h3 className="font-medium text-blue-900 mb-2">Podsumowanie rezerwacji:</h3>
-                <ul className="text-sm text-blue-800 space-y-1">
-                  <li><strong>Zasób:</strong> {resourceName}</li>
-                  <li><strong>Data:</strong> {selectedDate.toLocaleDateString('pl-PL')}</li>
-                  <li><strong>Godziny:</strong> {selectedStartHour} - {selectedEndHour}</li>
-                  {description && <li><strong>Opis:</strong> {description}</li>}
-                </ul>
+                <div className="text-sm text-blue-800 space-y-1">
+                  <div><strong>Zasób:</strong> <span className="break-words">{resourceName}</span></div>
+                  <div><strong>Data:</strong> {selectedDate.toLocaleDateString('pl-PL')}</div>
+                  <div><strong>Godziny:</strong> {selectedStartHour} - {selectedEndHour}</div>
+                  {description && (
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-1">
+                      <strong className="flex-shrink-0">Opis:</strong> 
+                      <span className="break-words break-all">{description}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
