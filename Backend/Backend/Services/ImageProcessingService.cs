@@ -16,6 +16,7 @@ namespace Backend.Services
         private const int TARGET_WIDTH = 1920;
         private const int TARGET_HEIGHT = 1080;
         private const int MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+        private readonly string[] _reservedNames = { "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9" };
 
         public bool IsValidImageFile(IFormFile file)
         {
@@ -25,41 +26,67 @@ namespace Backend.Services
             if (file.Length > MAX_FILE_SIZE)
                 return false;
 
+            // Walidacja nazwy pliku
+            if (string.IsNullOrWhiteSpace(file.FileName))
+                return false;
+
+            // Sprawdź rozszerzenie
             var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-            return _allowedExtensions.Contains(extension);
+            if (!_allowedExtensions.Contains(extension))
+                return false;
+
+            // Sprawdź czy nazwa pliku nie zawiera niebezpiecznych znaków
+            var fileName = Path.GetFileNameWithoutExtension(file.FileName);
+            if (string.IsNullOrWhiteSpace(fileName))
+                return false;
+
+            // Sprawdź czy nie jest to nazwa systemowa
+            if (_reservedNames.Contains(fileName.ToUpperInvariant()))
+                return false;
+
+            // Sprawdź czy nazwa nie zawiera nielegalnych znaków
+            var invalidChars = Path.GetInvalidFileNameChars();
+            if (fileName.IndexOfAny(invalidChars) >= 0)
+                return false;
+
+            return true;
         }
 
         public async Task<string> ProcessAndSaveImageAsync(IFormFile file, string uploadPath, string fileName)
         {
             if (!IsValidImageFile(file))
-                throw new ArgumentException("Invalid image file");
+                throw new ArgumentException("Nieprawidłowy plik obrazu");
 
-            // Ensure directory exists
-            Directory.CreateDirectory(uploadPath);
+            // Walidacja parametrów wejściowych
+            if (string.IsNullOrWhiteSpace(uploadPath))
+                throw new ArgumentException("Ścieżka uploadu nie może być pusta", nameof(uploadPath));
+            
+            if (string.IsNullOrWhiteSpace(fileName))
+                throw new ArgumentException("Nazwa pliku nie może być pusta", nameof(fileName));
 
-            // Generate final file path with .webp extension
-            var webpFileName = Path.ChangeExtension(fileName, ".webp");
-            var filePath = Path.Combine(uploadPath, webpFileName);
+            // Bezpieczne generowanie ścieżki pliku
+            var safeFilePath = GetSafeFilePath(uploadPath, fileName);
+            var webpFileName = Path.GetFileName(safeFilePath);
 
             try
             {
                 using var image = await Image.LoadAsync(file.OpenReadStream());
                 
-                // Get original dimensions
+                
                 var originalWidth = image.Width;
                 var originalHeight = image.Height;
                 var originalRatio = (double)originalWidth / originalHeight;
                 var targetRatio = (double)TARGET_WIDTH / TARGET_HEIGHT;
 
-                // Process image based on aspect ratio
+               
                 if (Math.Abs(originalRatio - targetRatio) < 0.1)
                 {
-                    // Already close to 16:9 - simple resize
+                    
                     image.Mutate(x => x.Resize(TARGET_WIDTH, TARGET_HEIGHT, KnownResamplers.Lanczos3));
                 }
                 else if (originalRatio > targetRatio * 1.5)
                 {
-                    // Very wide (panoramic) - crop to 16:9
+                    
                     image.Mutate(x => x.Resize(new ResizeOptions
                     {
                         Size = new Size(TARGET_WIDTH, TARGET_HEIGHT),
@@ -70,19 +97,19 @@ namespace Backend.Services
                 }
                 else if (originalRatio < targetRatio * 0.7)
                 {
-                    // Very tall (portrait) - pad with gradient background
+                    
                     image.Mutate(x => x.Resize(new ResizeOptions
                     {
                         Size = new Size(TARGET_WIDTH, TARGET_HEIGHT),
                         Mode = ResizeMode.Pad,
                         Position = AnchorPositionMode.Center,
-                        PadColor = Color.FromRgb(240, 240, 240), // Light gray background
+                        PadColor = Color.FromRgb(240, 240, 240),
                         Sampler = KnownResamplers.Lanczos3
                     }));
                 }
                 else
                 {
-                    // Normal ratio - resize to fit
+                    // dopasowanie rozmiaru z zachowaniem proporcji
                     image.Mutate(x => x.Resize(new ResizeOptions
                     {
                         Size = new Size(TARGET_WIDTH, TARGET_HEIGHT),
@@ -92,10 +119,10 @@ namespace Backend.Services
                     }));
                 }
 
-                // Apply subtle sharpening for better quality
+                // nałozenie lekkiego wyostrzenia
                 image.Mutate(x => x.GaussianSharpen(0.5f));
 
-                // Save as WebP with high quality
+                // Zapisywanie jako webP
                 var encoder = new WebpEncoder
                 {
                     Quality = 90, // High quality
@@ -103,14 +130,64 @@ namespace Backend.Services
                     FileFormat = WebpFileFormatType.Lossy
                 };
 
-                await image.SaveAsync(filePath, encoder);
+                await image.SaveAsync(safeFilePath, encoder);
                 
                 return webpFileName;
             }
+            catch (UnauthorizedAccessException)
+            {
+                throw; // Przekaż wyjątki bezpieczeństwa bez zmian
+            }
+            catch (DirectoryNotFoundException ex)
+            {
+                throw new InvalidOperationException($"Katalog uploadu nie został znaleziony: {ex.Message}", ex);
+            }
+            catch (IOException ex)
+            {
+                throw new InvalidOperationException($"Błąd operacji na pliku: {ex.Message}", ex);
+            }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Error processing image: {ex.Message}", ex);
+                throw new InvalidOperationException($"Błąd przetwarzania obrazu: {ex.Message}", ex);
             }
+        }
+
+        private string GetSafeFilePath(string uploadDirectory, string fileName)
+        {
+            // Upewnij się, że katalog uploadu istnieje
+            Directory.CreateDirectory(uploadDirectory);
+
+            // Oczyść nazwę pliku - usuń komponenty ścieżki
+            var safeFileName = Path.GetFileName(fileName);
+            if (string.IsNullOrWhiteSpace(safeFileName))
+                throw new ArgumentException("Nieprawidłowa nazwa pliku", nameof(fileName));
+
+            // Wygeneruj unikalną nazwę pliku aby uniknąć konfliktów
+            var extension = Path.GetExtension(safeFileName);
+            var nameWithoutExtension = Path.GetFileNameWithoutExtension(safeFileName);
+            var uniqueFileName = $"{nameWithoutExtension}_{Guid.NewGuid()}.webp";
+
+            // Stwórz pełną ścieżkę
+            var fullPath = Path.Combine(uploadDirectory, uniqueFileName);
+
+            // Znormalizuj ścieżki do porównania
+            var normalizedUploadDir = Path.GetFullPath(uploadDirectory);
+            var normalizedFilePath = Path.GetFullPath(fullPath);
+
+            // Sprawdzenie bezpieczeństwa: upewnij się, że wynikowa ścieżka jest w dozwolonym katalogu
+            if (!normalizedFilePath.StartsWith(normalizedUploadDir, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new UnauthorizedAccessException("Wykryto próbę ataku path traversal. Ścieżka pliku jest poza dozwolonym katalogiem.");
+            }
+
+            // Dodatkowe zabezpieczenie: sprawdź czy ścieżka zawiera podejrzane wzorce
+            var relativePath = Path.GetRelativePath(normalizedUploadDir, normalizedFilePath);
+            if (relativePath.Contains("..") || relativePath.StartsWith("/") || relativePath.StartsWith("\\"))
+            {
+                throw new UnauthorizedAccessException("Wykryto nieprawidłową ścieżkę pliku.");
+            }
+
+            return normalizedFilePath;
         }
     }
 }

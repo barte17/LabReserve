@@ -137,7 +137,7 @@ namespace Backend.Controllers
 
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> UpdateSala(int id, CreateSalaDto dto)
+        public async Task<IActionResult> UpdateSala(int id, [FromForm] CreateSalaDto dto, [FromForm] List<IFormFile>? zdjecia)
         {
             var sala = await _context.Sale.FindAsync(id);
             if (sala == null) return NotFound();
@@ -152,6 +152,26 @@ namespace Backend.Controllers
             sala.IdOpiekuna = dto.IdOpiekuna;
 
             await _context.SaveChangesAsync();
+
+            // Obsługa nowych zdjęć - zastąp stare zdjęcia nowymi
+            if (zdjecia != null && zdjecia.Count > 0)
+            {
+                // Usuń stare zdjęcia z bazy danych
+                var stareZdjecia = await _context.Zdjecia.Where(z => z.SalaId == id).ToListAsync();
+                _context.Zdjecia.RemoveRange(stareZdjecia);
+                await _context.SaveChangesAsync();
+
+                // Usuń stare pliki z dysku
+                var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "sale", $"sala-{id}");
+                if (Directory.Exists(uploadsPath))
+                {
+                    Directory.Delete(uploadsPath, true);
+                }
+
+                // Dodaj nowe zdjęcia
+                await SaveZdjeciaForSala(id, zdjecia);
+            }
+
             return NoContent();
         }
 

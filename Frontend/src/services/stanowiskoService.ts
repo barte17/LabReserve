@@ -33,14 +33,40 @@ export const addStanowisko = async (data: any) => {
 
 export const editStanowisko = async (id: number, data: any) => {
   const { authenticatedFetch } = await import('./authService');
-  const res = await authenticatedFetch(`/api/stanowisko/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error("Błąd edycji stanowiska");
+  
+  // Sprawdź czy są zdjęcia do wysłania
+  if (data.zdjecia && data.zdjecia.length > 0) {
+    // Użyj FormData dla zdjęć
+    const formData = new FormData();
+    
+    // Dodanie danych formularza
+    Object.keys(data).forEach(key => {
+      if (key === 'zdjecia' && data[key]) {
+        // Dodanie plików
+        data[key].forEach((file: File) => {
+          formData.append('zdjecia', file);
+        });
+      } else if (data[key] !== null && data[key] !== undefined) {
+        formData.append(key, data[key].toString());
+      }
+    });
+
+    const res = await authenticatedFetch(`/api/stanowisko/${id}`, {
+      method: "PUT",
+      body: formData, // Bez Content-Type - browser ustawi automatycznie z boundary
+    });
+    if (!res.ok) throw new Error("Błąd edycji stanowiska");
+  } else {
+    // Bez zdjęć - użyj JSON
+    const res = await authenticatedFetch(`/api/stanowisko/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error("Błąd edycji stanowiska");
+  }
 };
 
 export const deleteStanowisko = async (id: number) => {

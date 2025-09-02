@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { fetchSale, editSala, deleteSala } from "../services/salaService";
 import AddSalaForm from "./forms/AddRoomForm";
 import { useToastContext } from "./ToastProvider";
@@ -30,6 +31,7 @@ export default function SaleListAdmin({ onEdit }: Props) {
   const [stanowiskaFilter, setStanowiskaFilter] = useState<"" | "tak" | "nie">("");
   const [editingSala, setEditingSala] = useState<Sala | null>(null);
   const { showSuccess, showError } = useToastContext();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchSale()
@@ -226,6 +228,15 @@ export default function SaleListAdmin({ onEdit }: Props) {
             </div>
             <div className="list-item-actions">
               <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => navigate(`/sala/${s.id}`)}
+                  className="btn btn-primary btn-sm"
+                >
+                  <svg className="h-3 w-3 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  Przejdź do strony sali
+                </button>
                 <button
                   onClick={() => handleEdit(s)}
                   className="btn btn-secondary btn-sm"
