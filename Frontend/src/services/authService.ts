@@ -1,4 +1,5 @@
 // src/services/authService.ts
+import { ApiErrorHandler } from './apiErrorHandler';
 import { jwtDecode } from 'jwt-decode';
 
 interface DecodedToken {
@@ -16,7 +17,7 @@ interface User {
 }
 
 let cachedUser: User | null = null;
-let accessToken: string | null = null; // In-memory storage - OWASP compliant
+let accessToken: string | null = null; // In-memory storage - OWASP
 let refreshPromise: Promise<any> | null = null; // Mutex dla refresh token
 
 export const getUserFromToken = (): User | null => {
@@ -89,14 +90,14 @@ export const login = async (email: string, password: string) => {
       throw error;
     }
     
-    // Handle rate limiting (HTTP 429)
+    // (HTTP 429)
     if (response.status === 429) {
       const error = new Error('Zbyt wiele prób logowania. Spróbuj ponownie za chwilę.') as any;
       error.type = 'rate_limited';
       throw error;
     }
     
-    // Fallback for old string responses
+    
     if (errorData && typeof errorData === 'string') {
       throw new Error(errorData);
     }
@@ -106,7 +107,7 @@ export const login = async (email: string, password: string) => {
 
   const data = await response.json();
   
-  // Zapisz access token w pamięci - OWASP compliant
+  // Zapisz access token w pamięci
   accessToken = data.accessToken;
   cachedUser = null; // wyczyść cache po nowym loginie
   
@@ -162,7 +163,7 @@ export const refreshToken = async () => {
 
     const data = await response.json();
     
-    // Zapisz nowy access token w pamięci - OWASP compliant
+    // Zapisz nowy access token w pamięci
     accessToken = data.accessToken;
     
     cachedUser = null; // wyczyść cache przy odświeżeniu
@@ -181,7 +182,7 @@ export const logout = async () => {
     method: 'POST',
     credentials: 'include', // Ważne: wysyła cookies żeby backend mógł usunąć refresh token
   });
-  // Wyczyść access token z pamięci - OWASP compliant
+  // Wyczyść access token z pamięci
   accessToken = null;
   cachedUser = null;
 };
@@ -231,32 +232,51 @@ export const authenticatedFetch = async (url: string, options: RequestInit = {})
     "Authorization": `Bearer ${token}`
   };
   
-  const response = await fetch(url, { 
-    ...options, 
-    headers,
-    credentials: 'include' // Ważne: wysyła cookies z refresh tokenem
-  });
-  
-  // Jeśli dostajemy 401, spróbuj odświeżyć token i powtórz request
-  if (response.status === 401) {
-    try {
-      await refreshToken();
-      
-      if (accessToken) {
-        const newHeaders = {
-          ...options.headers,
-          "Authorization": `Bearer ${accessToken}`
-        };
-        return await fetch(url, { 
-          ...options, 
-          headers: newHeaders,
-          credentials: 'include'
-        });
+  try {
+    const response = await fetch(url, { 
+      ...options, 
+      headers,
+      credentials: 'include' // Ważne: wysyła cookies z refresh tokenem
+    });
+    
+    // Jeśli dostajemy 401, spróbuj odświeżyć token i powtórz request
+    if (response.status === 401) {
+      try {
+        await refreshToken();
+        
+        if (accessToken) {
+          const newHeaders = {
+            ...options.headers,
+            "Authorization": `Bearer ${accessToken}`
+          };
+          const retryResponse = await fetch(url, { 
+            ...options, 
+            headers: newHeaders,
+            credentials: 'include'
+          });
+          
+          // Użyj error handlera dla retry response (ale nie dla 401 - to obsługuje auth)
+          if (!retryResponse.ok && retryResponse.status !== 401) {
+            return await ApiErrorHandler.handleResponse(retryResponse);
+          }
+          return retryResponse;
+        }
+      } catch (error) {
+        console.error("Nie udało się odświeżyć tokenu po 401:", error);
       }
-    } catch (error) {
-      console.error("Nie udało się odświeżyć tokenu po 401:", error);
     }
+    
+    // Użyj error handlera dla wszystkich odpowiedzi oprócz 401 
+    if (!response.ok && response.status !== 401) {
+      return await ApiErrorHandler.handleResponse(response);
+    }
+    
+    return response;
+  } catch (error) {
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      // Network error
+      await ApiErrorHandler.handleNetworkError(error, url);
+    }
+    throw error;
   }
-  
-  return response;
 };

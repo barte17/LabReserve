@@ -13,22 +13,60 @@ import ReservationPage from '../pages/ReservationPage';
 import MyReservations from '../pages/MyReservations';
 import PublicRoute from "../routes/PublicRoute";
 import { AdminRoute } from "../routes/AdminRoute";
+import { PageErrorBoundary } from "../components/ErrorBoundary";
 
 export function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/stanowiska" element={<Stanowiska />} />
-      <Route path="/stanowisko/:id" element={<StanowiskoDetails />} />
-      <Route path="/sale" element={<Sale />} />
-      <Route path="/sala/:id" element={<SalaDetails />} />
-      <Route path="/account" element={<UserPanel />} />
-      <Route path="/reservation" element={<ReservationPage />} />
-      <Route path="/my-reservations" element={<MyReservations />} />
+      
+      <Route path="/stanowiska" element={
+        <PageErrorBoundary fallbackPath="/" fallbackText="Strona główna">
+          <Stanowiska />
+        </PageErrorBoundary>
+      } />
+      
+      <Route path="/stanowisko/:id" element={
+        <PageErrorBoundary fallbackPath="/stanowiska" fallbackText="Lista stanowisk">
+          <StanowiskoDetails />
+        </PageErrorBoundary>
+      } />
+      
+      <Route path="/sale" element={
+        <PageErrorBoundary fallbackPath="/" fallbackText="Strona główna">
+          <Sale />
+        </PageErrorBoundary>
+      } />
+      
+      <Route path="/sala/:id" element={
+        <PageErrorBoundary fallbackPath="/sale" fallbackText="Lista sal">
+          <SalaDetails />
+        </PageErrorBoundary>
+      } />
+      
+      <Route path="/account" element={
+        <PageErrorBoundary fallbackPath="/" fallbackText="Strona główna">
+          <UserPanel />
+        </PageErrorBoundary>
+      } />
+      
+      <Route path="/reservation" element={
+        <PageErrorBoundary fallbackPath="/" fallbackText="Strona główna">
+          <ReservationPage />
+        </PageErrorBoundary>
+      } />
+      
+      <Route path="/my-reservations" element={
+        <PageErrorBoundary fallbackPath="/" fallbackText="Strona główna">
+          <MyReservations />
+        </PageErrorBoundary>
+      } />
 
       <Route path="/panel-admina" element={
         <AdminRoute>
-          <PanelAdmina />
+          <PageErrorBoundary fallbackPath="/" fallbackText="Strona główna">
+            <PanelAdmina />
+          </PageErrorBoundary>
         </AdminRoute>
       } />
 
