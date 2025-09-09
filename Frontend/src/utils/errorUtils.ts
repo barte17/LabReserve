@@ -17,16 +17,20 @@ export interface ErrorLog {
   };
 }
 
-export const getErrorLogs = (type?: 'global' | 'page' | 'api'): ErrorLog[] => {
+export const getErrorLogs = (type?: 'global' | 'page' | 'api' | 'form' | 'auth'): ErrorLog[] => {
   try {
     const globalLogs = JSON.parse(localStorage.getItem('errorLogs') || '[]');
     const pageLogs = JSON.parse(localStorage.getItem('pageErrorLogs') || '[]');
     const apiLogs = JSON.parse(localStorage.getItem('apiErrorLogs') || '[]');
+    const formLogs = JSON.parse(localStorage.getItem('formErrorLogs') || '[]');
+    const authLogs = JSON.parse(localStorage.getItem('authErrorLogs') || '[]');
     
     const allLogs = [
       ...globalLogs.map((log: any) => ({ ...log, type: 'global' })),
       ...pageLogs.map((log: any) => ({ ...log, type: 'page' })),
-      ...apiLogs.map((log: any) => ({ ...log, type: 'api' }))
+      ...apiLogs.map((log: any) => ({ ...log, type: 'api' })),
+      ...formLogs.map((log: any) => ({ ...log, type: 'form' })),
+      ...authLogs.map((log: any) => ({ ...log, type: 'auth' }))
     ];
 
     if (type) {
@@ -40,16 +44,23 @@ export const getErrorLogs = (type?: 'global' | 'page' | 'api'): ErrorLog[] => {
   }
 };
 
-export const clearErrorLogs = (type?: 'global' | 'page' | 'api'): void => {
+export const clearErrorLogs = (type?: 'global' | 'page' | 'api' | 'form' | 'auth'): void => {
   try {
     if (type) {
-      const key = type === 'global' ? 'errorLogs' : 
-                  type === 'page' ? 'pageErrorLogs' : 'apiErrorLogs';
-      localStorage.removeItem(key);
+      const keyMap = {
+        'global': 'errorLogs',
+        'page': 'pageErrorLogs', 
+        'api': 'apiErrorLogs',
+        'form': 'formErrorLogs',
+        'auth': 'authErrorLogs'
+      };
+      localStorage.removeItem(keyMap[type]);
     } else {
       localStorage.removeItem('errorLogs');
       localStorage.removeItem('pageErrorLogs');
       localStorage.removeItem('apiErrorLogs');
+      localStorage.removeItem('formErrorLogs');
+      localStorage.removeItem('authErrorLogs');
     }
   } catch (e) {
     console.error('Failed to clear error logs:', e);
@@ -87,7 +98,10 @@ if (typeof window !== 'undefined') {
   console.log('🛠️ Error Utils dostępne w konsoli:');
   console.log('- errorUtils.getLogs() - pokaż wszystkie błędy');
   console.log('- errorUtils.getLogs("api") - pokaż błędy API');
+  console.log('- errorUtils.getLogs("form") - pokaż błędy formularzy');
+  console.log('- errorUtils.getLogs("auth") - pokaż błędy uwierzytelniania');
   console.log('- errorUtils.showAllLogs() - pokaż w tabeli');
-  console.log('- errorUtils.clearLogs() - wyczyść błędy');
+  console.log('- errorUtils.clearLogs() - wyczyść wszystkie błędy');
+  console.log('- errorUtils.clearLogs("auth") - wyczyść błędy auth');
   console.log('- errorUtils.testApiError() - test API error');
 }

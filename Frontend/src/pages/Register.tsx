@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { register } from '../services/authService';
+import { FormErrorBoundary } from '../components/ErrorBoundary';
 
 const Register = () => {
   const [email, setEmail] = useState('');
@@ -97,6 +98,24 @@ const Register = () => {
     setValidationErrors(prev => ({ ...prev, confirmPassword: validateConfirmPassword(value, password) }));
   };
 
+  // Reset formularza po błędzie
+  const resetForm = () => {
+    setEmail('');
+    setPassword('');
+    setImie('');
+    setNazwisko('');
+    setConfirmPassword('');
+    setError('');
+    setIsLoading(false);
+    setValidationErrors({
+      imie: '',
+      nazwisko: '',
+      email: '',
+      password: '',
+      confirmPassword: ''
+    });
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -179,7 +198,11 @@ const Register = () => {
         {/* Form */}
         <div className="card animate-scale-in">
           <div className="card-body">
-            <form onSubmit={handleRegister} className="space-y-6">
+            <FormErrorBoundary 
+              onError={resetForm}
+              fallbackMessage="Wystąpił błąd w formularzu rejestracji. Formularz został zresetowany."
+            >
+              <form onSubmit={handleRegister} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="form-group">
                   <label htmlFor="imie" className="form-label">
@@ -310,6 +333,7 @@ const Register = () => {
                 )}
               </button>
             </form>
+            </FormErrorBoundary>
           </div>
         </div>
 

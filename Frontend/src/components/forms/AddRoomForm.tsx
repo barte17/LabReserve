@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import ImageUpload from "../ImageUpload";
+import { FormErrorBoundary } from "../ErrorBoundary";
 
 type SalaFormData = {
   numer: number;
@@ -141,6 +142,27 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
     setValidationErrors(prev => ({ ...prev, opis: validateOpis(value) }));
   };
 
+  // Reset formularza po błędzie
+  const resetForm = () => {
+    setNumer('');
+    setBudynek('');
+    setMaxOsob('');
+    setOpiekunId('');
+    setCzynnaOd('');
+    setCzynnaDo('');
+    setOpis('');
+    setMaStanowiska(false);
+    setZdjecia([]);
+    setValidationErrors({
+      numer: '',
+      budynek: '',
+      maxOsob: '',
+      czynnaOd: '',
+      czynnaDo: '',
+      opis: ''
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -191,7 +213,11 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <FormErrorBoundary 
+        onError={resetForm}
+        fallbackMessage="Wystąpił błąd w formularzu sali. Formularz został zresetowany."
+      >
+        <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="form-group">
             <label className="form-label">Numer sali</label>
@@ -376,7 +402,8 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
             </button>
           )}
         </div>
-      </form>
+        </form>
+      </FormErrorBoundary>
     </div>
   );
 }

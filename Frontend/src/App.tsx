@@ -10,6 +10,9 @@ import "./utils/errorUtils";
 import { setToastHandler } from "./services/apiErrorHandler";
 import { setGlobalToastHandler } from "./components/ErrorBoundary/GlobalErrorBoundary";
 import { setPageToastHandler } from "./components/ErrorBoundary/PageErrorBoundary";
+import { setFormToastHandler } from "./components/ErrorBoundary/FormErrorBoundary";
+import { setAuthToastHandler } from "./components/ErrorBoundary/AuthErrorBoundary";
+import { AuthErrorBoundary } from "./components/ErrorBoundary";
 import { useEffect } from "react";
 
 
@@ -22,6 +25,8 @@ const AppContent = () => {
     setToastHandler(showError);
     setGlobalToastHandler(showError);
     setPageToastHandler(showError);
+    setFormToastHandler(showError);
+    setAuthToastHandler(showError);
   }, [showError]);
 
   return (
@@ -37,11 +42,13 @@ const AppContent = () => {
 function App() {
   return (
     <GlobalErrorBoundary>
-      <AuthProvider>
-        <ToastProvider>
-          <AppContent />
-        </ToastProvider>
-      </AuthProvider>
+      <AuthErrorBoundary>
+        <AuthProvider>
+          <ToastProvider>
+            <AppContent />
+          </ToastProvider>
+        </AuthProvider>
+      </AuthErrorBoundary>
     </GlobalErrorBoundary>
   );
 }

@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { createReservation, getAvailableHours, getAvailableDays } from '../services/rezerwacjaService';
 import type { AvailableDayDto } from '../services/rezerwacjaService';
 import { getUserFromToken } from '../services/authService';
+import { FormErrorBoundary } from '../components/ErrorBoundary';
 
 interface AvailableHour {
   godzina: string;
@@ -280,6 +281,17 @@ export default function ReservationPage() {
     return endHours;
   };
 
+  // Reset formularza po błędzie
+  const resetForm = () => {
+    setSelectedDate(null);
+    setSelectedStartHour('');
+    setSelectedEndHour('');
+    setDescription('');
+    setAvailableHours([]);
+    setIsLoading(false);
+    setError('');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -348,7 +360,11 @@ export default function ReservationPage() {
           </h1>
           
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <FormErrorBoundary 
+            onError={resetForm}
+            fallbackMessage="Wystąpił błąd w formularzu rezerwacji. Formularz został zresetowany."
+          >
+            <form onSubmit={handleSubmit} className="space-y-6">
             {/* Kalendarz */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-4">
@@ -601,6 +617,7 @@ export default function ReservationPage() {
               </div>
             )}
           </form>
+          </FormErrorBoundary>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useToastContext } from "../ToastProvider";
 import ImageUpload from "../ImageUpload";
+import { FormErrorBoundary } from "../ErrorBoundary";
 
 type StanowiskoFormData = {
   salaId: number;
@@ -37,6 +38,15 @@ export default function AddStationForm({ onSubmit, initialData, submitLabel = "D
       .catch(console.error);
   }, []);
 
+  // Reset formularza po błędzie
+  const resetForm = () => {
+    setNazwa('');
+    setTyp('');
+    setSalaId('');
+    setOpis('');
+    setSelectedImages([]);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (salaId === "") {
@@ -64,7 +74,11 @@ export default function AddStationForm({ onSubmit, initialData, submitLabel = "D
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <FormErrorBoundary 
+        onError={resetForm}
+        fallbackMessage="Wystąpił błąd w formularzu stanowiska. Formularz został zresetowany."
+      >
+        <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="form-group">
             <label className="form-label">Nazwa laboratorium</label>
@@ -145,7 +159,8 @@ export default function AddStationForm({ onSubmit, initialData, submitLabel = "D
             </button>
           )}
         </div>
-      </form>
+        </form>
+      </FormErrorBoundary>
     </div>
   );
 }

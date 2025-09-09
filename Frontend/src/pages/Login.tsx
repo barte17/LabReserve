@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { login } from '../services/authService';
 import { useAuth } from '../contexts/AuthContext';
+import { FormErrorBoundary } from '../components/ErrorBoundary';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -41,6 +42,18 @@ const Login = () => {
   const handlePasswordChange = (value: string) => {
     setPassword(value);
     setValidationErrors(prev => ({ ...prev, password: validatePassword(value) }));
+  };
+
+  // Reset formularza po błędzie
+  const resetForm = () => {
+    setEmail('');
+    setPassword('');
+    setError('');
+    setErrorType('');
+    setRemainingAttempts(null);
+    setLockoutInfo(null);
+    setIsLoading(false);
+    setValidationErrors({ email: '', password: '' });
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -119,7 +132,11 @@ const Login = () => {
         {/* Form */}
         <div className="card animate-scale-in">
           <div className="card-body">
-            <form onSubmit={handleLogin} className="space-y-6">
+            <FormErrorBoundary 
+              onError={resetForm}
+              fallbackMessage="Wystąpił błąd w formularzu logowania. Formularz został zresetowany."
+            >
+              <form onSubmit={handleLogin} className="space-y-6">
               <div className="form-group">
                 <label htmlFor="email" className="form-label">
                   Adres email
@@ -240,6 +257,7 @@ const Login = () => {
                 )}
               </button>
             </form>
+            </FormErrorBoundary>
           </div>
         </div>
 
