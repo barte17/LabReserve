@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { fetchSale, editSala, deleteSala } from "../services/salaService";
 import AddSalaForm from "./forms/AddRoomForm";
 import { useToastContext } from "./ToastProvider";
+import { LoadingTable } from "./LoadingStates";
+import { useMinimumLoadingDelay } from "../hooks/useMinimumLoadingDelay";
 
 type Sala = {
   id: number;
@@ -104,7 +106,12 @@ export default function SaleListAdmin({ onEdit }: Props) {
     return 0;
   });
 
-  if (loading) return <p>Ładowanie sal...</p>;
+  const shouldShowLoading = useMinimumLoadingDelay(loading, {
+    minimumDelay: 200,
+    minimumDuration: 500
+  });
+
+  if (shouldShowLoading) return <LoadingTable rows={5} columns={7} className="mt-6" />;
 
   if (editingSala) {
     return (

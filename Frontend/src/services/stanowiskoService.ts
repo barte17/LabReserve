@@ -1,6 +1,5 @@
 export const fetchStanowiska = async () => {
-  const { authenticatedFetch } = await import('./authService');
-  const res = await authenticatedFetch("/api/stanowisko");
+  const res = await fetch("/api/stanowisko");
   if (!res.ok) throw new Error("Błąd pobierania stanowisk");
   return await res.json();
 };
@@ -78,8 +77,7 @@ export const deleteStanowisko = async (id: number) => {
 };
 
 export const fetchStanowiskoById = async (id: number) => {
-  const { authenticatedFetch } = await import('./authService');
-  const res = await authenticatedFetch(`/api/stanowisko/${id}`);
+  const res = await fetch(`/api/stanowisko/${id}`);
   if (!res.ok) throw new Error("Błąd pobierania szczegółów stanowiska");
   return await res.json();
 };

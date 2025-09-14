@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import AddStationForm from "./forms/AddStationForm";
 import { fetchStanowiska, editStanowisko, deleteStanowisko } from "../services/stanowiskoService";
 import { useToastContext } from "./ToastProvider";
+import { LoadingTable } from "./LoadingStates";
+import { useMinimumLoadingDelay } from "../hooks/useMinimumLoadingDelay";
 
 type Stanowisko = {
   id: number;
@@ -78,7 +80,12 @@ export default function StanowiskaListAdmin() {
     }
   });
 
-  if (loading) return <p>Ładowanie stanowisk...</p>;
+  const shouldShowLoading = useMinimumLoadingDelay(loading, {
+    minimumDelay: 200,
+    minimumDuration: 500
+  });
+
+  if (shouldShowLoading) return <LoadingTable rows={5} columns={6} className="mt-6" />;
 
   if (editingStanowisko) {
     // Konwersja null na pusty string dla typ i opis

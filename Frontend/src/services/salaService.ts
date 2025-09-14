@@ -1,6 +1,5 @@
 export const fetchSale = async () => {
-  const { authenticatedFetch } = await import('./authService');
-  const res = await authenticatedFetch("/api/sala");
+  const res = await fetch("/api/sala");
   if (!res.ok) throw new Error("Błąd pobierania sal");
   return await res.json();
 };
@@ -78,8 +77,7 @@ export const deleteSala = async (id: number) => {
 };
 
 export const fetchSalaById = async (id: number) => {
-  const { authenticatedFetch } = await import('./authService');
-  const res = await authenticatedFetch(`/api/sala/${id}`);
+  const res = await fetch(`/api/sala/${id}`);
   if (!res.ok) throw new Error("Błąd pobierania szczegółów sali");
   return await res.json();
 };

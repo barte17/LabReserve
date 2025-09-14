@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getRooms } from "../services/api";
+import { LoadingRoomCard } from "../components/LoadingStates";
+import { useMinimumLoadingDelay } from "../hooks/useMinimumLoadingDelay";
 
 type Sala = {
   id: number;
@@ -40,12 +42,49 @@ export default function Sale() {
   // Unikalne budynki do filtra
   const uniqueBudynki = [...new Set(sale.map(sala => sala.budynek))];
 
-  if (loading) {
+  const shouldShowLoading = useMinimumLoadingDelay(loading, {
+    minimumDelay: 200, // Pokaż loading tylko jeśli ładowanie trwa dłużej niż 200ms
+    minimumDuration: 600 // Jeśli już się pokazał, trzymaj minimum 600ms
+  });
+
+  if (shouldShowLoading) {
     return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin h-12 w-12 border-4 border-primary-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-neutral-600">Ładowanie sal...</p>
+      <div className="min-h-screen bg-neutral-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header skeleton */}
+          <div className="mb-8">
+            <div className="h-8 bg-gray-300 rounded w-48 mb-2 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 rounded w-80 animate-pulse"></div>
+          </div>
+
+          {/* Filtry skeleton */}
+          <div className="filters-panel mb-8">
+            <div className="filters-grid">
+              <div className="form-group">
+                <div className="h-4 bg-gray-200 rounded w-24 mb-2 animate-pulse"></div>
+                <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+              <div className="form-group">
+                <div className="h-4 bg-gray-200 rounded w-32 mb-2 animate-pulse"></div>
+                <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Statystyki skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="card animate-pulse">
+                <div className="card-body text-center">
+                  <div className="h-8 bg-gray-300 rounded w-12 mx-auto mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-16 mx-auto"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Karty sal skeleton */}
+          <LoadingRoomCard count={6} />
         </div>
       </div>
     );

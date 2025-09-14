@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { fetchStanowiskoById } from "../services/stanowiskoService";
 import ImageGallery from "../components/ImageGallery";
+import { LoadingCard } from "../components/LoadingStates";
+import { useMinimumLoadingDelay } from "../hooks/useMinimumLoadingDelay";
 
 type StanowiskoDetails = {
   id: number;
@@ -48,18 +50,21 @@ export default function StanowiskoDetails() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  if (loading) {
+  const shouldShowLoading = useMinimumLoadingDelay(loading, {
+    minimumDelay: 150,
+    minimumDuration: 400
+  });
+
+  if (shouldShowLoading) {
     return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin h-12 w-12 border-4 border-primary-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-neutral-600">Ładowanie szczegółów stanowiska...</p>
-        </div>
+      <div className="min-h-screen bg-neutral-50 py-8">
+        <LoadingCard count={1} className="max-w-4xl mx-auto" />
       </div>
     );
   }
 
-  if (error || !stanowisko) {
+  // Nie pokazuj błędu jeśli nadal trwa ładowanie lub skeleton jest widoczny
+  if ((error || !stanowisko) && !loading && !shouldShowLoading) {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
         <div className="text-center">
@@ -68,9 +73,20 @@ export default function StanowiskoDetails() {
           </svg>
           <h2 className="text-xl font-semibold text-neutral-900 mb-2">Błąd</h2>
           <p className="text-neutral-600 mb-4">{error}</p>
+          <button
+            onClick={() => navigate('/stanowiska')}
+            className="btn btn-primary"
+          >
+            Powrót do listy stanowisk
+          </button>
         </div>
       </div>
     );
+  }
+
+  // Dodatkowy guard - nie renderuj jeśli stanowisko jest null
+  if (!stanowisko) {
+    return null;
   }
 
   return (

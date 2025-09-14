@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchMyReservations, cancelReservation } from '../services/rezerwacjaService';
 import type { RezerwacjaDetailsDto } from '../services/rezerwacjaService';
+import { LoadingTable } from '../components/LoadingStates';
+import { useMinimumLoadingDelay } from '../hooks/useMinimumLoadingDelay';
 
 export default function MyReservations() {
   const [reservations, setReservations] = useState<RezerwacjaDetailsDto[]>([]);

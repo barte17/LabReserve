@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { fetchUsers, changeUserRoles } from "../services/userService";
 import { useToastContext } from "./ToastProvider";
+import { LoadingTable } from "./LoadingStates";
+import { useMinimumLoadingDelay } from "../hooks/useMinimumLoadingDelay";
 
 export type User = {
   id: string;
@@ -62,7 +64,12 @@ export default function UsersListAdmin() {
     }
   };
 
-  if (loading) return <p>Ładowanie użytkowników...</p>;
+  const shouldShowLoading = useMinimumLoadingDelay(loading, {
+    minimumDelay: 200,
+    minimumDuration: 500
+  });
+
+  if (shouldShowLoading) return <LoadingTable rows={6} columns={5} className="mt-6" />;
   if (error) return <p className="text-red-500">{error}</p>;
 
   return (
