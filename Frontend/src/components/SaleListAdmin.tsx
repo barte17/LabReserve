@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchSale, editSala, deleteSala } from "../services/salaService";
+import { fetchSale, editSala, deleteSala, fetchSalaById } from "../services/salaService";
 import AddSalaForm from "./forms/AddRoomForm";
 import { useToastContext } from "./ToastProvider";
 import { LoadingTable } from "./LoadingStates";
@@ -32,6 +32,8 @@ export default function SaleListAdmin({ onEdit }: Props) {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [stanowiskaFilter, setStanowiskaFilter] = useState<"" | "tak" | "nie">("");
   const [editingSala, setEditingSala] = useState<Sala | null>(null);
+  const [editingSalaDetails, setEditingSalaDetails] = useState<any>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const { showSuccess, showError } = useToastContext();
   const navigate = useNavigate();
 
@@ -57,8 +59,19 @@ export default function SaleListAdmin({ onEdit }: Props) {
     }
   };
 
-  const handleEdit = (sala: Sala) => {
+  const handleEdit = async (sala: Sala) => {
     setEditingSala(sala);
+    setLoadingDetails(true);
+    try {
+      const details = await fetchSalaById(sala.id);
+      setEditingSalaDetails(details);
+    } catch (error) {
+      console.error("Błąd pobierania szczegółów sali:", error);
+      showError("Błąd pobierania szczegółów sali");
+      setEditingSala(null);
+    } finally {
+      setLoadingDetails(false);
+    }
   };
 
   const handleEditSubmit = async (data: any) => {
@@ -68,6 +81,7 @@ export default function SaleListAdmin({ onEdit }: Props) {
       const updatedSale = await fetchSale();
       setSale(updatedSale);
       setEditingSala(null);
+      setEditingSalaDetails(null);
       showSuccess("Pomyślnie zaktualizowano salę");
     } catch (e) {
       console.error(e);
@@ -114,14 +128,46 @@ export default function SaleListAdmin({ onEdit }: Props) {
   if (shouldShowLoading) return <LoadingTable rows={5} columns={7} className="mt-6" />;
 
   if (editingSala) {
+    if (loadingDetails) {
+      return (
+        <div className="max-w-3xl mx-auto px-2">
+          <h3 className="text-2xl font-bold mb-6 mt-4 text-center">Edytuj salę</h3>
+          <div className="flex justify-center items-center py-8">
+            <div className="text-gray-600">Ładowanie szczegółów sali...</div>
+          </div>
+        </div>
+      );
+    }
+
+    if (!editingSalaDetails) {
+      return (
+        <div className="max-w-3xl mx-auto px-2">
+          <h3 className="text-2xl font-bold mb-6 mt-4 text-center">Edytuj salę</h3>
+          <div className="flex justify-center items-center py-8">
+            <div className="text-red-600">Błąd ładowania szczegółów sali</div>
+          </div>
+        </div>
+      );
+    }
+
+    // Przygotowanie listy istniejących zdjęć
+    const existingImages = editingSalaDetails.zdjecia?.map((zdjecie: any) => ({
+      id: zdjecie.id,
+      url: zdjecie.url
+    })) || [];
+
     return (
       <div className="max-w-3xl mx-auto px-2">
         <h3 className="text-2xl font-bold mb-6 mt-4 text-center">Edytuj salę</h3>
         <AddSalaForm
           onSubmit={handleEditSubmit}
           initialData={editingSala}
+          existingImages={existingImages}
           submitLabel="Zapisz zmiany"
-          onCancel={() => setEditingSala(null)}
+          onCancel={() => {
+            setEditingSala(null);
+            setEditingSalaDetails(null);
+          }}
         />
       </div>
     );

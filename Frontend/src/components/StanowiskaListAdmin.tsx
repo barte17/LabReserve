@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AddStationForm from "./forms/AddStationForm";
-import { fetchStanowiska, editStanowisko, deleteStanowisko } from "../services/stanowiskoService";
+import { fetchStanowiska, editStanowisko, deleteStanowisko, fetchStanowiskoById } from "../services/stanowiskoService";
 import { useToastContext } from "./ToastProvider";
 import { LoadingTable } from "./LoadingStates";
 import { useMinimumLoadingDelay } from "../hooks/useMinimumLoadingDelay";
@@ -21,6 +21,8 @@ export default function StanowiskaListAdmin() {
   const [sortKey, setSortKey] = useState<"id" | "nazwa" | "salaId">("id");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [editingStanowisko, setEditingStanowisko] = useState<Stanowisko | null>(null);
+  const [editingStanowiskoDetails, setEditingStanowiskoDetails] = useState<any>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const { showSuccess, showError } = useToastContext();
   const navigate = useNavigate();
 
@@ -41,8 +43,19 @@ export default function StanowiskaListAdmin() {
     }
   };
 
-  const handleEdit = (stanowisko: Stanowisko) => {
+  const handleEdit = async (stanowisko: Stanowisko) => {
     setEditingStanowisko(stanowisko);
+    setLoadingDetails(true);
+    try {
+      const details = await fetchStanowiskoById(stanowisko.id);
+      setEditingStanowiskoDetails(details);
+    } catch (error) {
+      console.error("Błąd pobierania szczegółów stanowiska:", error);
+      showError("Błąd pobierania szczegółów stanowiska");
+      setEditingStanowisko(null);
+    } finally {
+      setLoadingDetails(false);
+    }
   };
 
   const handleEditSubmit = async (data: any) => {
@@ -51,6 +64,7 @@ export default function StanowiskaListAdmin() {
       await editStanowisko(editingStanowisko.id, data);
       setStanowiska((prev) => prev.map((s) => (s.id === editingStanowisko.id ? { ...s, ...data } : s)));
       setEditingStanowisko(null);
+      setEditingStanowiskoDetails(null);
       showSuccess("Pomyślnie zaktualizowano stanowisko");
     } catch (e) {
       console.error(e);
@@ -88,20 +102,53 @@ export default function StanowiskaListAdmin() {
   if (shouldShowLoading) return <LoadingTable rows={5} columns={6} className="mt-6" />;
 
   if (editingStanowisko) {
+    if (loadingDetails) {
+      return (
+        <div className="max-w-3xl mx-auto px-2">
+          <h3 className="text-2xl font-bold mb-6 mt-4 text-center">Edytuj stanowisko</h3>
+          <div className="flex justify-center items-center py-8">
+            <div className="text-gray-600">Ładowanie szczegółów stanowiska...</div>
+          </div>
+        </div>
+      );
+    }
+
+    if (!editingStanowiskoDetails) {
+      return (
+        <div className="max-w-3xl mx-auto px-2">
+          <h3 className="text-2xl font-bold mb-6 mt-4 text-center">Edytuj stanowisko</h3>
+          <div className="flex justify-center items-center py-8">
+            <div className="text-red-600">Błąd ładowania szczegółów stanowiska</div>
+          </div>
+        </div>
+      );
+    }
+
     // Konwersja null na pusty string dla typ i opis
     const initialData = {
       ...editingStanowisko,
       typ: editingStanowisko.typ ?? "",
       opis: editingStanowisko.opis ?? "",
     };
+
+    // Przygotowanie listy istniejących zdjęć
+    const existingImages = editingStanowiskoDetails.zdjecia?.map((zdjecie: any) => ({
+      id: zdjecie.id,
+      url: zdjecie.url
+    })) || [];
+
     return (
       <div className="max-w-3xl mx-auto px-2">
         <h3 className="text-2xl font-bold mb-6 mt-4 text-center">Edytuj stanowisko</h3>
         <AddStationForm
           onSubmit={handleEditSubmit}
           initialData={initialData}
+          existingImages={existingImages}
           submitLabel="Zapisz zmiany"
-          onCancel={() => setEditingStanowisko(null)}
+          onCancel={() => {
+            setEditingStanowisko(null);
+            setEditingStanowiskoDetails(null);
+          }}
         />
       </div>
     );
