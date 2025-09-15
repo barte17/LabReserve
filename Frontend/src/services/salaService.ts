@@ -33,39 +33,31 @@ export const addSala = async (data: any) => {
 export const editSala = async (id: number, data: any) => {
   const { authenticatedFetch } = await import('./authService');
   
-  // Sprawdź czy są zdjęcia do wysłania
-  if (data.zdjecia && data.zdjecia.length > 0) {
-    // Użyj FormData dla zdjęć
-    const formData = new FormData();
-    
-    // Dodanie danych formularza
-    Object.keys(data).forEach(key => {
-      if (key === 'zdjecia' && data[key]) {
-        // Dodanie plików
-        data[key].forEach((file: File) => {
-          formData.append('zdjecia', file);
-        });
-      } else if (data[key] !== null && data[key] !== undefined) {
-        formData.append(key, data[key].toString());
-      }
-    });
+  // ZAWSZE używaj FormData - backend oczekuje FormData
+  const formData = new FormData();
+  
+  // Dodanie danych formularza
+  Object.keys(data).forEach(key => {
+    if (key === 'zdjecia' && data[key]) {
+      // Dodanie nowych plików
+      data[key].forEach((file: File) => {
+        formData.append('zdjecia', file);
+      });
+    } else if (key === 'zdjeciaDoUsuniecia' && data[key]) {
+      // Dodanie ID zdjęć do usunięcia
+      data[key].forEach((id: number) => {
+        formData.append('zdjeciaDoUsuniecia', id.toString());
+      });
+    } else if (data[key] !== null && data[key] !== undefined) {
+      formData.append(key, data[key].toString());
+    }
+  });
 
-    const res = await authenticatedFetch(`/api/sala/${id}`, {
-      method: "PUT",
-      body: formData, // Bez Content-Type - browser ustawi automatycznie z boundary
-    });
-    if (!res.ok) throw new Error("Błąd edycji sali");
-  } else {
-    // Bez zdjęć - użyj JSON
-    const res = await authenticatedFetch(`/api/sala/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) throw new Error("Błąd edycji sali");
-  }
+  const res = await authenticatedFetch(`/api/sala/${id}`, {
+    method: "PUT",
+    body: formData, // Backend oczekuje FormData
+  });
+  if (!res.ok) throw new Error("Błąd edycji sali");
 };
 
 export const deleteSala = async (id: number) => {

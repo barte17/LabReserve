@@ -9,6 +9,7 @@ type StanowiskoFormData = {
   typ: string;
   opis: string;
   zdjecia?: File[];
+  zdjeciaDoUsuniecia?: number[];
 };
 
 type SalaTyp = {
@@ -17,11 +18,12 @@ type SalaTyp = {
   budynek: string;
 };
 
-export default function AddStationForm({ onSubmit, initialData, submitLabel = "Dodaj", onCancel }: {
+export default function AddStationForm({ onSubmit, initialData, submitLabel = "Dodaj", onCancel, existingImages = [] }: {
   onSubmit: (data: StanowiskoFormData) => void;
   initialData?: Partial<StanowiskoFormData>;
   submitLabel?: string;
   onCancel?: () => void;
+  existingImages?: { id: number; url: string }[];
 }) {
   const [sale, setSale] = useState<SalaTyp[]>([]);
   const [salaId, setSalaId] = useState<number | "">(initialData?.salaId ?? "");
@@ -29,6 +31,7 @@ export default function AddStationForm({ onSubmit, initialData, submitLabel = "D
   const [typ, setTyp] = useState(initialData?.typ ?? "");
   const [opis, setOpis] = useState(initialData?.opis ?? "");
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [imagesToDelete, setImagesToDelete] = useState<number[]>([]);
   const { showWarning } = useToastContext();
 
   useEffect(() => {
@@ -60,6 +63,7 @@ export default function AddStationForm({ onSubmit, initialData, submitLabel = "D
       typ,
       opis,
       zdjecia: selectedImages,
+      zdjeciaDoUsuniecia: imagesToDelete,
     });
   };
 
@@ -138,6 +142,8 @@ export default function AddStationForm({ onSubmit, initialData, submitLabel = "D
           </p>
           <ImageUpload 
             onFilesChange={setSelectedImages}
+            onExistingImagesChange={setImagesToDelete}
+            existingImages={existingImages}
             maxFiles={8}
             maxSizeInMB={5}
           />

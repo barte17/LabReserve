@@ -12,6 +12,7 @@ type SalaFormData = {
   opis: string;
   idOpiekuna: string | null;
   zdjecia?: File[];
+  zdjeciaDoUsuniecia?: number[];
 };
 
 type User = {
@@ -20,11 +21,12 @@ type User = {
   nazwisko: string;
 };
 
-export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Dodaj", onCancel }: {
+export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Dodaj", onCancel, existingImages = [] }: {
   onSubmit: (data: SalaFormData) => void;
   initialData?: Partial<SalaFormData>;
   submitLabel?: string;
   onCancel?: () => void;
+  existingImages?: { id: number; url: string }[];
 }) {
   const [numer, setNumer] = useState(initialData?.numer?.toString() ?? "");
   const [budynek, setBudynek] = useState(initialData?.budynek ?? "");
@@ -36,6 +38,7 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
   const [idOpiekuna, setIdOpiekuna] = useState(initialData?.idOpiekuna ?? "");
   const [nauczyciele, setNauczyciele] = useState<User[]>([]);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [imagesToDelete, setImagesToDelete] = useState<number[]>([]);
   
   
   const [validationErrors, setValidationErrors] = useState({
@@ -147,12 +150,13 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
     setNumer('');
     setBudynek('');
     setMaxOsob('');
-    setOpiekunId('');
+    setIdOpiekuna('');
     setCzynnaOd('');
     setCzynnaDo('');
     setOpis('');
     setMaStanowiska(false);
-    setZdjecia([]);
+    setSelectedImages([]);
+    setImagesToDelete([]);
     setValidationErrors({
       numer: '',
       budynek: '',
@@ -196,7 +200,8 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
       czynnaDo: formatTimeToTimeSpan(czynnaDo),
       opis,
       idOpiekuna: idOpiekuna || null,
-      zdjecia: selectedImages
+      zdjecia: selectedImages,
+      zdjeciaDoUsuniecia: imagesToDelete
     };
 
     onSubmit(parsedData);
@@ -381,6 +386,8 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
           </p>
           <ImageUpload 
             onFilesChange={setSelectedImages}
+            onExistingImagesChange={setImagesToDelete}
+            existingImages={existingImages}
             maxFiles={8}
             maxSizeInMB={5}
           />

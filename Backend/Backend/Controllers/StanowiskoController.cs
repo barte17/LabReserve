@@ -98,7 +98,8 @@ namespace Backend.Controllers
 
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> UpdateStanowisko(int id, [FromForm] CreateStanowiskoDto dto, [FromForm] List<IFormFile>? zdjecia)
+        public async Task<IActionResult> UpdateStanowisko(int id, [FromForm] CreateStanowiskoDto dto, 
+            [FromForm] List<IFormFile>? zdjecia, [FromForm] List<int>? zdjeciaDoUsuniecia)
         {
             var stanowisko = await _context.Stanowiska.FindAsync(id);
             if (stanowisko == null) return NotFound();
@@ -110,22 +111,38 @@ namespace Backend.Controllers
 
             await _context.SaveChangesAsync();
 
-            // Obsługa nowych zdjęć - zastąp stare zdjęcia nowymi
-            if (zdjecia != null && zdjecia.Count > 0)
+            // Obsługa selektywnego usuwania zdjęć
+            if (zdjeciaDoUsuniecia != null && zdjeciaDoUsuniecia.Count > 0)
             {
-                // Usuń stare zdjęcia z bazy danych
-                var stareZdjecia = await _context.Zdjecia.Where(z => z.StanowiskoId == id).ToListAsync();
-                _context.Zdjecia.RemoveRange(stareZdjecia);
-                await _context.SaveChangesAsync();
+                var zdjeciaDoUsunieciaFromDb = await _context.Zdjecia
+                    .Where(z => z.StanowiskoId == id && zdjeciaDoUsuniecia.Contains(z.Id))
+                    .ToListAsync();
 
-                // Usuń stare pliki z dysku
-                var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "stanowiska", $"stanowisko-{id}");
-                if (Directory.Exists(uploadsPath))
+                foreach (var zdjecie in zdjeciaDoUsunieciaFromDb)
                 {
-                    Directory.Delete(uploadsPath, true);
+                    // Usuń plik z dysku
+                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", zdjecie.Url.TrimStart('/'));
+                    if (System.IO.File.Exists(filePath))
+                    {
+                        try
+                        {
+                            System.IO.File.Delete(filePath);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error deleting file {filePath}: {ex.Message}");
+                        }
+                    }
                 }
 
-                // Dodaj nowe zdjęcia
+                // Usuń rekordy z bazy
+                _context.Zdjecia.RemoveRange(zdjeciaDoUsunieciaFromDb);
+                await _context.SaveChangesAsync();
+            }
+
+            // Obsługa dodawania nowych zdjęć
+            if (zdjecia != null && zdjecia.Count > 0)
+            {
                 await SaveZdjeciaForStanowisko(id, zdjecia);
             }
 

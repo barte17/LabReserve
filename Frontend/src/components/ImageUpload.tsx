@@ -1,26 +1,53 @@
-import { useState, useRef, DragEvent, ChangeEvent } from 'react';
+import { useState, useRef, DragEvent, ChangeEvent, useEffect } from 'react';
 
 interface ImageFile {
   file: File;
   preview: string;
   id: string;
+  isNew: true;
 }
+
+interface ExistingImage {
+  id: number;
+  url: string;
+  isNew: false;
+  markedForDeletion?: boolean;
+}
+
+type ImageItem = ImageFile | ExistingImage;
 
 interface ImageUploadProps {
   onFilesChange: (files: File[]) => void;
+  onExistingImagesChange?: (imagesToDelete: number[]) => void;
+  existingImages?: { id: number; url: string }[];
   maxFiles?: number;
   maxSizeInMB?: number;
 }
 
 export default function ImageUpload({ 
-  onFilesChange, 
+  onFilesChange,
+  onExistingImagesChange,
+  existingImages = [],
   maxFiles = 10, 
   maxSizeInMB = 5 
 }: ImageUploadProps) {
-  const [images, setImages] = useState<ImageFile[]>([]);
+  const [images, setImages] = useState<ImageItem[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [error, setError] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Inicjalizuj istniejące zdjęcia
+  useEffect(() => {
+    if (existingImages.length > 0) {
+      const existingImageItems: ExistingImage[] = existingImages.map(img => ({
+        id: img.id,
+        url: img.url,
+        isNew: false,
+        markedForDeletion: false
+      }));
+      setImages(existingImageItems);
+    }
+  }, [existingImages]);
 
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
   const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
@@ -40,6 +67,11 @@ export default function ImageUpload({
     const newImages: ImageFile[] = [];
     let errorMessages: string[] = [];
 
+    // Policz aktualne aktywne zdjęcia (nie oznaczone do usunięcia)
+    const activeImagesCount = images.filter(img => 
+      img.isNew || (!img.isNew && !img.markedForDeletion)
+    ).length;
+
     Array.from(fileList).forEach(file => {
       const validationError = validateFile(file);
       if (validationError) {
@@ -47,7 +79,7 @@ export default function ImageUpload({
         return;
       }
 
-      if (images.length + newImages.length >= maxFiles) {
+      if (activeImagesCount + newImages.length >= maxFiles) {
         errorMessages.push(`Maksymalna liczba plików: ${maxFiles}`);
         return;
       }
@@ -56,7 +88,7 @@ export default function ImageUpload({
       const preview = URL.createObjectURL(file);
       
       newFiles.push(file);
-      newImages.push({ file, preview, id });
+      newImages.push({ file, preview, id, isNew: true });
     });
 
     if (errorMessages.length > 0) {
@@ -67,7 +99,12 @@ export default function ImageUpload({
     if (newImages.length > 0) {
       const updatedImages = [...images, ...newImages];
       setImages(updatedImages);
-      onFilesChange(updatedImages.map(img => img.file));
+      
+      // Notify parent tylko o nowych plikach
+      const allNewFiles = updatedImages
+        .filter((img): img is ImageFile => img.isNew)
+        .map(img => img.file);
+      onFilesChange(allNewFiles);
     }
   };
 
@@ -101,16 +138,34 @@ export default function ImageUpload({
     }
   };
 
-  const removeImage = (id: string) => {
-    const updatedImages = images.filter(img => {
-      if (img.id === id) {
+  const removeImage = (id: string | number) => {
+    const updatedImages = images.map(img => {
+      if (img.isNew && img.id === id) {
+        // Usuń nowe zdjęcie całkowicie
         URL.revokeObjectURL(img.preview);
-        return false;
+        return null;
+      } else if (!img.isNew && img.id === id) {
+        // Oznacz istniejące zdjęcie do usunięcia
+        return { ...img, markedForDeletion: !img.markedForDeletion };
       }
-      return true;
-    });
+      return img;
+    }).filter(Boolean) as ImageItem[];
+
     setImages(updatedImages);
-    onFilesChange(updatedImages.map(img => img.file));
+    
+    // Notify parent o nowych plikach
+    const allNewFiles = updatedImages
+      .filter((img): img is ImageFile => img.isNew)
+      .map(img => img.file);
+    onFilesChange(allNewFiles);
+    
+    // Notify parent o istniejących zdjęciach do usunięcia
+    if (onExistingImagesChange) {
+      const imagesToDelete = updatedImages
+        .filter((img): img is ExistingImage => !img.isNew && img.markedForDeletion)
+        .map(img => img.id);
+      onExistingImagesChange(imagesToDelete);
+    }
   };
 
   const openFileDialog = () => {
@@ -181,43 +236,87 @@ export default function ImageUpload({
       {/* Preview Grid */}
       {images.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {images.map((image) => (
-            <div key={image.id} className="relative group">
-              <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
-                <img
-                  src={image.preview}
-                  alt="Preview"
-                  className="w-full h-full object-cover"
-                />
+          {images.map((image) => {
+            const isMarkedForDeletion = !image.isNew && image.markedForDeletion;
+            const imageUrl = image.isNew ? image.preview : `http://localhost:3000${image.url}`;
+            
+            return (
+              <div key={image.id} className="relative group">
+                <div className={`aspect-square rounded-lg overflow-hidden bg-gray-100 transition-all ${
+                  isMarkedForDeletion ? 'opacity-50 grayscale' : ''
+                }`}>
+                  <img
+                    src={imageUrl}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                  
+                  {/* Overlay for marked for deletion */}
+                  {isMarkedForDeletion && (
+                    <div className="absolute inset-0 bg-red-500 bg-opacity-30 flex items-center justify-center">
+                      <span className="text-white font-bold text-sm bg-red-600 px-2 py-1 rounded">
+                        DO USUNIĘCIA
+                      </span>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Remove/Restore Button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeImage(image.id);
+                  }}
+                  className={`absolute top-2 right-2 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm transition-colors opacity-0 group-hover:opacity-100 ${
+                    isMarkedForDeletion 
+                      ? 'bg-green-500 hover:bg-green-600' 
+                      : 'bg-red-500 hover:bg-red-600'
+                  }`}
+                  title={isMarkedForDeletion ? 'Przywróć zdjęcie' : 'Usuń zdjęcie'}
+                >
+                  {isMarkedForDeletion ? '↶' : '×'}
+                </button>
+                
+                {/* Badge for existing vs new images */}
+                <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {image.isNew ? (
+                    <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                      NOWE
+                    </span>
+                  ) : (
+                    <span className="bg-gray-500 text-white text-xs px-2 py-1 rounded">
+                      ISTNIEJĄCE
+                    </span>
+                  )}
+                </div>
+                
+                {/* File Name */}
+                <p className="mt-1 text-xs text-gray-500 truncate">
+                  {image.isNew ? image.file.name : `Zdjęcie ${image.id}`}
+                </p>
               </div>
-              
-              {/* Remove Button */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeImage(image.id);
-                }}
-                className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
-              >
-                ×
-              </button>
-              
-              {/* File Name */}
-              <p className="mt-1 text-xs text-gray-500 truncate">
-                {image.file.name}
-              </p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       {/* Files Count */}
-      {images.length > 0 && (
-        <p className="text-sm text-gray-600">
-          Wybrano {images.length} z {maxFiles} plików
-        </p>
-      )}
+      {images.length > 0 && (() => {
+        const activeImages = images.filter(img => img.isNew || (!img.isNew && !img.markedForDeletion));
+        const newImages = images.filter(img => img.isNew);
+        const existingImages = images.filter(img => !img.isNew && !img.markedForDeletion);
+        const markedForDeletion = images.filter(img => !img.isNew && img.markedForDeletion);
+        
+        return (
+          <div className="text-sm text-gray-600 space-y-1">
+            <p>Aktywne zdjęcia: {activeImages.length} z {maxFiles}</p>
+            {newImages.length > 0 && <p className="text-blue-600">• Nowe: {newImages.length}</p>}
+            {existingImages.length > 0 && <p className="text-gray-600">• Istniejące: {existingImages.length}</p>}
+            {markedForDeletion.length > 0 && <p className="text-red-600">• Do usunięcia: {markedForDeletion.length}</p>}
+          </div>
+        );
+      })()}
     </div>
   );
 }
