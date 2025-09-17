@@ -60,6 +60,26 @@ export const editSala = async (id: number, data: any) => {
   if (!res.ok) throw new Error("Błąd edycji sali");
 };
 
+// Funkcje dla opiekuna
+export const fetchMojeSale = async () => {
+  const { authenticatedFetch } = await import('./authService');
+  const res = await authenticatedFetch("/api/sala/opiekun/me");
+  if (!res.ok) throw new Error("Błąd pobierania sal opiekuna");
+  return res.json();
+};
+
+export const updateMojaSala = async (id: number, data: { opis?: string; czynnaOd?: string; czynnaDo?: string }) => {
+  const { authenticatedFetch } = await import('./authService');
+  const res = await authenticatedFetch(`/api/sala/opiekun/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error("Błąd edycji sali");
+};
+
 export const deleteSala = async (id: number) => {
   const { authenticatedFetch } = await import('./authService');
   const res = await authenticatedFetch(`/api/sala/${id}`, {

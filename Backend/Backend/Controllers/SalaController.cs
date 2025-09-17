@@ -135,6 +135,58 @@ namespace Backend.Controllers
             return Ok(sale);
         }
 
+        [HttpGet("opiekun/me")]
+        [Authorize(Roles = "Opiekun,Admin")]
+        public async Task<ActionResult<IEnumerable<SalaDto>>> GetMojeSale()
+        {
+            var userId = User.Identity.Name;
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == userId);
+            
+            if (user == null) return NotFound("Użytkownik nie istnieje");
+
+            var mojeSale = await _context.Sale
+                .Include(s => s.Opiekun)
+                .Where(s => s.IdOpiekuna == user.Id)
+                .Select(s => new SalaDto
+                {
+                    Id = s.Id,
+                    Numer = s.Numer,
+                    Budynek = s.Budynek,
+                    MaxOsob = s.MaxOsob,
+                    MaStanowiska = s.MaStanowiska,
+                    CzynnaOd = s.CzynnaOd,
+                    CzynnaDo = s.CzynnaDo,
+                    Opis = s.Opis,
+                    IdOpiekuna = s.IdOpiekuna,
+                    ImieOpiekuna = s.Opiekun != null ? s.Opiekun.Imie : null,
+                    NazwiskoOpiekuna = s.Opiekun != null ? s.Opiekun.Nazwisko : null
+                })
+                .ToListAsync();
+
+            return Ok(mojeSale);
+        }
+
+        [HttpPut("opiekun/{id}")]
+        [Authorize(Roles = "Opiekun,Admin")]
+        public async Task<IActionResult> UpdateMojaSala(int id, [FromBody] UpdateMojaSalaDto dto)
+        {
+            var userId = User.Identity.Name;
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == userId);
+            
+            if (user == null) return NotFound("Użytkownik nie istnieje");
+
+            var sala = await _context.Sale.FirstOrDefaultAsync(s => s.Id == id && s.IdOpiekuna == user.Id);
+            if (sala == null) return NotFound("Sala nie istnieje lub nie jesteś jej opiekunem");
+
+            // Opiekun może edytować tylko opis i godziny dostępności
+            sala.Opis = dto.Opis ?? sala.Opis;
+            sala.CzynnaOd = dto.CzynnaOd ?? sala.CzynnaOd;
+            sala.CzynnaDo = dto.CzynnaDo ?? sala.CzynnaDo;
+
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateSala(int id, [FromForm] CreateSalaDto dto, 

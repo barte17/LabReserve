@@ -56,12 +56,12 @@ export function Navbar() {
                   Moje Rezerwacje
                 </Link>
               )}
-              {isLogged && hasRole("Admin") && (
+              {isLogged && (hasRole("Admin") || hasRole("Opiekun")) && (
                 <Link 
-                  to="/panel-admina" 
-                  className={isActiveLink("/panel-admina") ? "navbar-link-active" : "navbar-link"}
+                  to="/panel" 
+                  className={isActiveLink("/panel") ? "navbar-link-active" : "navbar-link"}
                 >
-                  Panel admina
+                  Panel zarządzania
                 </Link>
               )}
             </div>
@@ -158,17 +158,17 @@ export function Navbar() {
                   Moje Rezerwacje
                 </Link>
               )}
-              {isLogged && hasRole("Admin") && (
+              {isLogged && (hasRole("Admin") || hasRole("Opiekun")) && (
                 <Link 
-                  to="/panel-admina" 
+                  to="/panel" 
                   className={`block px-3 py-2 rounded-lg text-base font-medium transition-all duration-200 ${
-                    isActiveLink("/panel-admina") 
+                    isActiveLink("/panel") 
                       ? "bg-primary-100 text-primary-700" 
                       : "text-neutral-700 hover:text-primary-600 hover:bg-primary-50"
                   }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  Panel admina
+                  Panel zarządzania
                 </Link>
               )}
               

@@ -524,5 +524,82 @@ namespace Backend.Controllers
 
             return startTime >= sala.CzynnaOd && endTime <= sala.CzynnaDo;
         }
+
+        // Endpointy dla opiekuna
+        [HttpGet("opiekun/me")]
+        [Authorize(Roles = "Opiekun,Admin")]
+        public async Task<ActionResult<IEnumerable<object>>> GetMojeRezerwacje()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            // Pobierz rezerwacje dla sal, dla których user jest opiekunem
+            var rezerwacje = await _context.Rezerwacje
+                .Include(r => r.Sala)
+                .Include(r => r.Stanowisko)
+                    .ThenInclude(s => s.Sala)
+                .Include(r => r.Uzytkownik)
+                .Where(r => (r.Sala != null && r.Sala.IdOpiekuna == userId) || 
+                           (r.Stanowisko != null && r.Stanowisko.Sala.IdOpiekuna == userId))
+                .OrderByDescending(r => r.DataUtworzenia)
+                .Select(r => new
+                {
+                    Id = r.Id,
+                    DataStart = r.DataStart,
+                    DataKoniec = r.DataKoniec,
+                    Opis = r.Opis,
+                    Status = r.Status,
+                    DataUtworzenia = r.DataUtworzenia,
+                    UzytkownikEmail = r.Uzytkownik.Email,
+                    UzytkownikImie = r.Uzytkownik.Imie,
+                    UzytkownikNazwisko = r.Uzytkownik.Nazwisko,
+                    SalaId = r.SalaId,
+                    SalaNumer = r.Sala != null ? r.Sala.Numer : (int?)null,
+                    SalaBudynek = r.Sala != null ? r.Sala.Budynek : null,
+                    StanowiskoId = r.StanowiskoId,
+                    StanowiskoNazwa = r.Stanowisko != null ? r.Stanowisko.Nazwa : null,
+                    StanowiskoSala = r.Stanowisko != null ? $"{r.Stanowisko.Sala.Numer} - {r.Stanowisko.Sala.Budynek}" : null
+                })
+                .ToListAsync();
+
+            return Ok(rezerwacje);
+        }
+
+        [HttpPut("opiekun/{id}/status")]
+        [Authorize(Roles = "Opiekun,Admin")]
+        public async Task<IActionResult> UpdateStatusRezerwacji(int id, [FromBody] UpdateStatusDto dto)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var rezerwacja = await _context.Rezerwacje
+                .Include(r => r.Sala)
+                .Include(r => r.Stanowisko)
+                    .ThenInclude(s => s.Sala)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (rezerwacja == null) return NotFound("Rezerwacja nie istnieje");
+
+            // Sprawdź czy opiekun ma uprawnienia do tej rezerwacji
+            bool hasPermission = (rezerwacja.Sala != null && rezerwacja.Sala.IdOpiekuna == userId) ||
+                                (rezerwacja.Stanowisko != null && rezerwacja.Stanowisko.Sala.IdOpiekuna == userId);
+
+            if (!hasPermission && !User.IsInRole("Admin"))
+            {
+                return Forbid("Nie masz uprawnień do zarządzania tą rezerwacją");
+            }
+
+            // Walidacja statusu
+            var allowedStatuses = new[] { "oczekujące", "zaakceptowano", "anulowane", "odrzucono" };
+            if (!allowedStatuses.Contains(dto.Status))
+            {
+                return BadRequest("Nieprawidłowy status rezerwacji");
+            }
+
+            rezerwacja.Status = dto.Status;
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
     }
 }

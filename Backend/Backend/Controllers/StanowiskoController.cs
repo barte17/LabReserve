@@ -160,5 +160,59 @@ namespace Backend.Controllers
             return NoContent();
         }
 
+        // Endpointy dla opiekuna
+        [HttpGet("opiekun/me")]
+        [Authorize(Roles = "Opiekun,Admin")]
+        public async Task<ActionResult<IEnumerable<object>>> GetMojeStanowiska()
+        {
+            var userId = User.Identity.Name;
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == userId);
+            
+            if (user == null) return NotFound("Użytkownik nie istnieje");
+
+            // Pobierz stanowiska z sal, dla których user jest opiekunem
+            var mojeStanowiska = await _context.Stanowiska
+                .Include(s => s.Sala)
+                .Where(s => s.Sala.IdOpiekuna == user.Id)
+                .Select(s => new
+                {
+                    Id = s.Id,
+                    Nazwa = s.Nazwa,
+                    Typ = s.Typ,
+                    Opis = s.Opis,
+                    SalaId = s.SalaId,
+                    SalaNumer = s.Sala.Numer,
+                    SalaBudynek = s.Sala.Budynek
+                })
+                .ToListAsync();
+
+            return Ok(mojeStanowiska);
+        }
+
+        [HttpPut("opiekun/{id}")]
+        [Authorize(Roles = "Opiekun,Admin")]
+        public async Task<IActionResult> UpdateMojeStanowisko(int id, [FromBody] UpdateMojeStanowiskoDto dto)
+        {
+            var userId = User.Identity.Name;
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == userId);
+            
+            if (user == null) return NotFound("Użytkownik nie istnieje");
+
+            var stanowisko = await _context.Stanowiska
+                .Include(s => s.Sala)
+                .FirstOrDefaultAsync(s => s.Id == id && s.Sala.IdOpiekuna == user.Id);
+
+            if (stanowisko == null) return NotFound("Stanowisko nie istnieje lub nie jesteś opiekunem tej sali");
+
+            // Opiekun może edytować tylko opis stanowiska
+            if (!string.IsNullOrEmpty(dto.Opis))
+            {
+                stanowisko.Opis = dto.Opis;
+            }
+
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
     }
 }

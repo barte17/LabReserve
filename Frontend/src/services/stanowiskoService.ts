@@ -68,6 +68,26 @@ export const deleteStanowisko = async (id: number) => {
   if (!res.ok) throw new Error("Błąd usuwania stanowiska");
 };
 
+// Funkcje dla opiekuna
+export const fetchMojeStanowiska = async () => {
+  const { authenticatedFetch } = await import('./authService');
+  const res = await authenticatedFetch("/api/stanowisko/opiekun/me");
+  if (!res.ok) throw new Error("Błąd pobierania stanowisk opiekuna");
+  return res.json();
+};
+
+export const updateMojeStanowisko = async (id: number, data: { opis?: string }) => {
+  const { authenticatedFetch } = await import('./authService');
+  const res = await authenticatedFetch(`/api/stanowisko/opiekun/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error("Błąd edycji stanowiska");
+};
+
 export const fetchStanowiskoById = async (id: number) => {
   const res = await fetch(`/api/stanowisko/${id}`);
   if (!res.ok) throw new Error("Błąd pobierania szczegółów stanowiska");

@@ -143,3 +143,102 @@ export const cancelReservation = async (id: number) => {
   
   return await res.json();
 };
+
+// Funkcje dla opiekuna
+export const fetchMojeRezerwacje = async () => {
+  const { authenticatedFetch } = await import('./authService');
+  const res = await authenticatedFetch("/api/rezerwacja/opiekun/me");
+  if (!res.ok) throw new Error("Błąd pobierania rezerwacji opiekuna");
+  return res.json();
+};
+
+export const updateStatusRezerwacji = async (id: number, status: string) => {
+  const { authenticatedFetch } = await import('./authService');
+  const res = await authenticatedFetch(`/api/rezerwacja/opiekun/${id}/status`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ status })
+  });
+  if (!res.ok) throw new Error("Błąd aktualizacji statusu rezerwacji");
+};
+
+// Generowanie ostatnich aktywności z rezerwacji (Opcja A - bez nowej tabeli)
+export const generateRecentActivities = (rezerwacje: any[]) => {
+  // Sortuj po dacie utworzenia i weź ostatnie 7 dni
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  
+  return rezerwacje
+    .filter(r => new Date(r.dataUtworzenia) > sevenDaysAgo)
+    .slice(0, 10) // Max 10 aktywności
+    .map(r => ({
+      action: getActionText(r.status),
+      details: getDetailsText(r),
+      time: getTimeAgo(r.dataUtworzenia),
+      type: getActivityType(r.status),
+      icon: getActivityIcon(r.status)
+    }));
+};
+
+const getActionText = (status: string) => {
+  switch (status) {
+    case 'oczekujące': return 'Nowa rezerwacja';
+    case 'zaakceptowano': return 'Zatwierdzono rezerwację';
+    case 'odrzucono': return 'Odrzucono rezerwację';
+    case 'anulowane': return 'Anulowano rezerwację';
+    default: return 'Zmiana rezerwacji';
+  }
+};
+
+const getDetailsText = (rezerwacja: any) => {
+  const location = rezerwacja.salaId 
+    ? `Sala ${rezerwacja.salaNumer} - ${rezerwacja.salaBudynek}`
+    : `${rezerwacja.stanowiskoNazwa} (${rezerwacja.stanowiskoSala})`;
+  
+  const date = new Date(rezerwacja.dataStart).toLocaleDateString('pl-PL');
+  const time = new Date(rezerwacja.dataStart).toLocaleTimeString('pl-PL', { 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  });
+  
+  return `${location} • ${date} ${time}`;
+};
+
+const getTimeAgo = (dateString: string) => {
+  const now = new Date();
+  const date = new Date(dateString);
+  const diffMs = now.getTime() - date.getTime();
+  
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffMinutes < 60) {
+    return `${diffMinutes} min temu`;
+  } else if (diffHours < 24) {
+    return `${diffHours} godz. temu`;
+  } else {
+    return `${diffDays} dni temu`;
+  }
+};
+
+const getActivityType = (status: string) => {
+  switch (status) {
+    case 'oczekujące': return 'new';
+    case 'zaakceptowano': return 'approved';
+    case 'odrzucono': return 'rejected';
+    case 'anulowane': return 'cancelled';
+    default: return 'updated';
+  }
+};
+
+const getActivityIcon = (status: string) => {
+  switch (status) {
+    case 'oczekujące': return '📅';
+    case 'zaakceptowano': return '✅';
+    case 'odrzucono': return '❌';
+    case 'anulowane': return '🚫';
+    default: return '🔄';
+  }
+};

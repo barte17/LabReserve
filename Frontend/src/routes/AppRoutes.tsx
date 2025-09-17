@@ -14,6 +14,8 @@ import MyReservations from '../pages/MyReservations';
 import PublicRoute from "../routes/PublicRoute";
 import { AdminRoute } from "../routes/AdminRoute";
 import { PageErrorBoundary } from "../components/ErrorBoundary";
+import UserDashboard from "../components/dashboard/UserDashboard";
+import ProtectedRoute from "../routes/ProtectedRoute";
 
 export function AppRoutes() {
   return (
@@ -62,6 +64,16 @@ export function AppRoutes() {
         </PageErrorBoundary>
       } />
 
+      {/* Nowy unified dashboard */}
+      <Route path="/panel" element={
+        <ProtectedRoute>
+          <PageErrorBoundary fallbackPath="/" fallbackText="Strona główna">
+            <UserDashboard />
+          </PageErrorBoundary>
+        </ProtectedRoute>
+      } />
+
+      {/* Backward compatibility - stary panel admina */}
       <Route path="/panel-admina" element={
         <AdminRoute>
           <PageErrorBoundary fallbackPath="/" fallbackText="Strona główna">
