@@ -4,6 +4,7 @@ import React from 'react';
 import SaleListAdmin from '../SaleListAdmin';
 import StanowiskaListAdmin from '../StanowiskaListAdmin';
 import UsersListAdmin from '../UsersListAdmin';
+import RezerwacjeList from '../RezerwacjeList';
 
 // Import nowych komponentów opiekun (będą utworzone)
 import OpiekunDashboard from './panels/opiekun/OpiekunDashboard';
@@ -17,7 +18,7 @@ import RezerwujSale from './panels/user/RezerwujSale';
 import MojeRezerwacje from './panels/user/MojeRezerwacje';
 import UserProfile from './panels/user/UserProfile';
 
-// Import admina dashboard (będzie utworzony)
+// Import adminowych komponentów
 import AdminDashboard from './panels/admin/AdminDashboard';
 
 interface DashboardContentProps {
@@ -38,7 +39,7 @@ export default function DashboardContent({ role, activeSection }: DashboardConte
       case 'uzytkownicy':
         return <UsersListAdmin />;
       case 'rezerwacje':
-        return <div className="text-center py-8 text-gray-500">Moduł rezerwacji w przygotowaniu...</div>;
+        return <RezerwacjeList />;
       default:
         return <AdminDashboard />;
     }

@@ -156,14 +156,6 @@ export default function StanowiskaListAdmin() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h3 className="text-2xl font-bold text-neutral-900 mb-2">
-          Stanowiska laboratoryjne - zarządzanie
-        </h3>
-        <p className="text-neutral-600">
-          Edytuj i zarządzaj stanowiskami laboratoryjnymi w systemie
-        </p>
-      </div>
       <div className="filters-panel mb-6">
         <div className="form-group">
           <label className="form-label">Wyszukaj stanowisko</label>

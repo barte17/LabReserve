@@ -387,6 +387,41 @@ public async Task<IActionResult> Me()
     });
 }
 
+        [HttpGet("stats")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<object>> GetUserStats()
+        {
+            var users = await _userManager.Users.ToListAsync();
+            
+            // Policz użytkowników według ról
+            var adminCount = 0;
+            var opiekunCount = 0;
+            var regularCount = 0;
+            var unconfirmedCount = 0;
+
+            foreach (var user in users)
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+                if (roles.Contains("Admin"))
+                    adminCount++;
+                else if (roles.Contains("Opiekun"))
+                    opiekunCount++;
+                else if (roles.Count > 0) // Has any role - confirmed user
+                    regularCount++;
+                else // No roles - unconfirmed user
+                    unconfirmedCount++;
+            }
+
+            return Ok(new
+            {
+                TotalUsers = users.Count,
+                AdminUsers = adminCount,
+                OpiekunUsers = opiekunCount,
+                RegularUsers = regularCount,
+                UnconfirmedUsers = unconfirmedCount
+            });
+        }
+
     }
 
 }

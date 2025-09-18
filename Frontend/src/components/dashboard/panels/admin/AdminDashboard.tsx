@@ -1,43 +1,133 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { fetchSale } from '../../../../services/salaService';
+import { fetchStanowiska } from '../../../../services/stanowiskoService';
+import { fetchUserStats, fetchRezerwacjeStats } from '../../../../services/statsService';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-
-  const stats = [
+  const [stats, setStats] = useState([
     {
       title: 'Sale',
-      value: '12',
-      change: '+2 w tym miesiącu',
+      value: '0',
+      change: 'Ładowanie...',
       icon: '🏢',
       color: 'bg-blue-500',
       href: '/panel?view=admin&section=sale'
     },
     {
       title: 'Stanowiska', 
-      value: '48',
-      change: '+8 w tym miesiącu',
+      value: '0',
+      change: 'Ładowanie...',
       icon: '💻',
       color: 'bg-green-500',
       href: '/panel?view=admin&section=stanowiska'
     },
     {
       title: 'Użytkownicy',
-      value: '156',
-      change: '+12 nowych',
+      value: '0',
+      change: 'Ładowanie...',
       icon: '👥',
       color: 'bg-purple-500',
       href: '/panel?view=admin&section=uzytkownicy'
     },
     {
       title: 'Rezerwacje',
-      value: '324',
-      change: '+45 dziś',
+      value: '0',
+      change: 'Ładowanie...',
       icon: '📅',
       color: 'bg-red-500',
       href: '/panel?view=admin&section=rezerwacje'
     }
-  ];
+  ]);
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        // Pobierz wszystkie dane z API
+        const [saleData, stanowiskaData, userStatsData, rezerwacjeStatsData] = await Promise.all([
+          fetchSale(),
+          fetchStanowiska(),
+          fetchUserStats(),
+          fetchRezerwacjeStats()
+        ]);
+
+        setStats([
+          {
+            title: 'Sale',
+            value: saleData.length.toString(),
+            change: `${saleData.length} sal w systemie`,
+            icon: '🏢',
+            color: 'bg-blue-500',
+            href: '/panel?view=admin&section=sale'
+          },
+          {
+            title: 'Stanowiska', 
+            value: stanowiskaData.length.toString(),
+            change: `${stanowiskaData.length} stanowisk`,
+            icon: '💻',
+            color: 'bg-green-500',
+            href: '/panel?view=admin&section=stanowiska'
+          },
+          {
+            title: 'Użytkownicy',
+            value: userStatsData.totalUsers.toString(),
+            change: `${userStatsData.unconfirmedUsers} oczekuje zatwierdzenia`,
+            icon: '👥',
+            color: 'bg-purple-500',
+            href: '/panel?view=admin&section=uzytkownicy'
+          },
+          {
+            title: 'Rezerwacje',
+            value: rezerwacjeStatsData.totalRezerwacje.toString(),
+            change: `${rezerwacjeStatsData.oczekujaceRezerwacje} oczekuje`,
+            icon: '📅',
+            color: 'bg-red-500',
+            href: '/panel?view=admin&section=rezerwacje'
+          }
+        ]);
+      } catch (error) {
+        console.error('Błąd pobierania statystyk:', error);
+        // Fallback w przypadku błędu
+        setStats([
+          {
+            title: 'Sale',
+            value: '0',
+            change: 'Błąd ładowania',
+            icon: '🏢',
+            color: 'bg-blue-500',
+            href: '/panel?view=admin&section=sale'
+          },
+          {
+            title: 'Stanowiska', 
+            value: '0',
+            change: 'Błąd ładowania',
+            icon: '💻',
+            color: 'bg-green-500',
+            href: '/panel?view=admin&section=stanowiska'
+          },
+          {
+            title: 'Użytkownicy',
+            value: '0',
+            change: 'Błąd ładowania',
+            icon: '👥',
+            color: 'bg-purple-500',
+            href: '/panel?view=admin&section=uzytkownicy'
+          },
+          {
+            title: 'Rezerwacje',
+            value: '0',
+            change: 'Błąd ładowania',
+            icon: '📅',
+            color: 'bg-red-500',
+            href: '/panel?view=admin&section=rezerwacje'
+          }
+        ]);
+      }
+    };
+
+    loadStats();
+  }, []);
 
   const recentActivities = [
     { action: 'Dodano nową salę', details: 'Sala A101 - Laboratorium IT', time: '2 godz. temu', icon: '🏢' },
@@ -48,16 +138,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-lg p-6 text-white">
-        <h1 className="text-2xl font-bold mb-2">
-          Panel Administratora 🔧
-        </h1>
-        <p className="text-red-100">
-          Zarządzaj systemem rezerwacji sal i stanowisk
-        </p>
-      </div>
-
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => (
@@ -84,7 +164,7 @@ export default function AdminDashboard() {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">
-            Ostatnie aktywności
+            Ostatnie aktywności (do zrobienia w przyszłości)
           </h2>
         </div>
         <div className="p-6">

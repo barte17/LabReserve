@@ -94,14 +94,6 @@ export default function RezerwacjeList() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h3 className="text-2xl font-bold text-neutral-900 mb-2">
-          Rezerwacje Sal i Laboratoriów
-        </h3>
-        <p className="text-neutral-600">
-          Zarządzaj wszystkimi rezerwacjami w systemie
-        </p>
-      </div>
 
       {/* Filtry */}
       <div className="filters-panel mb-6">

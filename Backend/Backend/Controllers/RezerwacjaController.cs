@@ -601,5 +601,30 @@ namespace Backend.Controllers
 
             return NoContent();
         }
+
+        [HttpGet("stats")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<object>> GetRezerwacjeStats()
+        {
+            var rezerwacje = await _context.Rezerwacje.ToListAsync();
+            
+            var today = DateTime.Today;
+            var thisMonth = new DateTime(today.Year, today.Month, 1);
+            
+            var stats = new
+            {
+                TotalRezerwacje = rezerwacje.Count,
+                OczekujaceRezerwacje = rezerwacje.Count(r => r.Status == "oczekujące"),
+                ZaakceptowaneRezerwacje = rezerwacje.Count(r => r.Status == "zaakceptowano"),
+                OdrzuconeRezerwacje = rezerwacje.Count(r => r.Status == "odrzucono"),
+                AnulowaneRezerwacje = rezerwacje.Count(r => r.Status == "anulowane"),
+                DzisiejszeRezerwacje = rezerwacje.Count(r => r.DataStart.Date == today && r.Status == "zaakceptowano"),
+                MiesięczneRezerwacje = rezerwacje.Count(r => r.DataUtworzenia >= thisMonth),
+                SaleRezerwacje = rezerwacje.Count(r => r.SalaId != null),
+                StanowiskaRezerwacje = rezerwacje.Count(r => r.StanowiskoId != null)
+            };
+
+            return Ok(stats);
+        }
     }
 }

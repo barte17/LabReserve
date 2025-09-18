@@ -131,7 +131,6 @@ export default function SaleListAdmin({ onEdit }: Props) {
     if (loadingDetails) {
       return (
         <div className="max-w-3xl mx-auto px-2">
-          <h3 className="text-2xl font-bold mb-6 mt-4 text-center">Edytuj salę</h3>
           <div className="flex justify-center items-center py-8">
             <div className="text-gray-600">Ładowanie szczegółów sali...</div>
           </div>
@@ -142,7 +141,6 @@ export default function SaleListAdmin({ onEdit }: Props) {
     if (!editingSalaDetails) {
       return (
         <div className="max-w-3xl mx-auto px-2">
-          <h3 className="text-2xl font-bold mb-6 mt-4 text-center">Edytuj salę</h3>
           <div className="flex justify-center items-center py-8">
             <div className="text-red-600">Błąd ładowania szczegółów sali</div>
           </div>
@@ -158,7 +156,6 @@ export default function SaleListAdmin({ onEdit }: Props) {
 
     return (
       <div className="max-w-3xl mx-auto px-2">
-        <h3 className="text-2xl font-bold mb-6 mt-4 text-center">Edytuj salę</h3>
         <AddSalaForm
           onSubmit={handleEditSubmit}
           initialData={editingSala}
@@ -175,14 +172,6 @@ export default function SaleListAdmin({ onEdit }: Props) {
 
   return (
     <div>
-      <div className="mb-6">
-        <h3 className="text-2xl font-bold text-neutral-900 mb-2">
-          Sale uczelniane - zarządzanie
-        </h3>
-        <p className="text-neutral-600">
-          Edytuj i zarządzaj salami uczelnianymi w systemie
-        </p>
-      </div>
       <div className="filters-panel mb-6">
         <div className="form-group">
           <label className="form-label">Wyszukaj salę</label>

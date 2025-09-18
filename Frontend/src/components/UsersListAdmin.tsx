@@ -74,14 +74,6 @@ export default function UsersListAdmin() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h3 className="text-2xl font-bold text-neutral-900 mb-2">
-          Użytkownicy - Zarządzanie
-        </h3>
-        <p className="text-neutral-600">
-          Zarządzaj rolami i uprawnieniami użytkowników
-        </p>
-      </div>
 
       {/* Filtry i wyszukiwanie */}
       <div className="filters-panel mb-6">
