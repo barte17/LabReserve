@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AddStationForm from "./forms/AddStationForm";
-import { fetchStanowiska, editStanowisko, deleteStanowisko, fetchStanowiskoById } from "../services/stanowiskoService";
+import { fetchStanowiska, editStanowisko, deleteStanowisko, fetchStanowiskoById, addStanowisko } from "../services/stanowiskoService";
 import { useToastContext } from "./ToastProvider";
 import { LoadingTable } from "./LoadingStates";
 import { useMinimumLoadingDelay } from "../hooks/useMinimumLoadingDelay";
@@ -23,6 +23,8 @@ export default function StanowiskaListAdmin() {
   const [editingStanowisko, setEditingStanowisko] = useState<Stanowisko | null>(null);
   const [editingStanowiskoDetails, setEditingStanowiskoDetails] = useState<any>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
   const { showSuccess, showError } = useToastContext();
   const navigate = useNavigate();
 
@@ -72,6 +74,22 @@ export default function StanowiskaListAdmin() {
     }
   };
 
+  const handleAddSubmit = async (data: any) => {
+    setIsAdding(true);
+    try {
+      await addStanowisko(data);
+      const updatedStanowiska = await fetchStanowiska();
+      setStanowiska(updatedStanowiska);
+      setShowAddForm(false);
+      showSuccess("Pomyślnie dodano stanowisko");
+    } catch (e) {
+      console.error(e);
+      showError("Błąd podczas dodawania stanowiska");
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
   // Filtrowanie i wyszukiwanie
   let filtered = stanowiska.filter((s) => {
     const matchesSearch =
@@ -100,6 +118,20 @@ export default function StanowiskaListAdmin() {
   });
 
   if (shouldShowLoading) return <LoadingTable rows={5} columns={6} className="mt-6" />;
+
+  // Formularz dodawania stanowiska
+  if (showAddForm) {
+    return (
+      <div className="max-w-3xl mx-auto px-2">
+        <AddStationForm
+          onSubmit={handleAddSubmit}
+          submitLabel="Dodaj stanowisko"
+          isLoading={isAdding}
+          onCancel={() => setShowAddForm(false)}
+        />
+      </div>
+    );
+  }
 
   if (editingStanowisko) {
     if (loadingDetails) {
@@ -156,35 +188,49 @@ export default function StanowiskaListAdmin() {
 
   return (
     <div>
-      <div className="filters-panel mb-6">
-        <div className="form-group">
-          <label className="form-label">Wyszukaj stanowisko</label>
-          <input
-            type="text"
-            className="form-input"
-            placeholder="ID, sala, nazwa, typ, opis..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold mb-1 text-gray-700">Sortuj wg</label>
-          <div className="flex items-center">
-            <select
-              className="select"
-              value={sortKey}
-              onChange={e => setSortKey(e.target.value as "id" | "nazwa" | "salaId")}
-            >
-              <option value="id">ID stanowiska</option>
-              <option value="nazwa">Nazwa</option>
-              <option value="salaId">ID sali</option>
-            </select>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="flex flex-col lg:flex-row gap-4 items-center">
+          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="form-group">
+              <label className="block text-sm font-semibold mb-1 text-gray-700">Wyszukaj stanowisko</label>
+              <input
+                type="text"
+                className="form-input h-10"
+                placeholder="ID, sala, nazwa, typ, opis..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-1 text-gray-700">Sortuj według</label>
+              <div className="flex items-center gap-2 h-10">
+                <select
+                  className="select flex-1 h-10"
+                  value={sortKey}
+                  onChange={e => setSortKey(e.target.value as "id" | "nazwa" | "salaId")}
+                >
+                  <option value="id">ID stanowiska</option>
+                  <option value="nazwa">Nazwa</option>
+                  <option value="salaId">ID sali</option>
+                </select>
+                <button
+                  className="px-3 py-2 border border-gray-300 rounded bg-gray-100 hover:bg-gray-200 transition-colors h-10 flex items-center justify-center"
+                  onClick={() => setSortDir(d => (d === "asc" ? "desc" : "asc"))}
+                  title="Zmień kierunek sortowania"
+                >
+                  {sortDir === "asc" ? "▲" : "▼"}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-shrink-0">
             <button
-              className="ml-2 px-2 py-2 border border-gray-300 rounded bg-gray-100 hover:bg-gray-200"
-              onClick={() => setSortDir(d => (d === "asc" ? "desc" : "asc"))}
-              title="Zmień kierunek sortowania"
+              onClick={() => setShowAddForm(true)}
+              className="bg-red-600 text-white px-6 py-2.5 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2 whitespace-nowrap h-10"
             >
-              {sortDir === "asc" ? "▲" : "▼"}
+              <span>➕</span>
+              <span>Dodaj stanowisko</span>
             </button>
           </div>
         </div>

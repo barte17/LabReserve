@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchSale, editSala, deleteSala, fetchSalaById } from "../services/salaService";
+import { fetchSale, editSala, deleteSala, fetchSalaById, addSala } from "../services/salaService";
 import AddSalaForm from "./forms/AddRoomForm";
 import { useToastContext } from "./ToastProvider";
 import { LoadingTable } from "./LoadingStates";
@@ -34,6 +34,8 @@ export default function SaleListAdmin({ onEdit }: Props) {
   const [editingSala, setEditingSala] = useState<Sala | null>(null);
   const [editingSalaDetails, setEditingSalaDetails] = useState<any>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
   const { showSuccess, showError } = useToastContext();
   const navigate = useNavigate();
 
@@ -44,7 +46,6 @@ export default function SaleListAdmin({ onEdit }: Props) {
       .finally(() => setLoading(false));
   }, []);
 
-  // Resetuj edycję jeśli komponent jest montowany na nowo (np. po zmianie widoku)
   useEffect(() => {
     setEditingSala(null);
   }, []);
@@ -86,6 +87,22 @@ export default function SaleListAdmin({ onEdit }: Props) {
     } catch (e) {
       console.error(e);
       showError("Błąd podczas edycji sali");
+    }
+  };
+
+  const handleAddSubmit = async (data: any) => {
+    setIsAdding(true);
+    try {
+      await addSala(data);
+      const updatedSale = await fetchSale();
+      setSale(updatedSale);
+      setShowAddForm(false);
+      showSuccess("Pomyślnie dodano salę");
+    } catch (e) {
+      console.error(e);
+      showError("Błąd podczas dodawania sali");
+    } finally {
+      setIsAdding(false);
     }
   };
 
@@ -148,7 +165,6 @@ export default function SaleListAdmin({ onEdit }: Props) {
       );
     }
 
-    // Przygotowanie listy istniejących zdjęć
     const existingImages = editingSalaDetails.zdjecia?.map((zdjecie: any) => ({
       id: zdjecie.id,
       url: zdjecie.url
@@ -170,45 +186,76 @@ export default function SaleListAdmin({ onEdit }: Props) {
     );
   }
 
+  if (showAddForm) {
+    return (
+      <div className="max-w-3xl mx-auto px-2">
+        <AddSalaForm
+          onSubmit={handleAddSubmit}
+          submitLabel="Dodaj salę"
+          isLoading={isAdding}
+          onCancel={() => setShowAddForm(false)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div>
-      <div className="filters-panel mb-6">
-        <div className="form-group">
-          <label className="form-label">Wyszukaj salę</label>
-          <input
-            type="text"
-            className="form-input"
-            placeholder="Numer, budynek, opiekun, opis..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold mb-1 text-gray-700">Sortuj wg</label>
-          <select
-            className="select"
-            value={sortKey}
-            onChange={e => setSortKey(e.target.value as any)}
-          >
-            <option value="budynekA">Budynek A</option>
-            <option value="budynekB">Budynek B</option>
-            <option value="maxOsobAsc">Maks osób rosnąco</option>
-            <option value="maxOsobDesc">Maks osób malejąco</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-semibold mb-1 text-gray-700">Stanowiska</label>
-          <select
-            className="select"
-            value={stanowiskaFilter}
-            onChange={e => setStanowiskaFilter(e.target.value as "" | "tak" | "nie")}
-          >
-            <option value="">Wszystkie</option>
-            <option value="tak">Z stanowiskami</option>
-            <option value="nie">Bez stanowisk</option>
-          </select>
-        </div>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+  <div className="flex flex-col lg:flex-row lg:items-end lg:space-x-4 gap-4">
+    {/* pola wyszukiwarki i selecty */}
+    <div className="flex-1 flex flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0">
+      <div className="flex-1">
+        <label className="block text-sm font-semibold mb-1 text-gray-700">Wyszukaj salę</label>
+        <input
+          type="text"
+          className="form-input h-10 w-full"
+          placeholder="Numer, budynek, opiekun, opis..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
       </div>
+      <div className="flex-1">
+        <label className="block text-sm font-semibold mb-1 text-gray-700">Sortuj według</label>
+        <select
+          className="select h-10 w-full"
+          value={sortKey}
+          onChange={e => setSortKey(e.target.value as any)}
+        >
+          <option value="budynekA">Budynek A</option>
+          <option value="budynekB">Budynek B</option>
+          <option value="maxOsobAsc">Maks osób rosnąco</option>
+          <option value="maxOsobDesc">Maks osób malejąco</option>
+        </select>
+      </div>
+      <div className="flex-1">
+        <label className="block text-sm font-semibold mb-1 text-gray-700">Stanowiska</label>
+        <select
+          className="select h-10 w-full"
+          value={stanowiskaFilter}
+          onChange={e => setStanowiskaFilter(e.target.value as "" | "tak" | "nie")}
+        >
+          <option value="">Wszystkie</option>
+          <option value="tak">Z stanowiskami</option>
+          <option value="nie">Bez stanowisk</option>
+        </select>
+      </div>
+    </div>
+
+    {/* przycisk */}
+    <div className="flex-shrink-0 self-end">
+      <button
+        onClick={() => setShowAddForm(true)}
+        className="bg-red-600 text-white px-6 py-2.5 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2 whitespace-nowrap h-10"
+      >
+        <span>➕</span>
+        <span>Dodaj salę</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+      {/* lista sal */}
       <div className="space-y-4">
         {filtered.map((s) => (
           <div key={s.id} className="list-item animate-in">
@@ -260,7 +307,7 @@ export default function SaleListAdmin({ onEdit }: Props) {
                   </span>
                 </div>
               </div>
-              
+
               {s.opis && (
                 <div className="mt-3">
                   <span className="font-medium text-neutral-700">Opis:</span>
