@@ -110,7 +110,7 @@ export default function RezerwacjeList() {
       </div>
 
       {/* Interaktywne filtry statusów */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         <button
           onClick={() => setStatusFilter("")}
           className={`card transition-all duration-200 hover:shadow-lg ${
@@ -122,23 +122,7 @@ export default function RezerwacjeList() {
               {rezerwacje.length}
             </div>
             <div className="text-sm text-neutral-600">
-              Wszystkie rezerwacje
-            </div>
-          </div>
-        </button>
-        
-        <button
-          onClick={() => setStatusFilter("zaakceptowano")}
-          className={`card transition-all duration-200 hover:shadow-lg ${
-            statusFilter === "zaakceptowano" ? "ring-2 ring-green-500 bg-green-50" : "hover:bg-neutral-50"
-          }`}
-        >
-          <div className="card-body text-center">
-            <div className="text-2xl font-bold text-green-600 mb-1">
-              {rezerwacje.filter(r => r.status === 'zaakceptowano').length}
-            </div>
-            <div className="text-sm text-neutral-600">
-              Zaakceptowane
+              Wszystkie
             </div>
           </div>
         </button>
@@ -160,6 +144,22 @@ export default function RezerwacjeList() {
         </button>
         
         <button
+          onClick={() => setStatusFilter("zaakceptowano")}
+          className={`card transition-all duration-200 hover:shadow-lg ${
+            statusFilter === "zaakceptowano" ? "ring-2 ring-green-500 bg-green-50" : "hover:bg-neutral-50"
+          }`}
+        >
+          <div className="card-body text-center">
+            <div className="text-2xl font-bold text-green-600 mb-1">
+              {rezerwacje.filter(r => r.status === 'zaakceptowano').length}
+            </div>
+            <div className="text-sm text-neutral-600">
+              Zaakceptowane
+            </div>
+          </div>
+        </button>
+        
+        <button
           onClick={() => setStatusFilter("odrzucono")}
           className={`card transition-all duration-200 hover:shadow-lg ${
             statusFilter === "odrzucono" ? "ring-2 ring-red-500 bg-red-50" : "hover:bg-neutral-50"
@@ -171,6 +171,22 @@ export default function RezerwacjeList() {
             </div>
             <div className="text-sm text-neutral-600">
               Odrzucone
+            </div>
+          </div>
+        </button>
+
+        <button
+          onClick={() => setStatusFilter("anulowane")}
+          className={`card transition-all duration-200 hover:shadow-lg ${
+            statusFilter === "anulowane" ? "ring-2 ring-gray-500 bg-gray-50" : "hover:bg-neutral-50"
+          }`}
+        >
+          <div className="card-body text-center">
+            <div className="text-2xl font-bold text-gray-600 mb-1">
+              {rezerwacje.filter(r => r.status === 'anulowane').length}
+            </div>
+            <div className="text-sm text-neutral-600">
+              Anulowane
             </div>
           </div>
         </button>
@@ -252,19 +268,54 @@ export default function RezerwacjeList() {
               </div>
 
               <div className="list-item-actions">
-                <div className="flex items-center space-x-2">
-                  <select
-                    value={rez.status}
-                    onChange={(e) => handleStatusChange(rez.id, e.target.value)}
-                    className="form-input text-sm"
-                  >
-                    <option value="oczekujące">Oczekujące</option>
-                    <option value="zaakceptowano">Zaakceptowano</option>
-                    <option value="odrzucono">Odrzucono</option>
-                  </select>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm font-medium text-gray-700">Status:</span>
+                    <button
+                      onClick={() => handleStatusChange(rez.id, 'oczekujące')}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                        rez.status === 'oczekujące' 
+                          ? 'bg-yellow-100 text-yellow-800 ring-2 ring-yellow-300' 
+                          : 'bg-gray-100 text-gray-600 hover:bg-yellow-50 hover:text-yellow-700'
+                      }`}
+                    >
+                      ⏳ Oczekujące
+                    </button>
+                    <button
+                      onClick={() => handleStatusChange(rez.id, 'zaakceptowano')}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                        rez.status === 'zaakceptowano' 
+                          ? 'bg-green-100 text-green-800 ring-2 ring-green-300' 
+                          : 'bg-gray-100 text-gray-600 hover:bg-green-50 hover:text-green-700'
+                      }`}
+                    >
+                      ✅ Zaakceptuj
+                    </button>
+                    <button
+                      onClick={() => handleStatusChange(rez.id, 'odrzucono')}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                        rez.status === 'odrzucono' 
+                          ? 'bg-red-100 text-red-800 ring-2 ring-red-300' 
+                          : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-700'
+                      }`}
+                    >
+                      ❌ Odrzuć
+                    </button>
+                    <button
+                      onClick={() => handleStatusChange(rez.id, 'anulowane')}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                        rez.status === 'anulowane' 
+                          ? 'bg-gray-100 text-gray-800 ring-2 ring-gray-300' 
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-50 hover:text-gray-700'
+                      }`}
+                    >
+                      🚫 Anuluj
+                    </button>
+                  </div>
+                  
                   <button
                     onClick={() => handleDelete(rez.id)}
-                    className="btn btn-danger btn-sm"
+                    className="btn btn-danger btn-sm ml-4"
                   >
                     <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

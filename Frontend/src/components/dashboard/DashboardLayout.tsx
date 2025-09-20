@@ -19,6 +19,14 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ role, availableRoles, onRoleChange }: DashboardLayoutProps) {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [autoAdd, setAutoAdd] = useState<string | null>(null);
+
+  const handleSectionChange = (section: string, shouldAutoAdd: boolean = false) => {
+    setActiveSection(section);
+    setAutoAdd(shouldAutoAdd ? section : null);
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 lg:flex">
@@ -40,7 +48,7 @@ export default function DashboardLayout({ role, availableRoles, onRoleChange }: 
           role={role}
           availableRoles={availableRoles}
           activeSection={activeSection}
-          onSectionChange={setActiveSection}
+          onSectionChange={(section) => handleSectionChange(section, false)}
           onRoleChange={onRoleChange}
           onClose={() => setSidebarOpen(false)}
         />
@@ -58,6 +66,9 @@ export default function DashboardLayout({ role, availableRoles, onRoleChange }: 
             <DashboardContent
               role={role}
               activeSection={activeSection}
+              onSectionChange={handleSectionChange}
+              autoAdd={autoAdd}
+              onAutoAddProcessed={() => setAutoAdd(null)}
             />
           </div>
         </main>

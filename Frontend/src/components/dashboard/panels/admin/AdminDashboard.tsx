@@ -4,8 +4,21 @@ import { fetchSale } from '../../../../services/salaService';
 import { fetchStanowiska } from '../../../../services/stanowiskoService';
 import { fetchUserStats, fetchRezerwacjeStats } from '../../../../services/statsService';
 
-export default function AdminDashboard() {
+interface AdminDashboardProps {
+  onSectionChange?: (section: string, shouldAutoAdd?: boolean) => void;
+}
+
+export default function AdminDashboard({ onSectionChange }: AdminDashboardProps = {}) {
   const navigate = useNavigate();
+
+  const handleSectionChange = (section: string, shouldAutoAdd: boolean = false) => {
+    if (onSectionChange) {
+      onSectionChange(section, shouldAutoAdd);
+    } else {
+      // Fallback: nawiguj przez URL
+      navigate(`/panel?view=admin&section=${section}`);
+    }
+  };
   const [stats, setStats] = useState([
     {
       title: 'Sale',
@@ -59,7 +72,7 @@ export default function AdminDashboard() {
             change: `${saleData.length} sal w systemie`,
             icon: '🏢',
             color: 'bg-blue-500',
-            href: '/panel?view=admin&section=sale'
+            section: 'sale'
           },
           {
             title: 'Stanowiska', 
@@ -67,7 +80,7 @@ export default function AdminDashboard() {
             change: `${stanowiskaData.length} stanowisk`,
             icon: '💻',
             color: 'bg-green-500',
-            href: '/panel?view=admin&section=stanowiska'
+            section: 'stanowiska'
           },
           {
             title: 'Użytkownicy',
@@ -75,7 +88,7 @@ export default function AdminDashboard() {
             change: `${userStatsData.unconfirmedUsers} oczekuje zatwierdzenia`,
             icon: '👥',
             color: 'bg-purple-500',
-            href: '/panel?view=admin&section=uzytkownicy'
+            section: 'uzytkownicy'
           },
           {
             title: 'Rezerwacje',
@@ -83,7 +96,7 @@ export default function AdminDashboard() {
             change: `${rezerwacjeStatsData.oczekujaceRezerwacje} oczekuje`,
             icon: '📅',
             color: 'bg-red-500',
-            href: '/panel?view=admin&section=rezerwacje'
+            section: 'rezerwacje'
           }
         ]);
       } catch (error) {
@@ -143,7 +156,7 @@ export default function AdminDashboard() {
         {stats.map((stat, index) => (
           <div
             key={index}
-            onClick={() => navigate(stat.href)}
+            onClick={() => handleSectionChange(stat.section)}
             className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
           >
             <div className="flex items-center">
@@ -158,6 +171,114 @@ export default function AdminDashboard() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Szybkie akcje
+          </h3>
+          <div className="space-y-3">
+            <button
+              onClick={() => handleSectionChange('sale', true)}
+              className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-center space-x-3">
+                <span className="text-lg">🏢</span>
+                <span className="font-medium">Dodaj nową salę</span>
+              </div>
+            </button>
+            <button
+              onClick={() => handleSectionChange('stanowiska', true)}
+              className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-center space-x-3">
+                <span className="text-lg">💻</span>
+                <span className="font-medium">Dodaj nowe stanowisko</span>
+              </div>
+            </button>
+            <button
+              onClick={() => handleSectionChange('uzytkownicy')}
+              className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-center space-x-3">
+                <span className="text-lg">👥</span>
+                <span className="font-medium">Zarządzaj użytkownikami</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Wymagają uwagi
+          </h3>
+          <div className="space-y-4">
+            <div className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors cursor-pointer"
+                 onClick={() => handleSectionChange('uzytkownicy')}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                    <span className="text-orange-600">👥</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Niezatwierdzeni użytkownicy</p>
+                    <p className="text-xs text-gray-500">Kliknij aby zarządzać</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-lg font-bold text-orange-600">
+                    {stats.find(s => s.title === 'Użytkownicy')?.change?.match(/\d+/)?.[0] || '0'}
+                  </span>
+                  <p className="text-xs text-gray-500">oczekuje</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors cursor-pointer"
+                 onClick={() => handleSectionChange('rezerwacje')}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                    <span className="text-yellow-600">📅</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Oczekujące rezerwacje</p>
+                    <p className="text-xs text-gray-500">Kliknij aby zarządzać</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-lg font-bold text-yellow-600">
+                    {stats.find(s => s.title === 'Rezerwacje')?.change?.match(/\d+/)?.[0] || '0'}
+                  </span>
+                  <p className="text-xs text-gray-500">oczekuje</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200 pt-3 mt-4">
+              <div className="flex items-center justify-center">
+                <div className="text-center">
+                  <p className="text-sm font-medium text-gray-900">
+                    {new Date().toLocaleDateString('pl-PL', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {new Date().toLocaleTimeString('pl-PL', { 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    })}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Recent Activity */}
@@ -187,70 +308,6 @@ export default function AdminDashboard() {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Szybkie akcje
-          </h3>
-          <div className="space-y-3">
-            <button
-              onClick={() => navigate('/panel?view=admin&section=sale')}
-              className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex items-center space-x-3">
-                <span className="text-lg">🏢</span>
-                <span className="font-medium">Dodaj nową salę</span>
-              </div>
-            </button>
-            <button
-              onClick={() => navigate('/panel?view=admin&section=stanowiska')}
-              className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex items-center space-x-3">
-                <span className="text-lg">💻</span>
-                <span className="font-medium">Dodaj nowe stanowisko</span>
-              </div>
-            </button>
-            <button
-              onClick={() => navigate('/panel?view=admin&section=uzytkownicy')}
-              className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex items-center space-x-3">
-                <span className="text-lg">👥</span>
-                <span className="font-medium">Zarządzaj użytkownikami</span>
-              </div>
-            </button>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Status systemu
-          </h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Baza danych</span>
-              <span className="flex items-center text-green-600">
-                <span className="w-2 h-2 bg-green-600 rounded-full mr-2"></span>
-                Online
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">API Status</span>
-              <span className="flex items-center text-green-600">
-                <span className="w-2 h-2 bg-green-600 rounded-full mr-2"></span>
-                Aktywny
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Ostatnia kopia</span>
-              <span className="text-sm text-gray-500">2 godz. temu</span>
-            </div>
           </div>
         </div>
       </div>

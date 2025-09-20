@@ -24,18 +24,21 @@ import AdminDashboard from './panels/admin/AdminDashboard';
 interface DashboardContentProps {
   role: string;
   activeSection: string;
+  onSectionChange?: (section: string, shouldAutoAdd?: boolean) => void;
+  autoAdd?: string | null;
+  onAutoAddProcessed?: () => void;
 }
 
-export default function DashboardContent({ role, activeSection }: DashboardContentProps) {
+export default function DashboardContent({ role, activeSection, onSectionChange, autoAdd, onAutoAddProcessed }: DashboardContentProps) {
   // Renderowanie dla roli Admin
   if (role === 'admin') {
     switch (activeSection) {
       case 'dashboard':
-        return <AdminDashboard />;
+        return <AdminDashboard onSectionChange={onSectionChange} />;
       case 'sale':
-        return <SaleListAdmin />;
+        return <SaleListAdmin autoAdd={autoAdd === 'sale'} onAutoAddProcessed={onAutoAddProcessed} />;
       case 'stanowiska':
-        return <StanowiskaListAdmin />;
+        return <StanowiskaListAdmin autoAdd={autoAdd === 'stanowiska'} onAutoAddProcessed={onAutoAddProcessed} />;
       case 'uzytkownicy':
         return <UsersListAdmin />;
       case 'rezerwacje':
