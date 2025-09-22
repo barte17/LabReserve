@@ -25,6 +25,11 @@ export default function MojeSale() {
   const [editData, setEditData] = useState({ opis: '', czynnaOd: '', czynnaDo: '' });
   const { showSuccess, showError } = useToastContext();
 
+  // Filtry i wyszukiwanie
+  const [searchNumer, setSearchNumer] = useState<string>('');
+  const [filterBudynek, setFilterBudynek] = useState<'' | 'A' | 'B'>('');
+  const [filterStanowiska, setFilterStanowiska] = useState<'' | 'z' | 'bez'>('');
+
   useEffect(() => {
     loadMojeSale();
   }, []);
@@ -77,6 +82,22 @@ export default function MojeSale() {
     }
   };
 
+  // Przefiltrowana lista sal
+  const filteredSale = sale.filter((s) => {
+    if (searchNumer.trim() && !s.numer.toString().includes(searchNumer.trim())) return false;
+    if (filterBudynek && s.budynek !== filterBudynek) return false;
+    if (filterStanowiska === 'z' && !s.maStanowiska) return false;
+    if (filterStanowiska === 'bez' && s.maStanowiska) return false;
+    return true;
+  });
+
+  const hasActiveFilters = Boolean(searchNumer.trim() || filterBudynek || filterStanowiska);
+  const clearFilters = () => {
+    setSearchNumer('');
+    setFilterBudynek('');
+    setFilterStanowiska('');
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -86,16 +107,61 @@ export default function MojeSale() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          🏢 Moje Sale
-        </h1>
-        <p className="text-gray-600">
-          Zarządzaj salami, dla których jesteś opiekunem ({sale.length} sal)
-        </p>
-      </div>
+<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+  {/* Pasek filtrów i wyszukiwania */}
+  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">Numer sali</label>
+      <input
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        value={searchNumer}
+        onChange={(e) => setSearchNumer(e.target.value.replace(/[^0-9]/g, ''))}
+        placeholder="np. 204"
+        className="form-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+      />
+    </div>
+
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">Budynek</label>
+      <select
+        value={filterBudynek}
+        onChange={(e) => setFilterBudynek(e.target.value as any)}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+      >
+        <option value="">Wszystkie</option>
+        <option value="A">A</option>
+        <option value="B">B</option>
+      </select>
+    </div>
+
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">Stanowiska</label>
+      <select
+        value={filterStanowiska}
+        onChange={(e) => setFilterStanowiska(e.target.value as any)}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+      >
+        <option value="">Wszystkie</option>
+        <option value="z">Ze stanowiskami</option>
+        <option value="bez">Bez stanowisk</option>
+      </select>
+    </div>
+
+    <div className="flex items-end">
+      <button
+        onClick={clearFilters}
+        disabled={!hasActiveFilters}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+      >
+        Wyczyść filtry
+      </button>
+    </div>
+  </div>
+</div>
 
       {/* Lista sal */}
       {sale.length === 0 ? (
@@ -108,9 +174,14 @@ export default function MojeSale() {
             Nie jesteś opiekunem żadnej sali w systemie.
           </p>
         </div>
+      ) : filteredSale.length === 0 ? (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Brak wyników</h2>
+          <p className="text-gray-600">Zmień kryteria wyszukiwania lub wyczyść filtry.</p>
+        </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {sale.map((sala) => (
+          {filteredSale.map((sala) => (
             <div key={sala.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
               <div className="flex justify-between items-start mb-3">
                 <div className="flex-1">
