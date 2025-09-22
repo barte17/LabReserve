@@ -12,10 +12,14 @@ export type User = {
   roles: string[];
 };
 
-export default function UsersListAdmin() {
+interface UsersListAdminProps {
+  autoFilter?: string;
+}
+
+export default function UsersListAdmin({ autoFilter }: UsersListAdminProps = {}) {
   const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState("");
+  const [roleFilter, setRoleFilter] = useState(autoFilter || "");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [changingRoleId, setChangingRoleId] = useState<string | null>(null);

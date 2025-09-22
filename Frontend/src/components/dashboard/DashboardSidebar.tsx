@@ -24,6 +24,11 @@ interface DashboardSidebarProps {
   onSectionChange: (section: string) => void;
   onRoleChange: (role: string) => void;
   onClose: () => void;
+  stats?: {
+    mojeSale?: number;
+    mojeStanowiska?: number;
+    oczekujaceRezerwacje?: number;
+  };
 }
 
 export default function DashboardSidebar({
@@ -32,7 +37,8 @@ export default function DashboardSidebar({
   activeSection,
   onSectionChange,
   onRoleChange,
-  onClose
+  onClose,
+  stats
 }: DashboardSidebarProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -48,9 +54,9 @@ export default function DashboardSidebar({
     ],
     opiekun: [
       { id: 'dashboard', label: 'Dashboard', icon: '📊', description: 'Przegląd moich sal' },
-      { id: 'moje-sale', label: 'Moje sale', icon: '🏢', badge: '0', description: 'Sale pod opieką' },
-      { id: 'moje-stanowiska', label: 'Moje stanowiska', icon: '💻', badge: '0', description: 'Stanowiska w salach' },
-      { id: 'rezerwacje', label: 'Zarządzaj rezerwacjami', icon: '📅', badge: '0', description: 'Zatwierdź/odrzuć' }
+      { id: 'moje-sale', label: 'Moje sale', icon: '🏢', badge: stats?.mojeSale || 0, description: 'Sale pod opieką' },
+      { id: 'moje-stanowiska', label: 'Moje stanowiska', icon: '💻', badge: stats?.mojeStanowiska || 0, description: 'Stanowiska w salach' },
+      { id: 'rezerwacje', label: 'Zarządzaj rezerwacjami', icon: '📅', badge: stats?.oczekujaceRezerwacje || 0, description: 'Zatwierdź/odrzuć' }
     ],
     user: [
       { id: 'dashboard', label: 'Dashboard', icon: '📊', description: 'Przegląd aktywności' },
@@ -136,7 +142,7 @@ export default function DashboardSidebar({
               </div>
             </div>
             
-            {item.badge && (
+            {(item.badge !== undefined && item.badge !== null) && (
               <span className={`
                 px-2 py-1 text-xs font-medium rounded-full
                 ${activeSection === item.id

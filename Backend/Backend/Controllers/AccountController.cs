@@ -406,10 +406,10 @@ public async Task<IActionResult> Me()
                     adminCount++;
                 else if (roles.Contains("Opiekun"))
                     opiekunCount++;
-                else if (roles.Count > 0) // Has any role - confirmed user
-                    regularCount++;
-                else // No roles - unconfirmed user
+                else if (roles.Contains("Niezatwierdzony"))
                     unconfirmedCount++;
+                else // Other confirmed roles (User, etc.)
+                    regularCount++;
             }
 
             return Ok(new

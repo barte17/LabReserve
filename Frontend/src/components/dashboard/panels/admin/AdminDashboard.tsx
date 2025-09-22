@@ -216,7 +216,7 @@ export default function AdminDashboard({ onSectionChange }: AdminDashboardProps 
           </h3>
           <div className="space-y-4">
             <div className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors cursor-pointer"
-                 onClick={() => handleSectionChange('uzytkownicy')}>
+                 onClick={() => handleSectionChange('uzytkownicy', true)}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">

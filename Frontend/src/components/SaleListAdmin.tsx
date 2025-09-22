@@ -22,9 +22,11 @@ type Sala = {
 
 type Props = {
   onEdit?: (sala: Sala) => void;
+  autoAdd?: boolean;
+  onAutoAddProcessed?: () => void;
 };
 
-export default function SaleListAdmin({ onEdit }: Props) {
+export default function SaleListAdmin({ onEdit, autoAdd = false, onAutoAddProcessed }: Props) {
   const [sale, setSale] = useState<Sala[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -49,6 +51,16 @@ export default function SaleListAdmin({ onEdit }: Props) {
   useEffect(() => {
     setEditingSala(null);
   }, []);
+
+  // Handle autoAdd
+  useEffect(() => {
+    if (autoAdd) {
+      setShowAddForm(true);
+      if (onAutoAddProcessed) {
+        onAutoAddProcessed();
+      }
+    }
+  }, [autoAdd, onAutoAddProcessed]);
 
   const handleDelete = async (id: number) => {
     if (!window.confirm("Na pewno usunąć salę?")) return;

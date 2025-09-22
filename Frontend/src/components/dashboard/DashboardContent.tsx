@@ -24,12 +24,15 @@ import AdminDashboard from './panels/admin/AdminDashboard';
 interface DashboardContentProps {
   role: string;
   activeSection: string;
-  onSectionChange?: (section: string, shouldAutoAdd?: boolean) => void;
+  onSectionChange?: (section: string, shouldAutoAdd?: boolean, options?: { autoFilter?: string }) => void;
   autoAdd?: string | null;
   onAutoAddProcessed?: () => void;
+  onStatsUpdate?: (stats: { mojeSale: number; mojeStanowiska: number; oczekujaceRezerwacje: number }) => void;
+  autoFilterRezerwacje?: string | null;
+  onAutoFilterProcessed?: () => void;
 }
 
-export default function DashboardContent({ role, activeSection, onSectionChange, autoAdd, onAutoAddProcessed }: DashboardContentProps) {
+export default function DashboardContent({ role, activeSection, onSectionChange, autoAdd, onAutoAddProcessed, onStatsUpdate, autoFilterRezerwacje, onAutoFilterProcessed }: DashboardContentProps) {
   // Renderowanie dla roli Admin
   if (role === 'admin') {
     switch (activeSection) {
@@ -40,7 +43,7 @@ export default function DashboardContent({ role, activeSection, onSectionChange,
       case 'stanowiska':
         return <StanowiskaListAdmin autoAdd={autoAdd === 'stanowiska'} onAutoAddProcessed={onAutoAddProcessed} />;
       case 'uzytkownicy':
-        return <UsersListAdmin />;
+        return <UsersListAdmin autoFilter={autoAdd === 'uzytkownicy-niezatwierdzeni' ? 'niezatwierdzony' : undefined} />;
       case 'rezerwacje':
         return <RezerwacjeList />;
       default:
@@ -52,15 +55,20 @@ export default function DashboardContent({ role, activeSection, onSectionChange,
   if (role === 'opiekun') {
     switch (activeSection) {
       case 'dashboard':
-        return <OpiekunDashboard />;
+        return (
+          <OpiekunDashboard
+            onStatsUpdate={onStatsUpdate}
+            onNavigate={(section, opts) => onSectionChange?.(section, false, opts)}
+          />
+        );
       case 'moje-sale':
         return <MojeSale />;
       case 'moje-stanowiska':
         return <MojeStanowiska />;
       case 'rezerwacje':
-        return <ZarzadzajRezerwacje />;
+        return <ZarzadzajRezerwacje autoFilter={autoFilterRezerwacje || undefined} onAutoFilterProcessed={onAutoFilterProcessed} />;
       default:
-        return <OpiekunDashboard />;
+        return <OpiekunDashboard onStatsUpdate={onStatsUpdate} />;
     }
   }
 

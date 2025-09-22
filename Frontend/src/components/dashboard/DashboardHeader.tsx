@@ -59,22 +59,12 @@ export default function DashboardHeader({ role, onMenuClick }: DashboardHeaderPr
               <span className="hidden sm:inline">{roleInfo.label}</span>
             </div>
 
-            {/* User avatar and name */}
-            <div className="flex items-center space-x-3">
-              <div className="hidden sm:block text-right">
+            {/* User info */}
+            <div className="flex items-center">
+              <div className="text-right">
                 <p className="text-sm font-medium text-gray-900">
                   {user?.email}
                 </p>
-                <p className="text-xs text-gray-500">
-                  {new Date().toLocaleDateString('pl-PL')}
-                </p>
-              </div>
-              
-              {/* Avatar placeholder */}
-              <div className="h-8 w-8 bg-gray-300 rounded-full flex items-center justify-center">
-                <span className="text-sm font-medium text-gray-700">
-                  {user?.email?.charAt(0).toUpperCase()}
-                </span>
               </div>
             </div>
           </div>

@@ -4,7 +4,12 @@ import { fetchMojeSale } from '../../../../services/salaService';
 import { fetchMojeRezerwacje, generateRecentActivities } from '../../../../services/rezerwacjaService';
 import { fetchMojeStanowiska } from '../../../../services/stanowiskoService';
 
-export default function OpiekunDashboard() {
+interface OpiekunDashboardProps {
+  onStatsUpdate?: (stats: { mojeSale: number; mojeStanowiska: number; oczekujaceRezerwacje: number }) => void;
+  onNavigate?: (section: string, options?: { autoFilter?: string }) => void;
+}
+
+export default function OpiekunDashboard({ onStatsUpdate, onNavigate }: OpiekunDashboardProps = {}) {
   const { user } = useAuth();
   const [stats, setStats] = useState({
     mojeSale: 0,
@@ -37,12 +42,23 @@ export default function OpiekunDashboard() {
           return rezerwacjaDate === today && r.status === 'zaakceptowano';
         }).length;
         
-        setStats({
+        const newStats = {
           mojeSale: saleData.length,
           mojeStanowiska: stanowiskaData.length, // Prawdziwa liczba stanowisk
           oczekujaceRezerwacje,
           dzisiejszeRezerwacje
-        });
+        };
+        
+        setStats(newStats);
+        
+        // Przekaż stats do parent component dla sidebar
+        if (onStatsUpdate) {
+          onStatsUpdate({
+            mojeSale: newStats.mojeSale,
+            mojeStanowiska: newStats.mojeStanowiska,
+            oczekujaceRezerwacje: newStats.oczekujaceRezerwacje
+          });
+        }
         
         // Generuj ostatnie aktywności (Opcja A - bez nowej tabeli)
         const activities = generateRecentActivities(rezerwacjeData);
@@ -65,38 +81,58 @@ export default function OpiekunDashboard() {
     fetchStats();
   }, []);
 
+  const handleCardClick = (key: 'moje-sale' | 'moje-stanowiska' | 'rezerwacje-oczekujace' | 'rezerwacje') => {
+    if (!onNavigate) return;
+    switch (key) {
+      case 'moje-sale':
+        onNavigate('moje-sale');
+        break;
+      case 'moje-stanowiska':
+        onNavigate('moje-stanowiska');
+        break;
+      case 'rezerwacje-oczekujace':
+        onNavigate('rezerwacje', { autoFilter: 'oczekujące' });
+        break;
+      case 'rezerwacje':
+        onNavigate('rezerwacje');
+        break;
+      default:
+        break;
+    }
+  };
+
   const statsCards = [
     {
+      key: 'moje-sale',
       title: 'Moje sale',
       value: stats.mojeSale,
       change: 'Pod Twoją opieką',
       icon: '🏢',
-      color: 'bg-blue-500',
-      href: '#moje-sale'
+      color: 'bg-blue-500'
     },
     {
+      key: 'moje-stanowiska',
       title: 'Stanowiska', 
       value: stats.mojeStanowiska,
       change: 'W Twoich salach',
       icon: '💻',
-      color: 'bg-green-500',
-      href: '#moje-stanowiska'
+      color: 'bg-green-500'
     },
     {
+      key: 'rezerwacje-oczekujace',
       title: 'Oczekujące',
       value: stats.oczekujaceRezerwacje,
       change: 'Wymagają zatwierdzenia',
       icon: '⏳',
-      color: 'bg-orange-500',
-      href: '#rezerwacje'
+      color: 'bg-orange-500'
     },
     {
+      key: 'rezerwacje',
       title: 'Dzisiaj',
       value: stats.dzisiejszeRezerwacje,
       change: 'Aktywne rezerwacje',
       icon: '📅',
-      color: 'bg-red-500',
-      href: '#rezerwacje'
+      color: 'bg-red-500'
     }
   ];
 
@@ -132,6 +168,7 @@ export default function OpiekunDashboard() {
         {statsCards.map((stat, index) => (
           <div
             key={index}
+            onClick={() => handleCardClick(stat.key as any)}
             className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
           >
             <div className="flex items-center">
@@ -160,7 +197,7 @@ export default function OpiekunDashboard() {
           <div className="p-6">
             <div className="space-y-4">
               {recentActivities.map((activity, index) => (
-                <div key={index} className="flex items-start space-x-3">
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg min-h-16 space-x-3">
                   <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm ${
                     activity.type === 'new' ? 'bg-blue-100' :
                     activity.type === 'approved' ? 'bg-green-100' :
@@ -196,7 +233,7 @@ export default function OpiekunDashboard() {
           <div className="p-6">
             <div className="space-y-4">
               {upcomingReservations.map((reservation, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg min-h-16">
                   <div>
                     <p className="text-sm font-medium text-gray-900">
                       {reservation.sala}
@@ -215,55 +252,9 @@ export default function OpiekunDashboard() {
                 </div>
               ))}
             </div>
-            
-            {stats.oczekujaceRezerwacje > 0 && (
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <button className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors">
-                  Zarządzaj wszystkimi rezerwacjami ({stats.oczekujaceRezerwacje} oczekuje)
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Szybkie akcje
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
-            <div className="flex items-center space-x-3">
-              <span className="text-2xl">🏢</span>
-              <div>
-                <p className="font-medium">Edytuj moje sale</p>
-                <p className="text-sm text-gray-500">Zmień opisy i godziny</p>
-              </div>
-            </div>
-          </button>
-          
-          <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
-            <div className="flex items-center space-x-3">
-              <span className="text-2xl">📅</span>
-              <div>
-                <p className="font-medium">Zatwierdzaj rezerwacje</p>
-                <p className="text-sm text-gray-500">Sprawdź oczekujące</p>
-              </div>
-            </div>
-          </button>
-          
-          <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
-            <div className="flex items-center space-x-3">
-              <span className="text-2xl">📊</span>
-              <div>
-                <p className="font-medium">Zobacz raporty</p>
-                <p className="text-sm text-gray-500">Statystyki użycia</p>
-              </div>
-            </div>
-          </button>
         </div>
       </div>
     </div>
+  </div>
   );
 }

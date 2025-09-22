@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { fetchMojeSale } from '../../services/salaService';
+import { fetchMojeStanowiska } from '../../services/stanowiskoService';
+import { fetchMojeRezerwacje } from '../../services/rezerwacjaService';
 import DashboardSidebar from './DashboardSidebar';
 import DashboardHeader from './DashboardHeader';
 import DashboardContent from './DashboardContent';
@@ -20,13 +23,69 @@ export default function DashboardLayout({ role, availableRoles, onRoleChange }: 
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [autoAdd, setAutoAdd] = useState<string | null>(null);
+  const [autoFilterRezerwacje, setAutoFilterRezerwacje] = useState<string | null>(null);
+  const [sidebarStats, setSidebarStats] = useState<{
+    mojeSale?: number;
+    mojeStanowiska?: number;
+    oczekujaceRezerwacje?: number;
+  }>({});
 
-  const handleSectionChange = (section: string, shouldAutoAdd: boolean = false) => {
+  // Ładowanie statystyk do sidebaru dla opiekuna niezależnie od aktywnej sekcji
+  useEffect(() => {
+    let isMounted = true;
+    const loadSidebarStats = async () => {
+      if (role !== 'opiekun') return;
+      try {
+        const [saleRes, stanowiskaRes, rezerwacjeRes] = await Promise.allSettled([
+          fetchMojeSale(),
+          fetchMojeStanowiska(),
+          fetchMojeRezerwacje()
+        ]);
+
+        const mojeSale = saleRes.status === 'fulfilled' ? saleRes.value.length : 0;
+        const mojeStanowiska = stanowiskaRes.status === 'fulfilled' ? stanowiskaRes.value.length : 0;
+        const oczekujaceRezerwacje = rezerwacjeRes.status === 'fulfilled' 
+          ? rezerwacjeRes.value.filter((r: any) => r.status === 'oczekujące').length 
+          : 0;
+
+        if (isMounted) {
+          setSidebarStats({ mojeSale, mojeStanowiska, oczekujaceRezerwacje });
+        }
+      } catch {
+        // ciche błędy - sidebar może pokazywać 0 gdy brak danych
+      }
+    };
+
+    loadSidebarStats();
+    return () => { isMounted = false; };
+  }, [role, activeSection]);
+
+  const handleSectionChange = useCallback((section: string, shouldAutoAdd: boolean = false, options?: { autoFilter?: string }) => {
     setActiveSection(section);
-    setAutoAdd(shouldAutoAdd ? section : null);
+    // Set autoAdd based on section and type
+    if (shouldAutoAdd) {
+      if (section === 'uzytkownicy') {
+        setAutoAdd('uzytkownicy-niezatwierdzeni');
+      } else {
+        setAutoAdd(section);
+      }
+    } else {
+      setAutoAdd(null);
+    }
+
+    // Obsługa automatycznego filtra dla rezerwacji
+    if (section === 'rezerwacje') {
+      if (options?.autoFilter) {
+        setAutoFilterRezerwacje(options.autoFilter);
+      } else {
+        setAutoFilterRezerwacje(null);
+      }
+    } else {
+      setAutoFilterRezerwacje(null);
+    }
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 lg:flex">
@@ -51,6 +110,7 @@ export default function DashboardLayout({ role, availableRoles, onRoleChange }: 
           onSectionChange={(section) => handleSectionChange(section, false)}
           onRoleChange={onRoleChange}
           onClose={() => setSidebarOpen(false)}
+          stats={sidebarStats}
         />
       </div>
 
@@ -69,6 +129,9 @@ export default function DashboardLayout({ role, availableRoles, onRoleChange }: 
               onSectionChange={handleSectionChange}
               autoAdd={autoAdd}
               onAutoAddProcessed={() => setAutoAdd(null)}
+              onStatsUpdate={setSidebarStats}
+              autoFilterRezerwacje={autoFilterRezerwacje}
+              onAutoFilterProcessed={() => setAutoFilterRezerwacje(null)}
             />
           </div>
         </main>

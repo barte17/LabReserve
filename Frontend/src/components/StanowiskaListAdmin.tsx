@@ -14,7 +14,12 @@ type Stanowisko = {
   opis: string | null;
 };
 
-export default function StanowiskaListAdmin() {
+interface StanowiskaListAdminProps {
+  autoAdd?: boolean;
+  onAutoAddProcessed?: () => void;
+}
+
+export default function StanowiskaListAdmin({ autoAdd = false, onAutoAddProcessed }: StanowiskaListAdminProps = {}) {
   const [stanowiska, setStanowiska] = useState<Stanowisko[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -34,6 +39,16 @@ export default function StanowiskaListAdmin() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
+
+  // Handle autoAdd
+  useEffect(() => {
+    if (autoAdd) {
+      setShowAddForm(true);
+      if (onAutoAddProcessed) {
+        onAutoAddProcessed();
+      }
+    }
+  }, [autoAdd, onAutoAddProcessed]);
 
   const handleDelete = async (id: number) => {
     if (!window.confirm("Na pewno usunąć stanowisko?")) return;

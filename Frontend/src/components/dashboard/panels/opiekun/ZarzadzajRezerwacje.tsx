@@ -20,7 +20,12 @@ interface Rezerwacja {
   stanowiskoSala?: string;
 }
 
-export default function ZarzadzajRezerwacje() {
+interface ZarzadzajRezerwacjeProps {
+  autoFilter?: string;
+  onAutoFilterProcessed?: () => void;
+}
+
+export default function ZarzadzajRezerwacje({ autoFilter, onAutoFilterProcessed }: ZarzadzajRezerwacjeProps) {
   const [rezerwacje, setRezerwacje] = useState<Rezerwacja[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('wszystkie');
@@ -30,6 +35,15 @@ export default function ZarzadzajRezerwacje() {
   useEffect(() => {
     loadRezerwacje();
   }, []);
+
+  // Obsłuż automatyczny filtr z zewnątrz
+  useEffect(() => {
+    if (autoFilter) {
+      setFilter(autoFilter);
+      // poinformuj parenta, że przetworzono
+      onAutoFilterProcessed && onAutoFilterProcessed();
+    }
+  }, [autoFilter]);
 
   const loadRezerwacje = async () => {
     try {
