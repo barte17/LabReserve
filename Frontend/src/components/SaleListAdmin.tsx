@@ -38,6 +38,8 @@ export default function SaleListAdmin({ onEdit, autoAdd = false, onAutoAddProces
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
   const { showSuccess, showError } = useToastContext();
   const navigate = useNavigate();
 
@@ -148,6 +150,16 @@ export default function SaleListAdmin({ onEdit, autoAdd = false, onAutoAddProces
     }
     return 0;
   });
+
+  // Paginacja
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedSale = filtered.slice(startIndex, startIndex + itemsPerPage);
+
+  // Reset strony gdy zmienia się filtr
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, stanowiskaFilter, sortKey]);
 
   const shouldShowLoading = useMinimumLoadingDelay(loading, {
     minimumDelay: 200,
@@ -269,7 +281,7 @@ export default function SaleListAdmin({ onEdit, autoAdd = false, onAutoAddProces
 
       {/* lista sal */}
       <div className="space-y-4">
-        {filtered.map((s) => (
+        {paginatedSale.map((s) => (
           <div key={s.id} className="list-item animate-in">
             <div className="list-item-header">
               <div>
@@ -361,6 +373,46 @@ export default function SaleListAdmin({ onEdit, autoAdd = false, onAutoAddProces
           </div>
         ))}
       </div>
+
+      {/* Paginacja */}
+      {totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            Wyświetlanie {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filtered.length)} z {filtered.length} sal
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="btn btn-secondary btn-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Poprzednia
+            </button>
+            
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`btn btn-sm ${
+                  currentPage === page 
+                    ? 'btn-primary' 
+                    : 'btn-secondary'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+            
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="btn btn-secondary btn-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Następna
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -25,15 +25,42 @@ export default function UsersListAdmin({ autoFilter }: UsersListAdminProps = {})
   const [changingRoleId, setChangingRoleId] = useState<string | null>(null);
   const [editRolesUserId, setEditRolesUserId] = useState<string | null>(null);
   const [editRoles, setEditRoles] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
   const { showSuccess, showError } = useToastContext();
 
   const allRoles = ["Student", "Nauczyciel", "Opiekun", "Admin", "Niezatwierdzony"];
+  
   useEffect(() => {
     fetchUsers()
       .then(setUsers)
       .catch(() => setError("Błąd podczas pobierania użytkowników"))
       .finally(() => setLoading(false));
   }, []);
+
+  // Filtrowanie użytkowników
+  const filteredUsers = users.filter(user => {
+    const searchLower = searchTerm.toLowerCase();
+    const matchesSearch = 
+      user.imie.toLowerCase().includes(searchLower) ||
+      user.nazwisko.toLowerCase().includes(searchLower) ||
+      user.email.toLowerCase().includes(searchLower);
+    
+    const matchesRole = roleFilter === "" || 
+      (user.roles && user.roles.some(role => role.toLowerCase() === roleFilter.toLowerCase()));
+    
+    return matchesSearch && matchesRole;
+  });
+
+  // Paginacja
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
+
+  // Reset strony gdy zmienia się filtr
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, roleFilter]);
 
 
   const openEditRoles = (user: User) => {
@@ -111,18 +138,7 @@ export default function UsersListAdmin({ autoFilter }: UsersListAdminProps = {})
       </div>
 
       <div className="space-y-4">
-        {users.filter(user => {
-          const searchLower = searchTerm.toLowerCase();
-          const matchesSearch = 
-            user.imie.toLowerCase().includes(searchLower) ||
-            user.nazwisko.toLowerCase().includes(searchLower) ||
-            user.email.toLowerCase().includes(searchLower);
-          
-          const matchesRole = roleFilter === "" || 
-            (user.roles && user.roles.some(role => role.toLowerCase() === roleFilter.toLowerCase()));
-          
-          return matchesSearch && matchesRole;
-        }).map((u) => (
+        {paginatedUsers.map((u) => (
           <div key={u.id} className="list-item animate-in">
             <div className="list-item-header">
               <div>
@@ -212,6 +228,46 @@ export default function UsersListAdmin({ autoFilter }: UsersListAdminProps = {})
           </div>
         ))}
       </div>
+
+      {/* Paginacja */}
+      {totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            Wyświetlanie {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredUsers.length)} z {filteredUsers.length} użytkowników
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="btn btn-secondary btn-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Poprzednia
+            </button>
+            
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`btn btn-sm ${
+                  currentPage === page 
+                    ? 'btn-primary' 
+                    : 'btn-secondary'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+            
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="btn btn-secondary btn-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Następna
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

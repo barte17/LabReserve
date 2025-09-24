@@ -5,15 +5,15 @@ import { fetchStanowiska } from '../../../../services/stanowiskoService';
 import { fetchUserStats, fetchRezerwacjeStats } from '../../../../services/statsService';
 
 interface AdminDashboardProps {
-  onSectionChange?: (section: string, shouldAutoAdd?: boolean) => void;
+  onSectionChange?: (section: string, shouldAutoAdd?: boolean, options?: { autoFilter?: string }) => void;
 }
 
 export default function AdminDashboard({ onSectionChange }: AdminDashboardProps = {}) {
   const navigate = useNavigate();
 
-  const handleSectionChange = (section: string, shouldAutoAdd: boolean = false) => {
+  const handleSectionChange = (section: string, shouldAutoAdd: boolean = false, options?: { autoFilter?: string }) => {
     if (onSectionChange) {
-      onSectionChange(section, shouldAutoAdd);
+      onSectionChange(section, shouldAutoAdd, options);
     } else {
       // Fallback: nawiguj przez URL
       navigate(`/panel?view=admin&section=${section}`);
@@ -237,7 +237,7 @@ export default function AdminDashboard({ onSectionChange }: AdminDashboardProps 
             </div>
 
             <div className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors cursor-pointer"
-                 onClick={() => handleSectionChange('rezerwacje')}>
+                 onClick={() => handleSectionChange('rezerwacje', false, { autoFilter: 'oczekujące' })}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">

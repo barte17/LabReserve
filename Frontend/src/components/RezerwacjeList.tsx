@@ -3,11 +3,18 @@ import { fetchRezerwacje, updateStatus, deleteRezerwacja, type RezerwacjaDetails
 import { LoadingTable } from "./LoadingStates";
 import { useMinimumLoadingDelay } from "../hooks/useMinimumLoadingDelay";
 
-export default function RezerwacjeList() {
+interface RezerwacjeListProps {
+  autoFilter?: string;
+  onAutoFilterProcessed?: () => void;
+}
+
+export default function RezerwacjeList({ autoFilter, onAutoFilterProcessed }: RezerwacjeListProps = {}) {
   const [rezerwacje, setRezerwacje] = useState<RezerwacjaDetailsDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [showCompleted, setShowCompleted] = useState(false);
+  const [sortBy, setSortBy] = useState('default');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
@@ -17,6 +24,15 @@ export default function RezerwacjeList() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
+
+  // Obsłuż automatyczny filtr z zewnątrz
+  useEffect(() => {
+    if (autoFilter) {
+      setStatusFilter(autoFilter);
+      // poinformuj parenta, że przetworzono
+      onAutoFilterProcessed && onAutoFilterProcessed();
+    }
+  }, [autoFilter]);
 
   const [error, setError] = useState<string>("");
 
@@ -46,29 +62,56 @@ export default function RezerwacjeList() {
     }
   };
 
-  // Filtrowanie rezerwacji
-  const filteredRezerwacje = rezerwacje.filter(rez => {
-    const searchLower = searchTerm.toLowerCase();
-    const matchesSearch = 
-      rez.id.toString().includes(searchTerm) ||
-      rez.uzytkownikId.toLowerCase().includes(searchLower) ||
-      rez.status.toLowerCase().includes(searchLower) ||
-      (rez.opis && rez.opis.toLowerCase().includes(searchLower));
+  // Filtrowanie i sortowanie rezerwacji
+  const filteredAndSortedRezerwacje = (() => {
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // koniec dnia
     
-    const matchesStatus = statusFilter === "" || rez.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
+    // 1. Filtrowanie
+    let filtered = rezerwacje.filter(rez => {
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = 
+        rez.id.toString().includes(searchTerm) ||
+        rez.uzytkownikId.toLowerCase().includes(searchLower) ||
+        rez.status.toLowerCase().includes(searchLower) ||
+        (rez.opis && rez.opis.toLowerCase().includes(searchLower)) ||
+        new Date(rez.dataStart).toLocaleDateString('pl-PL').includes(searchTerm) ||
+        new Date(rez.dataKoniec).toLocaleDateString('pl-PL').includes(searchTerm) ||
+        new Date(rez.dataUtworzenia).toLocaleDateString('pl-PL').includes(searchTerm);
+      
+      const matchesStatus = statusFilter === "" || rez.status === statusFilter;
+      
+      // Filtr zakończonych rezerwacji
+      const isCompleted = new Date(rez.dataKoniec) < today;
+      const matchesCompleted = showCompleted || !isCompleted;
+      
+      return matchesSearch && matchesStatus && matchesCompleted;
+    });
+
+    // 2. Sortowanie
+    switch (sortBy) {
+      case 'created-desc':
+        return [...filtered].sort((a, b) => new Date(b.dataUtworzenia).getTime() - new Date(a.dataUtworzenia).getTime());
+      case 'created-asc':
+        return [...filtered].sort((a, b) => new Date(a.dataUtworzenia).getTime() - new Date(b.dataUtworzenia).getTime());
+      case 'nearest':
+        return [...filtered]
+          .filter(rez => new Date(rez.dataKoniec) >= today) // tylko aktywne
+          .sort((a, b) => new Date(a.dataStart).getTime() - new Date(b.dataStart).getTime());
+      default:
+        return filtered; // domyślna kolejność z API
+    }
+  })();
 
   // Paginacja
-  const totalPages = Math.ceil(filteredRezerwacje.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredAndSortedRezerwacje.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedRezerwacje = filteredRezerwacje.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedRezerwacje = filteredAndSortedRezerwacje.slice(startIndex, startIndex + itemsPerPage);
 
-  // Reset strony gdy zmienia się filtr
+  // Reset strony gdy zmienia się filtr lub sortowanie
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter]);
+  }, [searchTerm, statusFilter, showCompleted, sortBy]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -95,17 +138,42 @@ export default function RezerwacjeList() {
   return (
     <div>
 
-      {/* Filtry */}
-      <div className="filters-panel mb-6">
-        <div className="form-group">
-          <label className="form-label">Wyszukaj rezerwację</label>
+      {/* Wyszukiwanie */}
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Wyszukaj rezerwację</label>
+        <input
+          type="text"
+          placeholder="ID, użytkownik, status, opis, daty..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+        />
+      </div>
+
+      {/* Kontrolki sortowania i filtrowania */}
+      <div className="mb-4 flex flex-wrap items-center gap-4">
+        <label className="flex items-center space-x-2 text-sm">
           <input
-            type="text"
-            placeholder="ID, użytkownik, status, opis..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="form-input"
+            type="checkbox"
+            checked={showCompleted}
+            onChange={(e) => setShowCompleted(e.target.checked)}
+            className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
           />
+          <span className="text-gray-700">Pokaż zakończone</span>
+        </label>
+
+        <div className="flex items-center space-x-2">
+          <label className="text-sm font-medium text-gray-700">Sortuj według:</label>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="px-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm bg-white"
+          >
+            <option value="default">Domyślnie</option>
+            <option value="created-desc">Data utworzenia ↓</option>
+            <option value="created-asc">Data utworzenia ↑</option>
+            <option value="nearest">Najbliższe rezerwacje</option>
+          </select>
         </div>
       </div>
 
@@ -199,7 +267,7 @@ export default function RezerwacjeList() {
       )}
 
       {/* Lista rezerwacji */}
-      {filteredRezerwacje.length === 0 ? (
+      {filteredAndSortedRezerwacje.length === 0 ? (
         <div className="card">
           <div className="card-body text-center py-12">
             <svg className="h-16 w-16 text-neutral-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -333,7 +401,7 @@ export default function RezerwacjeList() {
       {totalPages > 1 && (
         <div className="mt-6 flex items-center justify-between">
           <div className="text-sm text-neutral-600">
-            Wyświetlanie {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredRezerwacje.length)} z {filteredRezerwacje.length} rezerwacji
+            Wyświetlanie {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredAndSortedRezerwacje.length)} z {filteredAndSortedRezerwacje.length} rezerwacji
           </div>
           <div className="flex items-center space-x-2">
             <button

@@ -45,7 +45,7 @@ export default function DashboardContent({ role, activeSection, onSectionChange,
       case 'uzytkownicy':
         return <UsersListAdmin autoFilter={autoAdd === 'uzytkownicy-niezatwierdzeni' ? 'niezatwierdzony' : undefined} />;
       case 'rezerwacje':
-        return <RezerwacjeList />;
+        return <RezerwacjeList autoFilter={autoFilterRezerwacje || undefined} onAutoFilterProcessed={onAutoFilterProcessed} />;
       default:
         return <AdminDashboard />;
     }
