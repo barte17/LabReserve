@@ -19,6 +19,7 @@ export default function MojeStanowiska() {
   const [loading, setLoading] = useState(true);
   const [editingStanowisko, setEditingStanowisko] = useState<number | null>(null);
   const [editOpis, setEditOpis] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const { showSuccess, showError } = useToastContext();
 
   useEffect(() => {
@@ -76,7 +77,22 @@ export default function MojeStanowiska() {
     }
   };
 
-  const groupedByRoom = stanowiska.reduce((acc, stanowisko) => {
+  // Filtrowanie stanowisk
+  const filteredStanowiska = stanowiska.filter(stanowisko => {
+    if (!searchTerm.trim()) return true;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      stanowisko.nazwa.toLowerCase().includes(searchLower) ||
+      stanowisko.typ.toLowerCase().includes(searchLower) ||
+      `${stanowisko.salaNumer}`.includes(searchTerm) ||
+      stanowisko.salaBudynek.toLowerCase().includes(searchLower) ||
+      `sala ${stanowisko.salaNumer}`.toLowerCase().includes(searchLower) ||
+      `${stanowisko.salaBudynek}${stanowisko.salaNumer}`.toLowerCase().includes(searchLower)
+    );
+  });
+
+  const groupedByRoom = filteredStanowiska.reduce((acc, stanowisko) => {
     const roomKey = `${stanowisko.salaNumer} - ${stanowisko.salaBudynek}`;
     if (!acc[roomKey]) {
       acc[roomKey] = [];
@@ -95,14 +111,20 @@ export default function MojeStanowiska() {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
+      {/* Wyszukiwanie */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          💻 Moje Stanowiska
-        </h1>
-        <p className="text-gray-600">
-          Stanowiska w salach pod Twoją opieką ({stanowiska.length} stanowisk)
-        </p>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Wyszukaj stanowisko ({filteredStanowiska.length} z {stanowiska.length})
+          </label>
+          <input
+            type="text"
+            placeholder="Nazwa stanowiska, typ, numer sali, budynek..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+          />
+        </div>
       </div>
 
       {/* Lista stanowisk pogrupowana po salach */}
@@ -110,10 +132,13 @@ export default function MojeStanowiska() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
           <div className="text-6xl mb-4">💻</div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Brak stanowisk
+            {stanowiska.length === 0 ? 'Brak stanowisk' : 'Brak wyników'}
           </h2>
           <p className="text-gray-600">
-            Nie ma stanowisk w salach pod Twoją opieką.
+            {stanowiska.length === 0 
+              ? 'Nie ma stanowisk w salach pod Twoją opieką.'
+              : 'Zmień kryteria wyszukiwania aby zobaczyć stanowiska.'
+            }
           </p>
         </div>
       ) : (
@@ -212,35 +237,6 @@ export default function MojeStanowiska() {
               </div>
             </div>
           ))}
-        </div>
-      )}
-
-      {/* Summary */}
-      {stanowiska.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Podsumowanie</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold text-blue-600">{stanowiska.length}</div>
-              <div className="text-sm text-gray-500">Wszystkie stanowiska</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-green-600">{Object.keys(groupedByRoom).length}</div>
-              <div className="text-sm text-gray-500">Sale</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-purple-600">
-                {stanowiska.filter(s => s.typ.toLowerCase().includes('komputer')).length}
-              </div>
-              <div className="text-sm text-gray-500">Komputery</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-orange-600">
-                {stanowiska.filter(s => s.opis && s.opis.trim()).length}
-              </div>
-              <div className="text-sm text-gray-500">Z opisem</div>
-            </div>
-          </div>
         </div>
       )}
     </div>
