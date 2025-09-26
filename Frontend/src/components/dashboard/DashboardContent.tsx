@@ -76,7 +76,7 @@ export default function DashboardContent({ role, activeSection, onSectionChange,
   if (role === 'user') {
     switch (activeSection) {
       case 'dashboard':
-        return <UserDashboardPanel />;
+        return <UserDashboardPanel onNavigate={(section) => onSectionChange?.(section)} />;
       case 'rezerwuj':
         return <RezerwujSale />;
       case 'moje-rezerwacje':
@@ -84,7 +84,7 @@ export default function DashboardContent({ role, activeSection, onSectionChange,
       case 'profil':
         return <UserProfile />;
       default:
-        return <UserDashboardPanel />;
+        return <UserDashboardPanel onNavigate={(section) => onSectionChange?.(section)} />;
     }
   }
 
