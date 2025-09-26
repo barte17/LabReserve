@@ -5,7 +5,7 @@ import Sale from "../pages/ShowRooms";
 import SalaDetails from "../pages/SalaDetails";
 import StanowiskoDetails from "../pages/StanowiskoDetails";
 import PanelAdmina from "../pages/AdminPanel";
-import UserPanel from "../pages/AccountPanel";
+import DashboardPage from "../pages/DashboardPage";
 import Login from '../pages/Login';
 import Register from '../pages/Register';
 import Home from '../pages/Home';
