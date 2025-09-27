@@ -81,7 +81,7 @@ export function Navbar() {
               </Link>
             ) : (
               <>
-                <Link to="/account" className="navbar-link">
+                <Link to="/panel?view=user" className="navbar-link">
                   Panel użytkownika
                 </Link>
                 <button onClick={handleLogout} className="btn btn-secondary">
@@ -191,7 +191,7 @@ export function Navbar() {
                 ) : (
                   <div className="space-y-2">
                     <Link 
-                      to="/account" 
+                      to="/panel?view=user" 
                       className="block px-3 py-2 rounded-lg text-base font-medium text-neutral-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >

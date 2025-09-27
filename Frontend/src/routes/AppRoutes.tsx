@@ -4,8 +4,6 @@ import Stanowiska from "../pages/ShowStations";
 import Sale from "../pages/ShowRooms";
 import SalaDetails from "../pages/SalaDetails";
 import StanowiskoDetails from "../pages/StanowiskoDetails";
-import PanelAdmina from "../pages/AdminPanel";
-import DashboardPage from "../pages/DashboardPage";
 import Login from '../pages/Login';
 import Register from '../pages/Register';
 import Home from '../pages/Home';
@@ -48,7 +46,7 @@ export function AppRoutes() {
       
       <Route path="/account" element={
         <PageErrorBoundary fallbackPath="/" fallbackText="Strona główna">
-          <UserPanel />
+          <UserDashboard />
         </PageErrorBoundary>
       } />
       
@@ -73,11 +71,11 @@ export function AppRoutes() {
         </ProtectedRoute>
       } />
 
-      {/* Backward compatibility - stary panel admina */}
+      {/* Backward compatibility - przekierowanie na nowy panel */}
       <Route path="/panel-admina" element={
         <AdminRoute>
           <PageErrorBoundary fallbackPath="/" fallbackText="Strona główna">
-            <PanelAdmina />
+            <UserDashboard />
           </PageErrorBoundary>
         </AdminRoute>
       } />
