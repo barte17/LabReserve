@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchMyReservations } from '../../../../services/rezerwacjaService';
+import { fetchStanowiskoById } from '../../../../services/stanowiskoService';
 
 interface Rezerwacja {
   id: number;
@@ -32,12 +33,34 @@ export default function RezerwujSale() {
   const loadOstatnieRezerwacje = async () => {
     try {
       const rezerwacje = await fetchMyReservations();
+      
       // Pobierz ostatnie 6 rezerwacji według daty rezerwacji (dataStart)
       const ostatnie = rezerwacje
         .sort((a, b) => new Date(b.dataStart).getTime() - new Date(a.dataStart).getTime())
         .slice(0, 6);
       
-      setOstatnieRezerwacje(ostatnie);
+      // Dla stanowisk pobierz dane sali
+      const ostatnieZSalami = await Promise.all(
+        ostatnie.map(async (rezerwacja) => {
+          if (rezerwacja.stanowiskoId && (!rezerwacja.salaNumer || !rezerwacja.salaBudynek)) {
+            try {
+              const stanowiskoDetails = await fetchStanowiskoById(rezerwacja.stanowiskoId);
+              console.log(`DEBUG - Stanowisko ${rezerwacja.stanowiskoId}:`, stanowiskoDetails);
+              return {
+                ...rezerwacja,
+                salaNumer: stanowiskoDetails.salaNumer || stanowiskoDetails.sala?.numer || 'brak',
+                salaBudynek: stanowiskoDetails.salaBudynek || stanowiskoDetails.sala?.budynek || ''
+              };
+            } catch (error) {
+              console.error(`Błąd pobierania danych stanowiska ${rezerwacja.stanowiskoId}:`, error);
+              return rezerwacja;
+            }
+          }
+          return rezerwacja;
+        })
+      );
+      
+      setOstatnieRezerwacje(ostatnieZSalami);
     } catch (error) {
       console.error('Błąd pobierania ostatnich rezerwacji:', error);
     } finally {
