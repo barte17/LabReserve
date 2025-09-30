@@ -17,13 +17,21 @@ interface DashboardLayoutProps {
   role: string;
   availableRoles: Role[];
   onRoleChange: (role: string) => void;
+  initialSection?: string;
 }
 
-export default function DashboardLayout({ role, availableRoles, onRoleChange }: DashboardLayoutProps) {
-  const [activeSection, setActiveSection] = useState('dashboard');
+export default function DashboardLayout({ role, availableRoles, onRoleChange, initialSection }: DashboardLayoutProps) {
+  const [activeSection, setActiveSection] = useState(initialSection || 'dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [autoAdd, setAutoAdd] = useState<string | null>(null);
   const [autoFilterRezerwacje, setAutoFilterRezerwacje] = useState<string | null>(null);
+
+  // Aktualizuj activeSection gdy zmieni się initialSection
+  useEffect(() => {
+    if (initialSection) {
+      setActiveSection(initialSection);
+    }
+  }, [initialSection]);
   const [sidebarStats, setSidebarStats] = useState<{
     mojeSale?: number;
     mojeStanowiska?: number;

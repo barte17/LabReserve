@@ -111,11 +111,14 @@ export default function UserDashboard() {
   }
 
   // Renderuj wybrany panel
+  const initialSection = searchParams.get('section') || 'dashboard';
+  
   return (
     <DashboardLayout 
       role={selectedRole!}
       availableRoles={availableRoles}
       onRoleChange={setSelectedRole}
+      initialSection={initialSection}
     />
   );
 }
