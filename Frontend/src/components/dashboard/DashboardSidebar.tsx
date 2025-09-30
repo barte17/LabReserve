@@ -81,111 +81,135 @@ export default function DashboardSidebar({
   };
 
   return (
-    <div className="h-full flex flex-col bg-white border-r border-gray-200">
-      {/* Header */}
-      <div className="flex-shrink-0 px-4 py-6 border-b border-gray-200">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="text-2xl mr-3">{currentRoleInfo?.icon}</div>
-            <div>
-              <h2 className="text-lg font-bold text-gray-900">
-                {role === 'admin' && 'Panel Admina'}
-                {role === 'opiekun' && 'Panel Opiekuna'}
-                {role === 'user' && 'Panel Użytkownika'}
-              </h2>
-              <p className="text-sm text-gray-500">
-                {user?.email}
-              </p>
-            </div>
-          </div>
-          
-          {/* Close button for mobile */}
-          <button
-            onClick={onClose}
-            className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
-          >
-            <span className="sr-only">Zamknij menu</span>
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
-        {currentMenu.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => {
-              onSectionChange(item.id);
-              onClose();
-            }}
-            className={`
-              w-full text-left px-3 py-3 rounded-lg transition-colors duration-200
-              flex items-center justify-between group
-              ${activeSection === item.id
-                ? 'bg-red-50 text-red-700 border border-red-200'
-                : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-              }
-            `}
-          >
-            <div className="flex items-center">
-              <span className="text-lg mr-3">{item.icon}</span>
-              <div>
-                <div className="font-medium">{item.label}</div>
-                {item.description && (
-                  <div className="text-xs text-gray-500 mt-0.5">
-                    {item.description}
-                  </div>
-                )}
+    <div className="h-full flex flex-col bg-white shadow-xl border-r border-gray-200/60">
+      {/* Header - Panel Info & Role Switcher */}
+      <div className="flex-shrink-0 bg-white border-b border-gray-200/60">
+        {/* Panel Header */}
+        <div className="px-6 py-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center min-w-0 flex-1">
+              <div className="flex-shrink-0">
+                <div className={`
+                  w-10 h-10 rounded-xl flex items-center justify-center text-lg font-semibold
+                  ${role === 'admin' ? 'bg-red-100 text-red-700' : ''}
+                  ${role === 'opiekun' ? 'bg-blue-100 text-blue-700' : ''}
+                  ${role === 'user' ? 'bg-gray-100 text-gray-700' : ''}
+                `}>
+                  {currentRoleInfo?.icon}
+                </div>
+              </div>
+              <div className="ml-4 min-w-0 flex-1">
+                <h2 className="text-lg font-bold text-gray-900 truncate">
+                  {role === 'admin' && 'Panel Admina'}
+                  {role === 'opiekun' && 'Panel Opiekuna'}
+                  {role === 'user' && 'Panel Użytkownika'}
+                </h2>
+                <p className="text-sm text-gray-500 truncate">
+                  {user?.email}
+                </p>
               </div>
             </div>
             
-            {(item.badge !== undefined && item.badge !== null) && (
-              <span className={`
-                px-2 py-1 text-xs font-medium rounded-full
-                ${activeSection === item.id
-                  ? 'bg-red-100 text-red-800'
-                  : 'bg-gray-100 text-gray-800'
-                }
-              `}>
-                {item.badge}
-              </span>
-            )}
-          </button>
-        ))}
-      </nav>
+            {/* Close button for mobile */}
+            <button
+              onClick={onClose}
+              className="lg:hidden ml-2 p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            >
+              <span className="sr-only">Zamknij menu</span>
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
 
-      {/* Role switcher i logout */}
-      <div className="flex-shrink-0 p-4 border-t border-gray-200 space-y-2">
-        {/* Role switcher - tylko jeśli więcej niż jedna rola */}
+        {/* Role Switcher - Vertical Layout */}
         {availableRoles.length > 1 && (
-          <div>
-            <p className="text-xs font-medium text-gray-500 mb-2">PRZEŁĄCZ PANEL:</p>
-            {availableRoles
-              .filter(r => r.key !== role)
-              .map((roleOption) => (
-                <button
-                  key={roleOption.key}
-                  onClick={() => handleRoleSwitch(roleOption.key)}
-                  className="w-full text-left px-3 py-2 text-sm rounded-md text-gray-600 hover:bg-gray-100 hover:text-gray-900 flex items-center transition-colors"
-                >
-                  <span className="mr-2">{roleOption.icon}</span>
-                  {roleOption.label.replace('Panel ', '')}
-                </button>
-              ))
-            }
+          <div className="px-6 pb-4">
+            <div className="space-y-2">
+              <span className="text-xs font-medium text-gray-500 block text-center">Przełącz panel:</span>
+              <div className="space-y-1">
+                {availableRoles
+                  .filter(r => r.key !== role)
+                  .map((roleOption) => (
+                    <button
+                      key={roleOption.key}
+                      onClick={() => handleRoleSwitch(roleOption.key)}
+                      className="w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg text-gray-600 bg-gray-50 hover:bg-gray-100 hover:text-gray-900 transition-colors border border-gray-200 hover:border-gray-300"
+                    >
+                      <span className="mr-2.5">{roleOption.icon}</span>
+                      <span>{roleOption.label.replace('Panel ', '')}</span>
+                    </button>
+                  ))
+                }
+              </div>
+            </div>
           </div>
         )}
+      </div>
 
-        {/* Logout */}
+      {/* Scrollable Navigation */}
+      <nav className="flex-1 px-4 py-6 overflow-y-auto dashboard-sidebar-scrollbar">
+        <div className="space-y-2">
+          {currentMenu.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => {
+                onSectionChange(item.id);
+                onClose();
+              }}
+              className={`
+                w-full group text-left px-4 py-3.5 rounded-xl transition-all duration-200
+                flex items-center justify-between
+                ${activeSection === item.id
+                  ? 'bg-gradient-to-r from-red-50 to-red-50/50 text-red-700 shadow-sm border border-red-200/60'
+                  : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 hover:shadow-sm'
+                }
+              `}
+            >
+              <div className="flex items-center min-w-0 flex-1">
+                <span className={`
+                  text-lg mr-3 flex-shrink-0 transition-transform duration-200
+                  ${activeSection === item.id ? 'scale-110' : 'group-hover:scale-105'}
+                `}>
+                  {item.icon}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold text-sm leading-tight truncate">{item.label}</div>
+                  {item.description && (
+                    <div className="text-xs text-gray-500 mt-0.5 truncate">
+                      {item.description}
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {(item.badge !== undefined && item.badge !== null && item.badge > 0) && (
+                <div className="flex-shrink-0 ml-2">
+                  <span className={`
+                    inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-xs font-bold rounded-full
+                    ${activeSection === item.id
+                      ? 'bg-red-100 text-red-800'
+                      : 'bg-gray-100 text-gray-700 group-hover:bg-gray-200'
+                    }
+                  `}>
+                    {item.badge}
+                  </span>
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      {/* Footer - Logout */}
+      <div className="flex-shrink-0 bg-white border-t border-gray-200/60 p-4">
         <button
           onClick={handleLogout}
-          className="w-full text-left px-3 py-2 text-sm rounded-md text-red-600 hover:bg-red-50 hover:text-red-700 flex items-center transition-colors"
+          className="w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl text-red-600 hover:bg-red-50 hover:text-red-700 transition-all duration-200 group"
         >
-          <span className="mr-2">🚪</span>
-          Wyloguj się
+          <span className="mr-3 text-base group-hover:scale-110 transition-transform duration-200">🚪</span>
+          <span>Wyloguj się</span>
         </button>
       </div>
     </div>

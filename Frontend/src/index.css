@@ -13,6 +13,10 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   * {
     @apply border-neutral-200;
   }
@@ -20,7 +24,7 @@
   body {
     @apply bg-neutral-50 text-neutral-900 font-sans min-h-screen;
     margin: 0;
-    padding-top: 80px;
+    padding-top: 5rem; /* 80px - sync with navbar height */
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -105,7 +109,9 @@
 
   /* ----- NAWIGACJA ----- */
   .navbar {
-    @apply fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-b border-neutral-200 z-50 shadow-sm;
+    @apply fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-b border-neutral-200 shadow-sm;
+    height: 5rem; /* 80px - exact height for consistency */
+    z-index: 60; /* Higher than sidebar z-30 */
   }
 
   .navbar-brand {
@@ -213,5 +219,28 @@
 
   .shadow-glow {
     box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+  }
+
+  /* Dashboard specific utilities */
+  .dashboard-sidebar-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+  }
+
+  .dashboard-sidebar-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .dashboard-sidebar-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .dashboard-sidebar-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.5);
+    border-radius: 3px;
+  }
+
+  .dashboard-sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.7);
   }
 }
