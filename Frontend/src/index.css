@@ -24,7 +24,7 @@
   body {
     @apply bg-neutral-50 text-neutral-900 font-sans min-h-screen;
     margin: 0;
-    padding-top: 5rem; /* 80px - sync with navbar height */
+    padding-top: 4rem; /* 64px - sync with navbar height */
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -43,6 +43,10 @@
   /* ----- PRZYCISKI ----- */
   .btn {
     @apply inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-navbar {
+    @apply btn h-full rounded-none;
   }
 
   .btn-primary {
@@ -110,7 +114,7 @@
   /* ----- NAWIGACJA ----- */
   .navbar {
     @apply fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-b border-neutral-200 shadow-sm;
-    height: 5rem; /* 80px - exact height for consistency */
+    height: 4rem; /* 64px - reduced height */
     z-index: 60; /* Higher than sidebar z-30 */
   }
 
@@ -119,11 +123,11 @@
   }
 
   .navbar-nav {
-    @apply flex items-center space-x-1;
+    @apply flex items-stretch h-full;
   }
 
   .navbar-link {
-    @apply px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all duration-200 font-medium;
+    @apply px-5 h-full flex items-center text-neutral-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 font-medium;
   }
 
   .navbar-link-active {

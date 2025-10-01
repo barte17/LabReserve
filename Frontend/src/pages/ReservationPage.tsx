@@ -336,7 +336,7 @@ export default function ReservationPage() {
       
       // Przekieruj po 2 sekundach
       setTimeout(() => {
-        navigate('/my-reservations');
+        navigate('/panel?view=user&section=moje-rezerwacje');
       }, 2000);
       
     } catch (err: any) {

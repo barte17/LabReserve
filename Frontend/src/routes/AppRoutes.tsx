@@ -8,7 +8,6 @@ import Login from '../pages/Login';
 import Register from '../pages/Register';
 import Home from '../pages/Home';
 import ReservationPage from '../pages/ReservationPage';
-import MyReservations from '../pages/MyReservations';
 import PublicRoute from "../routes/PublicRoute";
 import { AdminRoute } from "../routes/AdminRoute";
 import { PageErrorBoundary } from "../components/ErrorBoundary";
@@ -56,11 +55,6 @@ export function AppRoutes() {
         </PageErrorBoundary>
       } />
       
-      <Route path="/my-reservations" element={
-        <PageErrorBoundary fallbackPath="/" fallbackText="Strona główna">
-          <MyReservations />
-        </PageErrorBoundary>
-      } />
 
       {/* Nowy unified dashboard */}
       <Route path="/panel" element={

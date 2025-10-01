@@ -41,10 +41,10 @@ export function Navbar() {
   return (
     <nav className="navbar">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
+        <div className="flex justify-between items-stretch h-16">
           {/* Logo/Brand */}
-          <div className="flex-shrink-0">
-            <Link to="/" className="navbar-brand">
+          <div className="flex-shrink-0 h-full">
+            <Link to="/" className="navbar-brand h-full flex items-center">
               🎓 LabReserve
             </Link>
           </div>
@@ -75,27 +75,18 @@ export function Navbar() {
               </Link>
               {isLogged && (
                 <Link 
-                  to="/my-reservations" 
-                  className={`flex items-center space-x-1.5 ${isActiveLink("/my-reservations") ? "navbar-link-active" : "navbar-link"}`}
+                  to="/panel?view=user&section=moje-rezerwacje" 
+                  className={`flex items-center space-x-1.5 ${isActiveLink("/panel") && new URLSearchParams(location.search).get('section') === 'moje-rezerwacje' ? "navbar-link-active" : "navbar-link"}`}
                 >
                   <span>📋</span>
                   <span>Moje Rezerwacje</span>
-                </Link>
-              )}
-              {isLogged && (hasRole("Admin") || hasRole("Opiekun")) && (
-                <Link 
-                  to="/panel" 
-                  className={`flex items-center space-x-1.5 ${isActiveLink("/panel") ? "navbar-link-active" : "navbar-link"}`}
-                >
-                  <span>⚙️</span>
-                  <span>Panel zarządzania</span>
                 </Link>
               )}
             </div>
           </div>
 
           {/* User Menu */}
-          <div className="hidden md:flex items-center space-x-2">
+          <div className="hidden md:flex items-stretch space-x-2 h-full">
             {isLoading ? (
               // Placeholder podczas ładowania
               <div className="flex items-center space-x-2">
@@ -103,24 +94,30 @@ export function Navbar() {
                 <div className="w-16 h-8 bg-gray-200 rounded animate-pulse"></div>
               </div>
             ) : !isLogged ? (
-              <Link to="/login" className="btn btn-primary">
+              <Link to="/login" className="btn-navbar btn-primary">
                 Zaloguj się
               </Link>
             ) : (
               // User Dropdown
-              <div className="relative" ref={dropdownRef}>
+              <div className="relative h-full" ref={dropdownRef}>
                 <button
                   onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                  className="flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors border border-gray-200 hover:border-gray-300"
+                  className="flex items-center space-x-3 px-6 h-full text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md"
                 >
-                  <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                    {user?.email?.charAt(0).toUpperCase()}
-                  </div>
-                  <span className="hidden lg:block truncate max-w-32">
-                    {user?.email?.split('@')[0]}
+                  <svg 
+                    className="w-6 h-6 text-gray-600" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <span className="hidden lg:block font-semibold text-gray-900">
+                    Panel
                   </span>
                   <svg 
-                    className={`w-4 h-4 transition-transform duration-200 ${isUserDropdownOpen ? 'rotate-180' : ''}`} 
+                    className={`w-4 h-4 transition-transform duration-200 flex-shrink-0 ${isUserDropdownOpen ? 'rotate-180' : ''}`} 
                     fill="none" 
                     viewBox="0 0 24 24" 
                     stroke="currentColor"
@@ -131,11 +128,11 @@ export function Navbar() {
 
                 {/* Dropdown Menu */}
                 {isUserDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
+                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
                     {/* Header */}
                     <div className="px-4 py-3 border-b border-gray-100">
                       <p className="text-sm font-medium text-gray-900 truncate">{user?.email}</p>
-                      <p className="text-xs text-gray-500">Zalogowany użytkownik</p>
+                      <p className="text-xs text-gray-500">Panel</p>
                     </div>
 
                     {/* Menu Items */}
@@ -252,9 +249,9 @@ export function Navbar() {
               </Link>
               {isLogged && (
                 <Link 
-                  to="/my-reservations" 
+                  to="/panel?view=user&section=moje-rezerwacje" 
                   className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-base font-medium transition-all duration-200 ${
-                    isActiveLink("/my-reservations") 
+                    isActiveLink("/panel") && new URLSearchParams(location.search).get('section') === 'moje-rezerwacje'
                       ? "bg-primary-100 text-primary-700" 
                       : "text-neutral-700 hover:text-primary-600 hover:bg-primary-50"
                   }`}
@@ -262,20 +259,6 @@ export function Navbar() {
                 >
                   <span>📋</span>
                   <span>Moje Rezerwacje</span>
-                </Link>
-              )}
-              {isLogged && (hasRole("Admin") || hasRole("Opiekun")) && (
-                <Link 
-                  to="/panel" 
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-base font-medium transition-all duration-200 ${
-                    isActiveLink("/panel") 
-                      ? "bg-primary-100 text-primary-700" 
-                      : "text-neutral-700 hover:text-primary-600 hover:bg-primary-50"
-                  }`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <span>⚙️</span>
-                  <span>Panel zarządzania</span>
                 </Link>
               )}
               
