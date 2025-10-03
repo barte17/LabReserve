@@ -84,6 +84,9 @@ builder.Services.AddControllers()
 // Register Image Processing Service
 builder.Services.AddScoped<Backend.Services.IImageProcessingService, Backend.Services.ImageProcessingService>();
 
+// Register Background Service for expired reservations
+builder.Services.AddHostedService<Backend.Services.ExpiredReservationsService>();
+
 // Rate Limiting configuration
 builder.Services.AddMemoryCache();
 builder.Services.Configure<IpRateLimitOptions>(options =>

@@ -86,7 +86,7 @@ export function Navbar() {
           </div>
 
           {/* User Menu */}
-          <div className="hidden md:flex items-stretch space-x-2 h-full">
+          <div className="hidden md:flex items-center space-x-4">
             {isLoading ? (
               // Placeholder podczas ładowania
               <div className="flex items-center space-x-2">
@@ -94,15 +94,32 @@ export function Navbar() {
                 <div className="w-16 h-8 bg-gray-200 rounded animate-pulse"></div>
               </div>
             ) : !isLogged ? (
-              <Link to="/login" className="btn-navbar btn-primary">
+              <Link to="/login" className="flex items-center px-6 py-2.5 bg-red-500 hover:bg-red-600 text-white font-semibold text-sm rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
                 Zaloguj się
               </Link>
             ) : (
-              // User Dropdown
-              <div className="relative h-full" ref={dropdownRef}>
+              <>
+                {/* Notifications Bell */}
+                <button
+                  className="relative flex items-center justify-center p-2.5 text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors rounded-lg border border-gray-200 hover:border-gray-300"
+                  title="Powiadomienia"
+                >
+                  <svg 
+                    className="w-6 h-6" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                </button>
+
+                {/* User Dropdown */}
+                <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                  className="flex items-center space-x-3 px-6 h-full text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md"
+                  className="flex items-center space-x-3 px-6 py-2.5 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md"
                 >
                   <svg 
                     className="w-6 h-6 text-gray-600" 
@@ -186,12 +203,13 @@ export function Navbar() {
                     </div>
                   </div>
                 )}
-              </div>
+                </div>
+              </>
             )}
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="inline-flex items-center justify-center p-2 rounded-lg text-neutral-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200"

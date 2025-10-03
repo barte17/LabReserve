@@ -658,5 +658,19 @@ namespace Backend.Controllers
                 timestamp = DateTime.Now 
             });
         }
+
+        [HttpGet("background-service-status")]
+        [Authorize(Roles = "Admin")]
+        public ActionResult GetBackgroundServiceStatus()
+        {
+            // Prosty endpoint do sprawdzenia czy background service działa
+            return Ok(new 
+            { 
+                message = "Background service is configured and should be running",
+                checkInterval = "Every 30 minutes",
+                nextApproximateCheck = DateTime.Now.AddMinutes(30 - (DateTime.Now.Minute % 30)),
+                info = "Check server console logs for actual background service activity"
+            });
+        }
     }
 }
