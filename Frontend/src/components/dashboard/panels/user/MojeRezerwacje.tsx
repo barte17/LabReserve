@@ -107,6 +107,7 @@ export default function MojeRezerwacje() {
       case 'oczekujące': return 'bg-yellow-100 text-yellow-800';
       case 'odrzucono': return 'bg-red-100 text-red-800';
       case 'anulowane': return 'bg-gray-100 text-gray-800';
+      case 'po terminie': return 'bg-orange-100 text-orange-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -117,6 +118,7 @@ export default function MojeRezerwacje() {
       case 'oczekujące': return '⏳';
       case 'odrzucono': return '❌';
       case 'anulowane': return '🚫';
+      case 'po terminie': return '⏰';
       default: return '❓';
     }
   };
@@ -126,7 +128,8 @@ export default function MojeRezerwacje() {
     oczekujace: rezerwacje.filter(r => r.status === 'oczekujące').length,
     zaakceptowane: rezerwacje.filter(r => r.status === 'zaakceptowano').length,
     odrzucone: rezerwacje.filter(r => r.status === 'odrzucono').length,
-    anulowane: rezerwacje.filter(r => r.status === 'anulowane').length
+    anulowane: rezerwacje.filter(r => r.status === 'anulowane').length,
+    poTerminie: rezerwacje.filter(r => r.status === 'po terminie').length
   };
 
   if (loading) {
@@ -180,7 +183,7 @@ export default function MojeRezerwacje() {
         </div>
 
         {/* Kafelki filtrów statusów */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <button
             onClick={() => setStatusFilter('')}
             className={`p-4 rounded-lg text-center border-2 transition-all ${
@@ -239,6 +242,21 @@ export default function MojeRezerwacje() {
           >
             <div className="text-xl font-bold">{stats.anulowane}</div>
             <div className="text-xs mt-1">Anulowane</div>
+          </button>
+
+          <button
+            onClick={() => {
+              setStatusFilter('po terminie');
+              setShowCompleted(true);
+            }}
+            className={`p-4 rounded-lg text-center border-2 transition-all ${
+              statusFilter === 'po terminie'
+                ? 'border-orange-500 bg-orange-500 text-white shadow-md'
+                : 'border-orange-200 bg-orange-50 text-orange-700 hover:border-orange-300 hover:bg-orange-100'
+            }`}
+          >
+            <div className="text-xl font-bold">{stats.poTerminie}</div>
+            <div className="text-xs mt-1">Po terminie</div>
           </button>
         </div>
       </div>

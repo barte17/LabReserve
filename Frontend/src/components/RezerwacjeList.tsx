@@ -178,7 +178,7 @@ export default function RezerwacjeList({ autoFilter, onAutoFilterProcessed }: Re
       </div>
 
       {/* Interaktywne filtry statusów */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
         <button
           onClick={() => setStatusFilter("")}
           className={`card transition-all duration-200 hover:shadow-lg ${
@@ -255,6 +255,25 @@ export default function RezerwacjeList({ autoFilter, onAutoFilterProcessed }: Re
             </div>
             <div className="text-sm text-neutral-600">
               Anulowane
+            </div>
+          </div>
+        </button>
+
+        <button
+          onClick={() => {
+            setStatusFilter("po terminie");
+            setShowCompleted(true);
+          }}
+          className={`card transition-all duration-200 hover:shadow-lg ${
+            statusFilter === "po terminie" ? "ring-2 ring-orange-500 bg-orange-50" : "hover:bg-neutral-50"
+          }`}
+        >
+          <div className="card-body text-center">
+            <div className="text-2xl font-bold text-orange-600 mb-1">
+              {rezerwacje.filter(r => r.status === 'po terminie').length}
+            </div>
+            <div className="text-sm text-neutral-600">
+              Po terminie
             </div>
           </div>
         </button>

@@ -187,6 +187,7 @@ const getActionText = (status: string) => {
     case 'zaakceptowano': return 'Zatwierdzono rezerwację';
     case 'odrzucono': return 'Odrzucono rezerwację';
     case 'anulowane': return 'Anulowano rezerwację';
+    case 'po terminie': return 'Rezerwacja po terminie';
     default: return 'Zmiana rezerwacji';
   }
 };
@@ -203,6 +204,20 @@ const getDetailsText = (rezerwacja: any) => {
   });
   
   return `${location} • ${date} ${time}`;
+};
+
+// Sprawdzenie wygasłych rezerwacji
+export const checkExpiredReservations = async () => {
+  const { authenticatedFetch } = await import('./authService');
+  const res = await authenticatedFetch("/api/rezerwacja/check-expired", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  
+  if (!res.ok) throw new Error("Błąd sprawdzania wygasłych rezerwacji");
+  return res.json();
 };
 
 const getTimeAgo = (dateString: string) => {

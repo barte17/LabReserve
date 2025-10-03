@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { fetchSale } from '../../../../services/salaService';
 import { fetchStanowiska } from '../../../../services/stanowiskoService';
 import { fetchUserStats, fetchRezerwacjeStats } from '../../../../services/statsService';
+import { checkExpiredReservations } from '../../../../services/rezerwacjaService';
+import toast from 'react-hot-toast';
 
 interface AdminDashboardProps {
   onSectionChange?: (section: string, shouldAutoAdd?: boolean, options?: { autoFilter?: string }) => void;
@@ -19,6 +21,20 @@ export default function AdminDashboard({ onSectionChange }: AdminDashboardProps 
       navigate(`/panel?view=admin&section=${section}`);
     }
   };
+
+  const handleCheckExpiredReservations = async () => {
+    try {
+      const result = await checkExpiredReservations();
+      toast.success(`Sprawdzono wygasłe rezerwacje. Zaktualizowano: ${result.updatedCount} rezerwacji`);
+      
+      // Odśwież statystyki po sprawdzeniu
+      loadStats();
+    } catch (error) {
+      console.error('Błąd sprawdzania wygasłych rezerwacji:', error);
+      toast.error('Błąd podczas sprawdzania wygasłych rezerwacji');
+    }
+  };
+
   const [stats, setStats] = useState([
     {
       title: 'Sale',
@@ -54,8 +70,7 @@ export default function AdminDashboard({ onSectionChange }: AdminDashboardProps 
     }
   ]);
 
-  useEffect(() => {
-    const loadStats = async () => {
+  const loadStats = async () => {
       try {
         // Pobierz wszystkie dane z API
         const [saleData, stanowiskaData, userStatsData, rezerwacjeStatsData] = await Promise.all([
@@ -139,6 +154,7 @@ export default function AdminDashboard({ onSectionChange }: AdminDashboardProps 
       }
     };
 
+  useEffect(() => {
     loadStats();
   }, []);
 
@@ -205,6 +221,15 @@ export default function AdminDashboard({ onSectionChange }: AdminDashboardProps 
               <div className="flex items-center space-x-3">
                 <span className="text-lg">👥</span>
                 <span className="font-medium">Zarządzaj użytkownikami</span>
+              </div>
+            </button>
+            <button
+              onClick={handleCheckExpiredReservations}
+              className="w-full text-left p-3 rounded-lg border border-orange-200 hover:bg-orange-50 transition-colors border-2"
+            >
+              <div className="flex items-center space-x-3">
+                <span className="text-lg">⏰</span>
+                <span className="font-medium text-orange-700">Sprawdź wygasłe rezerwacje</span>
               </div>
             </button>
           </div>

@@ -590,7 +590,7 @@ namespace Backend.Controllers
             }
 
             // Walidacja statusu
-            var allowedStatuses = new[] { "oczekujące", "zaakceptowano", "anulowane", "odrzucono" };
+            var allowedStatuses = new[] { "oczekujące", "zaakceptowano", "anulowane", "odrzucono", "po terminie" };
             if (!allowedStatuses.Contains(dto.Status))
             {
                 return BadRequest("Nieprawidłowy status rezerwacji");
@@ -618,6 +618,7 @@ namespace Backend.Controllers
                 ZaakceptowaneRezerwacje = rezerwacje.Count(r => r.Status == "zaakceptowano"),
                 OdrzuconeRezerwacje = rezerwacje.Count(r => r.Status == "odrzucono"),
                 AnulowaneRezerwacje = rezerwacje.Count(r => r.Status == "anulowane"),
+                PoTerminieRezerwacje = rezerwacje.Count(r => r.Status == "po terminie"),
                 DzisiejszeRezerwacje = rezerwacje.Count(r => r.DataStart.Date == today && r.Status == "zaakceptowano"),
                 MiesięczneRezerwacje = rezerwacje.Count(r => r.DataUtworzenia >= thisMonth),
                 SaleRezerwacje = rezerwacje.Count(r => r.SalaId != null),
@@ -625,6 +626,37 @@ namespace Backend.Controllers
             };
 
             return Ok(stats);
+        }
+
+        [HttpPost("check-expired")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<object>> CheckExpiredReservations()
+        {
+            var now = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);
+            
+            // Znajdź wszystkie oczekujące rezerwacje z datą końca w przeszłości
+            var expiredReservations = await _context.Rezerwacje
+                .Where(r => r.Status == "oczekujące" && r.DataKoniec < now)
+                .ToListAsync();
+
+            var updatedCount = 0;
+            foreach (var rezerwacja in expiredReservations)
+            {
+                rezerwacja.Status = "po terminie";
+                updatedCount++;
+            }
+
+            if (updatedCount > 0)
+            {
+                await _context.SaveChangesAsync();
+            }
+
+            return Ok(new 
+            { 
+                message = $"Sprawdzono wygasłe rezerwacje", 
+                updatedCount = updatedCount,
+                timestamp = DateTime.Now 
+            });
         }
     }
 }
