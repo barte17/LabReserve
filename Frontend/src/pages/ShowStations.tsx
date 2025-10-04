@@ -129,14 +129,14 @@ export default function Stanowiska() {
         </div>
 
         {/* Statystyki */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="card">
             <div className="card-body text-center">
               <div className="text-2xl font-bold text-primary-600 mb-1">
                 {filteredStanowiska.length}
               </div>
               <div className="text-sm text-neutral-600">
-                {filteredStanowiska.length === 1 ? 'Stanowisko' : 'Stanowisk'}
+                Liczba stanowisk
               </div>
             </div>
           </div>
@@ -146,17 +146,7 @@ export default function Stanowiska() {
                 {uniqueTypy.length}
               </div>
               <div className="text-sm text-neutral-600">
-                {uniqueTypy.length === 1 ? 'Typ' : 'Typów'}
-              </div>
-            </div>
-          </div>
-          <div className="card">
-            <div className="card-body text-center">
-              <div className="text-2xl font-bold text-blue-600 mb-1">
-                {[...new Set(stanowiska.map(s => s.salaId))].length}
-              </div>
-              <div className="text-sm text-neutral-600">
-                Sal z stanowiskami
+                Różnego rodzaju stanowisk
               </div>
             </div>
           </div>

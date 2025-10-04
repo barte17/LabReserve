@@ -64,7 +64,7 @@ const Toast = ({ message, type, onClose, duration = 3000 }: {
   };
 
   return (
-    <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg flex items-center space-x-2 min-w-80 ${getToastStyles()}`}>
+    <div className={`fixed top-4 right-4 z-[70] p-4 rounded-lg shadow-lg flex items-center space-x-2 min-w-80 ${getToastStyles()}`}>
       <span className="text-lg">{getIcon()}</span>
       <span className="flex-1">{message}</span>
       <button 
@@ -98,7 +98,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <ToastContext.Provider value={{ showToast, showSuccess, showError, showWarning, showInfo }}>
       {children}
-      <div className="fixed top-4 right-4 z-50 space-y-2">
+      <div className="fixed top-4 right-4 z-[70] space-y-2">
         {toasts.map((toast) => (
           <Toast
             key={toast.id}

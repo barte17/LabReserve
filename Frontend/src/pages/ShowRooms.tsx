@@ -133,14 +133,14 @@ export default function Sale() {
         </div>
 
         {/* Statystyki */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="card">
             <div className="card-body text-center">
               <div className="text-2xl font-bold text-primary-600 mb-1">
                 {filteredSale.length}
               </div>
               <div className="text-sm text-neutral-600">
-                {filteredSale.length === 1 ? 'Sala' : 'Sale'}
+                Liczba sal
               </div>
             </div>
           </div>
@@ -150,17 +150,7 @@ export default function Sale() {
                 {filteredSale.filter(s => s.maStanowiska).length}
               </div>
               <div className="text-sm text-neutral-600">
-                Z laboratoriami
-              </div>
-            </div>
-          </div>
-          <div className="card">
-            <div className="card-body text-center">
-              <div className="text-2xl font-bold text-blue-600 mb-1">
-                {uniqueBudynki.length}
-              </div>
-              <div className="text-sm text-neutral-600">
-                {uniqueBudynki.length === 1 ? 'Budynek' : 'Budynki'}
+                Liczba sal z stanowiskami
               </div>
             </div>
           </div>
