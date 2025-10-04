@@ -248,11 +248,109 @@ namespace Backend.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteSala(int id)
         {
-            var sala = await _context.Sale.FindAsync(id);
-            if (sala == null) return NotFound();
-            _context.Sale.Remove(sala);
-            await _context.SaveChangesAsync();
-            return NoContent();
+            var sala = await _context.Sale
+                .Include(s => s.Zdjecia)
+                .Include(s => s.Rezerwacje) // Bezpośrednie rezerwacje sali
+                .FirstOrDefaultAsync(s => s.Id == id);
+
+            if (sala == null)
+            {
+                return NotFound(new { message = "Sala nie została znaleziona" });
+            }
+
+            // Sprawdź czy sala ma bezpośrednie rezerwacje
+            if (sala.Rezerwacje.Any())
+            {
+                return BadRequest(new { 
+                    message = "Nie można usunąć sali z istniejącymi rezerwacjami. Usuń najpierw wszystkie rezerwacje." 
+                });
+            }
+
+            // Sprawdź czy sala ma przypisane stanowiska
+            var stanowiska = await _context.Stanowiska
+                .Include(st => st.Rezerwacje)
+                .Where(st => st.SalaId == id)
+                .ToListAsync();
+
+            if (stanowiska.Any())
+            {
+                // Sprawdź czy którekolwiek stanowisko ma rezerwacje
+                var hasStanowiskoReservations = stanowiska.Any(st => st.Rezerwacje.Any());
+                
+                if (hasStanowiskoReservations)
+                {
+                    return BadRequest(new { 
+                        message = "Nie można usunąć sali z istniejącymi rezerwacjami stanowisk. Usuń najpierw wszystkie rezerwacje." 
+                    });
+                }
+
+                return BadRequest(new { 
+                    message = "Nie można usunąć sali z przypisanymi stanowiskami. Usuń najpierw wszystkie stanowiska." 
+                });
+            }
+
+            try
+            {
+                // Zbierz ścieżki do plików i folderów PRZED usunięciem z bazy
+                var filesToDelete = new List<string>();
+                foreach (var zdjecie in sala.Zdjecia.ToList())
+                {
+                    var imagePath = Path.Combine("wwwroot", zdjecie.Url.TrimStart('/'));
+                    if (System.IO.File.Exists(imagePath))
+                    {
+                        filesToDelete.Add(imagePath);
+                    }
+                    _context.Zdjecia.Remove(zdjecie);
+                }
+
+                var salaFolderPath = Path.Combine("wwwroot", "uploads", "sale", $"sala-{sala.Id}");
+                Console.WriteLine($"Planning to delete folder: {salaFolderPath}");
+
+                // Usuń salę z bazy NAJPIERW
+                _context.Sale.Remove(sala);
+                await _context.SaveChangesAsync();
+                Console.WriteLine("Sala removed from database successfully");
+
+                // DOPIERO TERAZ usuń pliki i foldery
+                foreach (var filePath in filesToDelete)
+                {
+                    try
+                    {
+                        Console.WriteLine($"Deleting file: {filePath}");
+                        System.IO.File.Delete(filePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Warning: Could not delete file {filePath}: {ex.Message}");
+                    }
+                }
+
+                // Usuń folder sali
+                if (Directory.Exists(salaFolderPath))
+                {
+                    try
+                    {
+                        Console.WriteLine($"Deleting folder: {salaFolderPath}");
+                        Directory.Delete(salaFolderPath, true); // true = recursive, usuń wszystko
+                        Console.WriteLine($"Successfully deleted folder: {salaFolderPath}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Warning: Could not delete folder {salaFolderPath}: {ex.Message}");
+                        Console.WriteLine($"Exception type: {ex.GetType().Name}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"Folder does not exist: {salaFolderPath}");
+                }
+
+                return Ok(new { message = "Sala została pomyślnie usunięta" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Błąd podczas usuwania sali", error = ex.Message });
+            }
         }
     }
 }
