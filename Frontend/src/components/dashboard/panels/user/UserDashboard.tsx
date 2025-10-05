@@ -399,12 +399,14 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
 
       {/* Kalendarzowy widok */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">
-            Kalendarz - {currentMonth.toLocaleDateString('pl-PL', { month: 'long', year: 'numeric' })}
-          </h2>
-          <div className="text-sm text-gray-500">
-            {kalendarzRezerwacje.length} rezerwacji w tym miesiącu
+        <div className="mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Kalendarz - {currentMonth.toLocaleDateString('pl-PL', { month: 'long', year: 'numeric' })}
+            </h2>
+            <div className="text-sm text-gray-500">
+              {kalendarzRezerwacje.length} rezerwacji w tym miesiącu
+            </div>
           </div>
         </div>
         

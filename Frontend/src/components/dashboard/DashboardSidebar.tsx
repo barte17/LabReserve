@@ -93,7 +93,7 @@ export default function DashboardSidebar({
                   w-10 h-10 rounded-xl flex items-center justify-center text-lg font-semibold
                   ${role === 'admin' ? 'bg-red-100 text-red-700' : ''}
                   ${role === 'opiekun' ? 'bg-blue-100 text-blue-700' : ''}
-                  ${role === 'user' ? 'bg-gray-100 text-gray-700' : ''}
+                  ${role === 'user' ? 'bg-green-100 text-green-700' : ''}
                 `}>
                   {currentRoleInfo?.icon}
                 </div>

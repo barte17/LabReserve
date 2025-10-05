@@ -306,12 +306,44 @@ export function Navbar() {
                       <span>👤</span>
                       <span>Panel użytkownika</span>
                     </Link>
+
+                    {hasRole("Admin") && (
+                      <Link 
+                        to="/panel?view=admin" 
+                        className="flex items-center space-x-2 px-3 py-2 rounded-lg text-base font-medium text-neutral-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <span>🔧</span>
+                        <span>Panel admina</span>
+                      </Link>
+                    )}
+
+                    {hasRole("Opiekun") && (
+                      <Link 
+                        to="/panel?view=opiekun" 
+                        className="flex items-center space-x-2 px-3 py-2 rounded-lg text-base font-medium text-neutral-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <span>👨‍🏫</span>
+                        <span>Panel opiekuna</span>
+                      </Link>
+                    )}
+
+                    <Link 
+                      to="/panel?view=user&section=profil" 
+                      className="flex items-center space-x-2 px-3 py-2 rounded-lg text-base font-medium text-neutral-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <span>⚙️</span>
+                      <span>Profil</span>
+                    </Link>
+
                     <button 
                       onClick={() => {
                         handleLogout();
                         setIsMobileMenuOpen(false);
                       }} 
-                      className="flex items-center space-x-2 w-full text-left px-3 py-2 rounded-lg text-base font-medium text-neutral-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200"
+                      className="flex items-center space-x-2 w-full text-left px-3 py-2 rounded-lg text-base font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-all duration-200"
                     >
                       <span>🚪</span>
                       <span>Wyloguj</span>

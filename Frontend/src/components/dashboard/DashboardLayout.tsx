@@ -109,7 +109,7 @@ export default function DashboardLayout({ role, availableRoles, onRoleChange, in
       <div className="lg:flex">
         {/* Sidebar */}
         <div className={`
-          fixed top-16 bottom-0 left-0 z-30 w-72 transform transition-transform duration-300 ease-in-out
+          fixed top-16 bottom-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-in-out
           lg:static lg:top-0 lg:translate-x-0 lg:w-72 lg:flex-shrink-0
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         `}>

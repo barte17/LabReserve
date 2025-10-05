@@ -2,6 +2,7 @@ import { BrowserRouter as Router  } from "react-router-dom";
 import { Navbar } from "./components/Navbar";
 import { AppRoutes } from "./routes/AppRoutes";
 import { ToastProvider, useToastContext } from "./components/ToastProvider";
+import ScrollToTop from "./components/ScrollToTop";
 import { AuthProvider } from "./contexts/AuthContext";
 import GlobalErrorBoundary from "./components/ErrorBoundary/GlobalErrorBoundary";
 // Import errorUtils dla debug tools
@@ -31,6 +32,7 @@ const AppContent = () => {
 
   return (
     <Router>
+      <ScrollToTop />
       <Navbar />
       <main>
         <AppRoutes />

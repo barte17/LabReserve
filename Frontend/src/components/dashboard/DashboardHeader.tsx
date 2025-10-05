@@ -16,9 +16,9 @@ export default function DashboardHeader({ role, onMenuClick }: DashboardHeaderPr
       case 'opiekun':
         return { label: 'Opiekun', color: 'bg-red-500', icon: '👨‍🏫' };
       case 'user':
-        return { label: 'Użytkownik', color: 'bg-gray-600', icon: '👤' };
+        return { label: 'Użytkownik', color: 'bg-red-600', icon: '👤' };
       default:
-        return { label: 'Użytkownik', color: 'bg-gray-600', icon: '👤' };
+        return { label: 'Użytkownik', color: 'bg-red-600', icon: '👤' };
     }
   };
 
