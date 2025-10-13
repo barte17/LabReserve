@@ -12,6 +12,7 @@ namespace Backend.Data
         public DbSet<Stanowisko> Stanowiska { get; set; }
         public DbSet<Zdjecie> Zdjecia { get; set; }
         public DbSet<Rezerwacja> Rezerwacje { get; set; }
+        public DbSet<Powiadomienie> Powiadomienia { get; set; }
 
         public DbSet<ApplicationUser> Uzytkownicy { get; set; } = null!;
 
@@ -30,6 +31,23 @@ namespace Backend.Data
 
                 entity.Property(e => e.DataUtworzenia)
                     .HasColumnType("timestamp"); // bez time zone
+            });
+
+            // Konfiguracja Powiadomienie
+            modelBuilder.Entity<Powiadomienie>(entity =>
+            {
+                entity.Property(e => e.DataUtworzenia)
+                    .HasColumnType("timestamp"); // bez time zone
+
+                entity.Property(e => e.DataWygasniecia)
+                    .HasColumnType("timestamp"); // bez time zone
+
+                // Indeks dla wydajności zapytań
+                entity.HasIndex(e => new { e.UzytkownikId, e.CzyPrzeczytane })
+                    .HasDatabaseName("IX_Powiadomienia_UzytkownikId_CzyPrzeczytane");
+
+                entity.HasIndex(e => e.DataUtworzenia)
+                    .HasDatabaseName("IX_Powiadomienia_DataUtworzenia");
             });
         }
 

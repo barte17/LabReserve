@@ -2,6 +2,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { logout as authLogout } from "../services/authService";
 import { useAuth } from "../contexts/AuthContext";
+import { useNotifications } from "../hooks/useNotifications";
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -9,6 +10,7 @@ export function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { isLogged, hasRole, logout, isLoading, user } = useAuth();
+  const { unreadCount } = useNotifications();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = async () => {
@@ -101,8 +103,9 @@ export function Navbar() {
               <>
                 {/* Notifications Bell */}
                 <button
+                  onClick={() => navigate('/panel?view=user&section=powiadomienia')}
                   className="relative flex items-center justify-center p-2.5 text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors rounded-lg border border-gray-200 hover:border-gray-300"
-                  title="Powiadomienia"
+                  title={`Powiadomienia ${unreadCount > 0 ? `(${unreadCount} nieprzeczytanych)` : ''}`}
                 >
                   <svg 
                     className="w-6 h-6" 
@@ -113,6 +116,13 @@ export function Navbar() {
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
+                  
+                  {/* Badge z licznikiem */}
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center min-w-[20px] shadow-lg">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
                 </button>
 
                 {/* User Dropdown */}

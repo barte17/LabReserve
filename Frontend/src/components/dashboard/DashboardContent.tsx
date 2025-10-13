@@ -16,6 +16,7 @@ import ZarzadzajRezerwacje from './panels/opiekun/ZarzadzajRezerwacje';
 import UserDashboardPanel from './panels/user/UserDashboard';
 import RezerwujSale from './panels/user/RezerwujSale';
 import MojeRezerwacje from './panels/user/MojeRezerwacje';
+import MojePowiadomienia from './panels/user/MojePowiadomienia';
 import UserProfile from './panels/user/UserProfile';
 
 // Import adminowych komponentów
@@ -81,6 +82,8 @@ export default function DashboardContent({ role, activeSection, onSectionChange,
         return <RezerwujSale />;
       case 'moje-rezerwacje':
         return <MojeRezerwacje />;
+      case 'powiadomienia':
+        return <MojePowiadomienia />;
       case 'profil':
         return <UserProfile />;
       default:

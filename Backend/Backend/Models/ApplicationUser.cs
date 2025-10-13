@@ -15,5 +15,6 @@ namespace Backend.Models
         public DateTime RefreshTokenExpiryTime { get; set; }
 
         public ICollection<Rezerwacja> Rezerwacje { get; set; } = new List<Rezerwacja>();
+        public ICollection<Powiadomienie> Powiadomienia { get; set; } = new List<Powiadomienie>();
     }
 }

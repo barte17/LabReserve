@@ -158,7 +158,10 @@ export async function apiRequest(
   customErrorMessage?: string
 ): Promise<Response> {
   try {
-    const response = await fetch(url, {
+    // Użyj authenticatedFetch z authService (używa in-memory tokens + refresh)
+    const { authenticatedFetch } = await import('./authService');
+    
+    const response = await authenticatedFetch(url, {
       ...options,
       headers: {
         'Content-Type': 'application/json',

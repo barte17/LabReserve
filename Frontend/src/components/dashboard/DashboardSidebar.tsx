@@ -62,6 +62,7 @@ export default function DashboardSidebar({
       { id: 'dashboard', label: 'Dashboard', icon: '📊', description: 'Przegląd aktywności' },
       { id: 'rezerwuj', label: 'Rezerwuj salę', icon: '📅', description: 'Nowa rezerwacja' },
       { id: 'moje-rezerwacje', label: 'Moje rezerwacje', icon: '📋', description: 'Historia rezerwacji' },
+      { id: 'powiadomienia', label: 'Moje powiadomienia', icon: '🔔', description: 'Powiadomienia systemowe' },
       { id: 'profil', label: 'Profil', icon: '👤', description: 'Ustawienia konta' }
     ]
   };
