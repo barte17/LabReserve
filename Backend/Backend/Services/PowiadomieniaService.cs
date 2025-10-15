@@ -223,6 +223,51 @@ namespace Backend.Services
             }
         }
 
+        public async Task<int> UsunWszystkiePowiadomieniaAsync(string uzytkownikId)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(uzytkownikId))
+                {
+                    _logger.LogWarning("Próba usunięcia wszystkich powiadomień bez ID użytkownika");
+                    return 0;
+                }
+
+                // Zabezpieczenie: sprawdź czy użytkownik istnieje
+                var uzytkownikExists = await _context.Users.AnyAsync(u => u.Id == uzytkownikId);
+                if (!uzytkownikExists)
+                {
+                    _logger.LogWarning($"Próba usunięcia powiadomień dla nieistniejącego użytkownika: {uzytkownikId}");
+                    return 0;
+                }
+
+                // Pobierz wszystkie powiadomienia użytkownika (włącznie z wygasłymi dla kompletnego oczyszczenia)
+                var powiadomieniaDoUsuniecia = await _context.Powiadomienia
+                    .Where(p => p.UzytkownikId == uzytkownikId)
+                    .ToListAsync();
+
+                if (!powiadomieniaDoUsuniecia.Any())
+                {
+                    _logger.LogInformation($"Brak powiadomień do usunięcia dla użytkownika {uzytkownikId}");
+                    return 0;
+                }
+
+                var liczbaUsunietych = powiadomieniaDoUsuniecia.Count;
+                
+                // Usuń wszystkie powiadomienia w jednej operacji dla wydajności
+                _context.Powiadomienia.RemoveRange(powiadomieniaDoUsuniecia);
+                await _context.SaveChangesAsync();
+                
+                _logger.LogInformation($"Usunięto {liczbaUsunietych} powiadomień dla użytkownika {uzytkownikId}");
+                return liczbaUsunietych;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Błąd podczas usuwania wszystkich powiadomień dla użytkownika {uzytkownikId}");
+                return 0;
+            }
+        }
+
         public async Task UsunWygasleAsync()
         {
             try

@@ -5,12 +5,12 @@ import { useAuth } from '../contexts/AuthContext';
 export const useSignalR = () => {
   const [connection, setConnection] = useState<HubConnection | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const { token } = useAuth();
+  const { isLogged } = useAuth();
   const connectionRef = useRef<HubConnection | null>(null);
 
   useEffect(() => {
-    if (!token) {
-      // Rozłącz jeśli brak tokena
+    if (!isLogged) {
+      // Rozłącz jeśli nie zalogowany
       if (connectionRef.current) {
         connectionRef.current.stop();
         setConnection(null);
@@ -22,7 +22,15 @@ export const useSignalR = () => {
     // Utwórz nowe połączenie
     const newConnection = new HubConnectionBuilder()
       .withUrl(`${import.meta.env.VITE_API_URL || 'http://localhost:5165'}/notificationHub`, {
-        accessTokenFactory: () => token
+        accessTokenFactory: async () => {
+          try {
+            const { ensureValidToken } = await import('../services/authService');
+            return await ensureValidToken();
+          } catch (error) {
+            console.error('Błąd pobierania tokena dla SignalR:', error);
+            return '';
+          }
+        }
       })
       .withAutomaticReconnect([0, 2000, 10000, 30000])
       .build();
@@ -66,7 +74,7 @@ export const useSignalR = () => {
         connectionRef.current.stop();
       }
     };
-  }, [token]);
+  }, [isLogged]);
 
   return { connection, isConnected };
 };

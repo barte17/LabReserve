@@ -3,9 +3,10 @@ import { useNotifications } from '../../../../hooks/useNotifications';
 import { NotificationList } from '../../../notifications/NotificationList';
 import { useToastContext } from '../../../ToastProvider';
 import { apiRequest } from '../../../../services/apiErrorHandler';
+import { notificationService } from '../../../../services/notificationService';
 
 export default function MojePowiadomienia() {
-  const { unreadCount, isConnected } = useNotifications();
+  const { unreadCount, isConnected, fetchNotifications, notifications, deleteNotification } = useNotifications();
   const { showSuccess, showError } = useToastContext();
 
   const handleMarkAllAsRead = async () => {
@@ -15,7 +16,8 @@ export default function MojePowiadomienia() {
       }, 'Błąd podczas oznaczania wszystkich powiadomień jako przeczytane');
       
       showSuccess('Wszystkie powiadomienia oznaczone jako przeczytane');
-      // Hook automatycznie zaktualizuje licznik przez SignalR
+      // Odśwież listę powiadomień
+      await fetchNotifications();
     } catch (error) {
       showError('Wystąpił błąd podczas oznaczania powiadomień');
     }
@@ -30,6 +32,26 @@ export default function MojePowiadomienia() {
       showSuccess('Testowe powiadomienie zostało wysłane! Sprawdź toast i dzwonek w navbarze.');
     } catch (error) {
       showError('Wystąpił błąd podczas wysyłania testowego powiadomienia');
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    if (!confirm('Czy na pewno chcesz usunąć wszystkie powiadomienia? Ta operacja jest nieodwracalna.')) {
+      return;
+    }
+
+    try {
+      // Użyj nowego, bezpiecznego i wydajnego endpointu
+      const result = await notificationService.deleteAllNotifications();
+      
+      showSuccess(result.message);
+      
+      // Odśwież listę powiadomień aby pokazać puste wyniki
+      await fetchNotifications();
+      
+    } catch (error) {
+      console.error('Błąd podczas usuwania wszystkich powiadomień:', error);
+      showError('Wystąpił błąd podczas usuwania powiadomień');
     }
   };
 
@@ -76,6 +98,13 @@ export default function MojePowiadomienia() {
               Oznacz wszystkie jako przeczytane
             </button>
           )}
+          
+          <button
+            onClick={handleDeleteAll}
+            className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+          >
+            🗑️ Usuń wszystkie
+          </button>
           
           <button
             onClick={handleTestNotification}

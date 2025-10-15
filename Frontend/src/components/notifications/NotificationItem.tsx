@@ -4,6 +4,7 @@ import type { NotificationData } from '../../types/notification';
 interface NotificationItemProps {
   notification: NotificationData;
   onMarkAsRead: (id: number) => void;
+  onMarkAsReadOnHover?: (id: number) => void;
   onDelete: (id: number) => void;
   compact?: boolean;
 }
@@ -11,9 +12,15 @@ interface NotificationItemProps {
 export const NotificationItem: React.FC<NotificationItemProps> = ({
   notification,
   onMarkAsRead,
+  onMarkAsReadOnHover,
   onDelete,
   compact = false
 }) => {
+  const handleMouseEnter = () => {
+    if (!notification.czyPrzeczytane && onMarkAsReadOnHover) {
+      onMarkAsReadOnHover(notification.id);
+    }
+  };
   const getPriorityColor = (priorytet: string) => {
     switch (priorytet) {
       case 'high': return 'border-l-red-500 bg-red-50';
@@ -46,13 +53,16 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   };
 
   return (
-    <div className={`
-      border-l-4 p-3 mb-2 rounded-r-lg transition-all duration-200
-      ${getPriorityColor(notification.priorytet)}
-      ${!notification.czyPrzeczytane ? 'shadow-md' : 'opacity-75'}
-      ${compact ? 'text-sm' : ''}
-      hover:shadow-lg
-    `}>
+    <div 
+      className={`
+        border-l-4 p-3 mb-2 rounded-r-lg transition-all duration-200
+        ${getPriorityColor(notification.priorytet)}
+        ${!notification.czyPrzeczytane ? 'shadow-md' : 'opacity-75'}
+        ${compact ? 'text-sm' : ''}
+        hover:shadow-lg cursor-pointer
+      `}
+      onMouseEnter={handleMouseEnter}
+    >
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
@@ -76,14 +86,6 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
             
             {!compact && (
               <div className="flex gap-2">
-                {!notification.czyPrzeczytane && (
-                  <button
-                    onClick={() => onMarkAsRead(notification.id)}
-                    className="text-xs text-blue-600 hover:text-blue-800 hover:underline"
-                  >
-                    Oznacz jako przeczytane
-                  </button>
-                )}
                 <button
                   onClick={() => onDelete(notification.id)}
                   className="text-xs text-red-600 hover:text-red-800 hover:underline"

@@ -17,6 +17,11 @@ export const useNotifications = () => {
       setLoading(true);
       const response = await notificationService.getNotifications(strona, rozmiar);
       setNotifications(response.powiadomienia);
+      
+      // Również zaktualizuj licznik nieprzeczytanych
+      const count = await notificationService.getUnreadCount();
+      setUnreadCount(count);
+      
       return response;
     } catch (error) {
       console.error('Błąd podczas pobierania powiadomień:', error);
@@ -52,6 +57,27 @@ export const useNotifications = () => {
       return false;
     }
   }, []);
+
+  // Oznacz jako przeczytane przy hover (tylko jeśli nieprzeczytane)
+  const markAsReadOnHover = useCallback(async (id: number) => {
+    try {
+      // Sprawdź czy powiadomienie jest nieprzeczytane
+      const notification = notifications.find(n => n.id === id);
+      if (!notification || notification.czyPrzeczytane) {
+        return true; // Już przeczytane, nic nie rób
+      }
+
+      await notificationService.markAsRead(id);
+      setNotifications(prev => 
+        prev.map(n => n.id === id ? { ...n, czyPrzeczytane: true } : n)
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+      return true;
+    } catch (error) {
+      console.error('Błąd podczas oznaczania jako przeczytane przy hover:', error);
+      return false;
+    }
+  }, [notifications]);
 
   // Usuń powiadomienie
   const deleteNotification = useCallback(async (id: number) => {
@@ -113,6 +139,7 @@ export const useNotifications = () => {
     fetchNotifications,
     fetchUnreadCount,
     markAsRead,
+    markAsReadOnHover,
     deleteNotification
   };
 };

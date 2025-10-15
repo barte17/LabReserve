@@ -190,6 +190,42 @@ namespace Backend.Controllers
             }
         }
 
+        [HttpDelete("usun-wszystkie")]
+        public async Task<IActionResult> UsunWszystkiePowiadomienia()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized("Nie można zidentyfikować użytkownika");
+                }
+
+                var liczbaUsunietych = await _powiadomieniaService.UsunWszystkiePowiadomieniaAsync(userId);
+                
+                if (liczbaUsunietych == 0)
+                {
+                    return Ok(new { 
+                        message = "Brak powiadomień do usunięcia",
+                        liczbaUsunietych = 0
+                    });
+                }
+
+                // Aktualizuj licznik w real-time (będzie 0 po usunięciu wszystkich)
+                await _realTimeService.AktualizujLicznikAsync(userId, 0);
+
+                return Ok(new { 
+                    message = $"Usunięto {liczbaUsunietych} powiadomień",
+                    liczbaUsunietych = liczbaUsunietych
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Błąd podczas usuwania wszystkich powiadomień");
+                return StatusCode(500, "Wystąpił błąd podczas usuwania powiadomień");
+            }
+        }
+
         [HttpPost("test")]
         public async Task<IActionResult> WyslijTestowePowiadomienie()
         {
@@ -213,18 +249,25 @@ namespace Backend.Controllers
 
                 if (success)
                 {
-                    // Wyślij real-time powiadomienie
-                    await _realTimeService.WyslijRealTimePowiadomienieAsync(userId, new
+                    // Pobierz najnowsze powiadomienie dla tego użytkownika (właśnie utworzone)
+                    var najnowszePowiadomienia = await _powiadomieniaService.PobierzPowiadomieniaAsync(userId, 1, 1);
+                    var nowePowiadomienie = najnowszePowiadomienia.FirstOrDefault();
+
+                    if (nowePowiadomienie != null)
                     {
-                        id = 0, // Tymczasowe ID
-                        tytul = "Testowe powiadomienie",
-                        tresc = "To jest testowe powiadomienie wysłane z systemu. Sprawdza działanie real-time i toast notifications.",
-                        typ = "system",
-                        priorytet = "normal",
-                        czyPrzeczytane = false,
-                        dataUtworzenia = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss"),
-                        actionUrl = "/panel?view=user&section=powiadomienia"
-                    });
+                        // Wyślij real-time powiadomienie z prawdziwym ID
+                        await _realTimeService.WyslijRealTimePowiadomienieAsync(userId, new
+                        {
+                            id = nowePowiadomienie.Id,
+                            tytul = nowePowiadomienie.Tytul,
+                            tresc = nowePowiadomienie.Tresc,
+                            typ = nowePowiadomienie.Typ,
+                            priorytet = nowePowiadomienie.Priorytet,
+                            czyPrzeczytane = nowePowiadomienie.CzyPrzeczytane,
+                            dataUtworzenia = nowePowiadomienie.DataUtworzenia.ToString("yyyy-MM-ddTHH:mm:ss"),
+                            actionUrl = nowePowiadomienie.ActionUrl
+                        });
+                    }
 
                     return Ok(new { message = "Testowe powiadomienie zostało wysłane!" });
                 }

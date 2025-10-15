@@ -15,6 +15,8 @@ namespace Backend.Services
         
         Task<bool> UsunPowiadomienieAsync(int powiadomienieId, string uzytkownikId);
         
+        Task<int> UsunWszystkiePowiadomieniaAsync(string uzytkownikId);
+        
         Task UsunWygasleAsync();
     }
 }

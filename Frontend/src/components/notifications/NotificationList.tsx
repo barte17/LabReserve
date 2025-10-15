@@ -17,6 +17,7 @@ export const NotificationList: React.FC<NotificationListProps> = ({
     loading, 
     fetchNotifications, 
     markAsRead, 
+    markAsReadOnHover,
     deleteNotification 
   } = useNotifications();
   const { showSuccess, showError } = useToastContext();
@@ -24,7 +25,15 @@ export const NotificationList: React.FC<NotificationListProps> = ({
 
   useEffect(() => {
     fetchNotifications(1, maxItems || 20);
+    setCurrentPage(1); // Reset strony przy nowym fetch
   }, [fetchNotifications, maxItems]);
+
+  // Reset strony gdy notifications są puste (po usunięciu wszystkich)
+  useEffect(() => {
+    if (notifications.length === 0) {
+      setCurrentPage(1);
+    }
+  }, [notifications.length]);
 
   const handleMarkAsRead = async (id: number) => {
     const success = await markAsRead(id);
@@ -80,6 +89,7 @@ export const NotificationList: React.FC<NotificationListProps> = ({
           key={notification.id}
           notification={notification}
           onMarkAsRead={handleMarkAsRead}
+          onMarkAsReadOnHover={markAsReadOnHover}
           onDelete={handleDelete}
           compact={compact}
         />

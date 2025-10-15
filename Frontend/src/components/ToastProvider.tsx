@@ -113,14 +113,21 @@ const Toast = ({ message, type, title, actionUrl, actionLabel, onClose, duration
 // Provider
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [idCounter, setIdCounter] = useState(0);
+
+  const generateUniqueId = useCallback(() => {
+    const newId = Date.now() + idCounter;
+    setIdCounter(prev => prev + 1);
+    return newId;
+  }, [idCounter]);
 
   const showToast = useCallback((message: string, type: ToastType = 'info') => {
-    const id = Date.now();
+    const id = generateUniqueId();
     setToasts(prev => [...prev, { id, message, type }]);
-  }, []);
+  }, [generateUniqueId]);
 
   const showNotification = useCallback((title: string, message: string, actionUrl?: string, actionLabel?: string) => {
-    const id = Date.now();
+    const id = generateUniqueId();
     setToasts(prev => [...prev, { 
       id, 
       message, 
@@ -130,7 +137,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       actionLabel,
       duration: 5000 // Dłuższy czas dla powiadomień z akcjami
     }]);
-  }, []);
+  }, [generateUniqueId]);
 
   const removeToast = useCallback((id: number) => {
     setToasts(prev => prev.filter(toast => toast.id !== id));

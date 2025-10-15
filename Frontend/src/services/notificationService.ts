@@ -29,5 +29,12 @@ export const notificationService = {
     await apiRequest('/api/powiadomienia/oznacz-wszystkie-przeczytane', { 
       method: 'POST' 
     }, 'Błąd podczas oznaczania wszystkich powiadomień jako przeczytane');
+  },
+
+  async deleteAllNotifications(): Promise<{ message: string; liczbaUsunietych: number }> {
+    const response = await apiRequest('/api/powiadomienia/usun-wszystkie', { 
+      method: 'DELETE' 
+    }, 'Błąd podczas usuwania wszystkich powiadomień');
+    return response.json();
   }
 };
