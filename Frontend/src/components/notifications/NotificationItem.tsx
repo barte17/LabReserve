@@ -84,16 +84,16 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
               {formatDate(notification.dataUtworzenia)}
             </span>
             
-            {!compact && (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => onDelete(notification.id)}
-                  className="text-xs text-red-600 hover:text-red-800 hover:underline"
-                >
-                  Usuń
-                </button>
-              </div>
-            )}
+            <div className="flex gap-2">
+              <button
+                onClick={() => onDelete(notification.id)}
+                className={`text-red-600 hover:text-red-800 hover:underline ${
+                  compact ? 'text-xs' : 'text-xs'
+                }`}
+              >
+                {compact ? '🗑️' : 'Usuń'}
+              </button>
+            </div>
           </div>
         </div>
       </div>

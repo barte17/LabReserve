@@ -6,27 +6,43 @@ import { useToastContext } from '../ToastProvider';
 interface NotificationListProps {
   compact?: boolean;
   maxItems?: number;
+  // Opcjonalne props do przekazania danych z rodzica (dla współdzielenia stanu)
+  externalNotifications?: any[];
+  externalLoading?: boolean;
+  externalMarkAsRead?: (id: number) => Promise<boolean>;
+  externalMarkAsReadOnHover?: (id: number) => Promise<boolean>;
+  externalDeleteNotification?: (id: number) => Promise<boolean>;
 }
 
 export const NotificationList: React.FC<NotificationListProps> = ({ 
   compact = false, 
-  maxItems 
+  maxItems,
+  externalNotifications,
+  externalLoading,
+  externalMarkAsRead,
+  externalMarkAsReadOnHover,
+  externalDeleteNotification
 }) => {
-  const { 
-    notifications, 
-    loading, 
-    fetchNotifications, 
-    markAsRead, 
-    markAsReadOnHover,
-    deleteNotification 
-  } = useNotifications();
+  const hookData = useNotifications();
+  
+  // Używaj zewnętrznych danych jeśli są dostępne, w przeciwnym razie użyj hooka
+  const notifications = externalNotifications ?? hookData.notifications;
+  const loading = externalLoading ?? hookData.loading;
+  const initialized = hookData.initialized;
+  const fetchNotifications = hookData.fetchNotifications;
+  const markAsRead = externalMarkAsRead ?? hookData.markAsRead;
+  const markAsReadOnHover = externalMarkAsReadOnHover ?? hookData.markAsReadOnHover;
+  const deleteNotification = externalDeleteNotification ?? hookData.deleteNotification;
   const { showSuccess, showError } = useToastContext();
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Początkowe załadowanie tylko jeśli używamy hooka (nie external props) i dane nie zostały załadowane
   useEffect(() => {
-    fetchNotifications(1, maxItems || 20);
-    setCurrentPage(1); // Reset strony przy nowym fetch
-  }, [fetchNotifications, maxItems]);
+    if (!externalNotifications && !initialized) {
+      fetchNotifications(1, maxItems || 20);
+      setCurrentPage(1);
+    }
+  }, [externalNotifications, initialized, fetchNotifications, maxItems]);
 
   // Reset strony gdy notifications są puste (po usunięciu wszystkich)
   useEffect(() => {
@@ -55,7 +71,7 @@ export const NotificationList: React.FC<NotificationListProps> = ({
 
   const loadMore = async () => {
     const nextPage = currentPage + 1;
-    await fetchNotifications(nextPage, 20);
+    await fetchNotifications(nextPage, 20, true); // append = true dla paginacji
     setCurrentPage(nextPage);
   };
 

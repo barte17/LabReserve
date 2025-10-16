@@ -22,13 +22,14 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     loading, 
     fetchNotifications, 
     markAsRead,
-    markAsReadOnHover
+    markAsReadOnHover,
+    deleteNotification
   } = useNotifications();
 
   // Pobierz ostatnie powiadomienia gdy dropdown się otwiera
   useEffect(() => {
     if (isOpen && notifications.length === 0) {
-      fetchNotifications(1, 3); // Max 3 powiadomienia
+      fetchNotifications(1, 5); // Pobierz 5 powiadomień (wyświetlimy 3, ale mamy zapas)
     }
   }, [isOpen, fetchNotifications, notifications.length]);
 
@@ -56,6 +57,19 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
   const handleMarkAsRead = async (id: number) => {
     await markAsRead(id);
+  };
+
+  const handleDelete = async (id: number) => {
+    const success = await deleteNotification(id);
+    if (success) {
+      // Po usunięciu powiadomienia, sprawdź czy mamy już 4+ powiadomień załadowanych
+      // Jeśli nie, pobierz więcej żeby pokazać kolejne w miejsce usuniętego
+      if (notifications.length <= 3) {
+        await fetchNotifications(1, 5); // Pobierz więcej powiadomień
+      }
+      // Jeśli mamy już więcej niż 3, lokalny stan się automatycznie zaktualizuje
+      // przez deleteNotification() który usuwa z lokalnej tablicy
+    }
   };
 
   const handleViewAll = () => {
@@ -104,7 +118,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                   notification={notification}
                   onMarkAsRead={handleMarkAsRead}
                   onMarkAsReadOnHover={markAsReadOnHover}
-                  onDelete={() => {}} // Ukryj usuwanie w dropdown
+                  onDelete={handleDelete}
                   compact={true}
                 />
               </div>

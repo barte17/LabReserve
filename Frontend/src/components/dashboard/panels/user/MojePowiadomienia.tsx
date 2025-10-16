@@ -3,21 +3,30 @@ import { useNotifications } from '../../../../hooks/useNotifications';
 import { NotificationList } from '../../../notifications/NotificationList';
 import { useToastContext } from '../../../ToastProvider';
 import { apiRequest } from '../../../../services/apiErrorHandler';
-import { notificationService } from '../../../../services/notificationService';
 
 export default function MojePowiadomienia() {
-  const { unreadCount, isConnected, fetchNotifications, notifications, deleteNotification } = useNotifications();
+  const { 
+    unreadCount, 
+    isConnected, 
+    fetchNotifications, 
+    notifications, 
+    loading,
+    deleteNotification,
+    markAsRead,
+    markAsReadOnHover,
+    markAllAsRead,
+    deleteAllNotifications
+  } = useNotifications();
   const { showSuccess, showError } = useToastContext();
 
   const handleMarkAllAsRead = async () => {
     try {
-      await apiRequest('/api/powiadomienia/oznacz-wszystkie-przeczytane', {
-        method: 'POST'
-      }, 'Błąd podczas oznaczania wszystkich powiadomień jako przeczytane');
-      
-      showSuccess('Wszystkie powiadomienia oznaczone jako przeczytane');
-      // Odśwież listę powiadomień
-      await fetchNotifications();
+      const success = await markAllAsRead();
+      if (success) {
+        showSuccess('Wszystkie powiadomienia oznaczone jako przeczytane');
+      } else {
+        showError('Wystąpił błąd podczas oznaczania powiadomień');
+      }
     } catch (error) {
       showError('Wystąpił błąd podczas oznaczania powiadomień');
     }
@@ -29,7 +38,7 @@ export default function MojePowiadomienia() {
         method: 'POST'
       }, 'Błąd podczas wysyłania testowego powiadomienia');
       
-      showSuccess('Testowe powiadomienie zostało wysłane! Sprawdź toast i dzwonek w navbarze.');
+      showSuccess('Testowe powiadomienie zostało wysłane! Sprawdź dzwonek w navbarze.');
     } catch (error) {
       showError('Wystąpił błąd podczas wysyłania testowego powiadomienia');
     }
@@ -41,14 +50,8 @@ export default function MojePowiadomienia() {
     }
 
     try {
-      // Użyj nowego, bezpiecznego i wydajnego endpointu
-      const result = await notificationService.deleteAllNotifications();
-      
+      const result = await deleteAllNotifications();
       showSuccess(result.message);
-      
-      // Odśwież listę powiadomień aby pokazać puste wyniki
-      await fetchNotifications();
-      
     } catch (error) {
       console.error('Błąd podczas usuwania wszystkich powiadomień:', error);
       showError('Wystąpił błąd podczas usuwania powiadomień');
@@ -117,7 +120,13 @@ export default function MojePowiadomienia() {
 
       {/* Lista powiadomień */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 min-h-[600px]">
-        <NotificationList />
+        <NotificationList 
+          externalNotifications={notifications}
+          externalLoading={loading}
+          externalMarkAsRead={markAsRead}
+          externalMarkAsReadOnHover={markAsReadOnHover}
+          externalDeleteNotification={deleteNotification}
+        />
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 ﻿using Backend.Data;
 using Backend.Dto;
 using Backend.Models;
+using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,10 +14,17 @@ namespace Backend.Controllers
     public class RezerwacjaController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly IPowiadomieniaService _powiadomieniaService;
+        private readonly IRealTimePowiadomieniaService _realTimeService;
 
-        public RezerwacjaController(AppDbContext context)
+        public RezerwacjaController(
+            AppDbContext context,
+            IPowiadomieniaService powiadomieniaService,
+            IRealTimePowiadomieniaService realTimeService)
         {
             _context = context;
+            _powiadomieniaService = powiadomieniaService;
+            _realTimeService = realTimeService;
         }
 
         [HttpGet]
@@ -143,6 +151,9 @@ namespace Backend.Controllers
 
             _context.Rezerwacje.Add(rezerwacja);
             await _context.SaveChangesAsync();
+
+            // Wyślij powiadomienie do opiekuna sali
+            await WyslijPowiadomienieDlaOpiekuna(rezerwacja);
 
             // Zwróć tylko podstawowe
             var result = new RezerwacjaDetailsDto
@@ -357,12 +368,19 @@ namespace Backend.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateStatusDto dto)
         {
-            var rezerwacja = await _context.Rezerwacje.FindAsync(id);
+            var rezerwacja = await _context.Rezerwacje
+                .Include(r => r.Sala)
+                .Include(r => r.Stanowisko)
+                .FirstOrDefaultAsync(r => r.Id == id);
             if (rezerwacja == null)
                 return NotFound();
 
+            var oldStatus = rezerwacja.Status;
             rezerwacja.Status = dto.Status;
             await _context.SaveChangesAsync();
+
+            // Wyślij powiadomienie do użytkownika o zmianie statusu
+            await WyslijPowiadomienieOZmianieStatusu(rezerwacja, oldStatus, dto.Status);
 
             return NoContent();
         }
@@ -596,8 +614,12 @@ namespace Backend.Controllers
                 return BadRequest("Nieprawidłowy status rezerwacji");
             }
 
+            var oldStatus = rezerwacja.Status;
             rezerwacja.Status = dto.Status;
             await _context.SaveChangesAsync();
+
+            // Wyślij powiadomienie do użytkownika o zmianie statusu
+            await WyslijPowiadomienieOZmianieStatusu(rezerwacja, oldStatus, dto.Status);
 
             return NoContent();
         }
@@ -671,6 +693,236 @@ namespace Backend.Controllers
                 nextApproximateCheck = DateTime.Now.AddMinutes(30 - (DateTime.Now.Minute % 30)),
                 info = "Check server console logs for actual background service activity"
             });
+        }
+
+        // Metody pomocnicze dla powiadomień
+        private async Task WyslijPowiadomienieDlaOpiekuna(Rezerwacja rezerwacja)
+        {
+            try
+            {
+                Console.WriteLine($"[DEBUG] Rozpoczynam wysyłanie powiadomienia dla rezerwacji ID: {rezerwacja.Id}");
+                
+                string? opiekunId = null;
+                string lokalizacja = "";
+
+                if (rezerwacja.SalaId.HasValue)
+                {
+                    Console.WriteLine($"[DEBUG] Szukam opiekuna dla sali ID: {rezerwacja.SalaId.Value}");
+                    
+                    var sala = await _context.Sale
+                        .Where(s => s.Id == rezerwacja.SalaId.Value)
+                        .Select(s => new { s.IdOpiekuna, s.Numer, s.Budynek })
+                        .FirstOrDefaultAsync();
+                    
+                    if (sala != null)
+                    {
+                        opiekunId = sala.IdOpiekuna;
+                        lokalizacja = $"sala {sala.Numer} ({sala.Budynek})";
+                        Console.WriteLine($"[DEBUG] Znaleziono salę - Opiekun ID: {opiekunId}, Lokalizacja: {lokalizacja}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[DEBUG] Nie znaleziono sali o ID: {rezerwacja.SalaId.Value}");
+                        lokalizacja = "sala nieznana";
+                    }
+                }
+                else if (rezerwacja.StanowiskoId.HasValue)
+                {
+                    Console.WriteLine($"[DEBUG] Szukam opiekuna dla stanowiska ID: {rezerwacja.StanowiskoId.Value}");
+                    
+                    var stanowisko = await _context.Stanowiska
+                        .Include(s => s.Sala)
+                        .Where(s => s.Id == rezerwacja.StanowiskoId.Value)
+                        .Select(s => new { 
+                            s.Nazwa, 
+                            s.Sala.IdOpiekuna, 
+                            s.Sala.Numer, 
+                            s.Sala.Budynek 
+                        })
+                        .FirstOrDefaultAsync();
+                    
+                    if (stanowisko != null)
+                    {
+                        opiekunId = stanowisko.IdOpiekuna;
+                        lokalizacja = $"stanowisko {stanowisko.Nazwa} (sala {stanowisko.Numer}, {stanowisko.Budynek})";
+                        Console.WriteLine($"[DEBUG] Znaleziono stanowisko - Opiekun ID: {opiekunId}, Lokalizacja: {lokalizacja}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[DEBUG] Nie znaleziono stanowiska o ID: {rezerwacja.StanowiskoId.Value}");
+                        lokalizacja = "stanowisko nieznane";
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("[DEBUG] Rezerwacja nie ma ani SalaId ani StanowiskoId");
+                }
+
+                if (!string.IsNullOrEmpty(opiekunId))
+                {
+                    Console.WriteLine($"[DEBUG] Pobieranie danych użytkownika ID: {rezerwacja.UzytkownikId}");
+                    
+                    var uzytkownik = await _context.Users
+                        .Where(u => u.Id == rezerwacja.UzytkownikId)
+                        .Select(u => new { u.Imie, u.Nazwisko, u.Email })
+                        .FirstOrDefaultAsync();
+
+                    if (uzytkownik != null)
+                    {
+                        var dataRezerwacji = rezerwacja.DataStart.ToString("dd.MM.yyyy HH:mm");
+                        var dataKonca = rezerwacja.DataKoniec.ToString("dd.MM.yyyy HH:mm");
+                        
+                        var tytul = $"Nowa rezerwacja - {lokalizacja}";
+                        var tresc = $"Uzytkownik {uzytkownik.Imie} {uzytkownik.Nazwisko} ({uzytkownik.Email}) " +
+                                   $"dokonal rezerwacji na {lokalizacja}. " +
+                                   $"Termin: {dataRezerwacji} - {dataKonca}. " +
+                                   $"Opis: {rezerwacja.Opis ?? "Brak opisu"}. " +
+                                   $"Status: {NormalizujStatus(rezerwacja.Status)}";
+
+                        Console.WriteLine($"[DEBUG] Wysyłam powiadomienie do opiekuna {opiekunId}");
+                        Console.WriteLine($"[DEBUG] Tytuł: {tytul}");
+                        
+                        var wynik = await _powiadomieniaService.WyslijPowiadomienieAsync(
+                            opiekunId,
+                            tytul,
+                            tresc,
+                            "rezerwacja",
+                            "normal",
+                            rezerwacja.Id,
+                            $"/panel?view=opiekun&section=rezerwacje"
+                        );
+                        
+                        Console.WriteLine($"[DEBUG] Wynik wysyłania powiadomienia: {wynik}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[DEBUG] Nie znaleziono użytkownika o ID: {rezerwacja.UzytkownikId}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("[DEBUG] Brak ID opiekuna - powiadomienie nie zostanie wysłane");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] Błąd wysyłania powiadomienia do opiekuna: {ex.Message}");
+                Console.WriteLine($"[ERROR] StackTrace: {ex.StackTrace}");
+            }
+        }
+
+        private async Task WyslijPowiadomienieOZmianieStatusu(Rezerwacja rezerwacja, string staryStatus, string nowyStatus)
+        {
+            try
+            {
+                Console.WriteLine($"[DEBUG] Rozpoczynam wysyłanie powiadomienia o zmianie statusu dla rezerwacji ID: {rezerwacja.Id}");
+                Console.WriteLine($"[DEBUG] Zmiana statusu: {staryStatus} -> {nowyStatus}");
+                
+                // Nie wysyłaj powiadomienia jeśli status się nie zmienił
+                if (staryStatus == nowyStatus) 
+                {
+                    Console.WriteLine("[DEBUG] Status się nie zmienił - pomijam powiadomienie");
+                    return;
+                }
+
+                string lokalizacja = "";
+                if (rezerwacja.SalaId.HasValue)
+                {
+                    lokalizacja = $"sala {rezerwacja.Sala?.Numer} ({rezerwacja.Sala?.Budynek})";
+                }
+                else if (rezerwacja.StanowiskoId.HasValue)
+                {
+                    lokalizacja = $"stanowisko {rezerwacja.Stanowisko?.Nazwa}";
+                }
+
+                Console.WriteLine($"[DEBUG] Lokalizacja: {lokalizacja}");
+                Console.WriteLine($"[DEBUG] Użytkownik ID: {rezerwacja.UzytkownikId}");
+
+                var dataRezerwacji = rezerwacja.DataStart.ToString("dd.MM.yyyy HH:mm");
+                var statusEmoji = GetStatusEmoji(nowyStatus);
+                var statusOpis = GetStatusDescription(nowyStatus);
+                
+                var tytul = $"Status rezerwacji zmieniony";
+                var tresc = $"Status Twojej rezerwacji na {lokalizacja} zostal zmieniony. " +
+                           $"Termin: {dataRezerwacji}. " +
+                           $"Stary status: {NormalizujStatus(GetStatusDescription(staryStatus))}. " +
+                           $"Nowy status: {NormalizujStatus(statusOpis)}. " +
+                           $"Opis: {rezerwacja.Opis ?? "Brak opisu"}";
+
+                var priorytet = nowyStatus == "odrzucono" || nowyStatus == "anulowane" ? "high" : "normal";
+
+                Console.WriteLine($"[DEBUG] Wysyłam powiadomienie o zmianie statusu");
+                Console.WriteLine($"[DEBUG] Tytuł: {tytul}");
+                Console.WriteLine($"[DEBUG] Priorytet: {priorytet}");
+
+                var wynik = await _powiadomieniaService.WyslijPowiadomienieAsync(
+                    rezerwacja.UzytkownikId,
+                    tytul,
+                    tresc,
+                    "rezerwacja",
+                    priorytet,
+                    rezerwacja.Id,
+                    $"/panel?view=user&section=rezerwacje"
+                );
+                
+                Console.WriteLine($"[DEBUG] Wynik wysyłania powiadomienia o zmianie statusu: {wynik}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] Błąd wysyłania powiadomienia o zmianie statusu: {ex.Message}");
+                Console.WriteLine($"[ERROR] StackTrace: {ex.StackTrace}");
+            }
+        }
+
+        private static string GetStatusEmoji(string status)
+        {
+            return status switch
+            {
+                "oczekujące" => "⏳",
+                "zaakceptowano" => "✅",
+                "odrzucono" => "❌",
+                "anulowane" => "🚫",
+                "po terminie" => "⏰",
+                _ => "📋"
+            };
+        }
+
+        private static string GetStatusDescription(string status)
+        {
+            return status switch
+            {
+                "oczekujące" => "Oczekujace na akceptacje",
+                "zaakceptowano" => "Zaakceptowano",
+                "odrzucono" => "Odrzucono",
+                "anulowane" => "Anulowano",
+                "po terminie" => "Po terminie",
+                _ => status
+            };
+        }
+
+        private static string NormalizujStatus(string tekst)
+        {
+            if (string.IsNullOrEmpty(tekst)) return tekst;
+            
+            return tekst
+                .Replace("ą", "a")
+                .Replace("ć", "c")
+                .Replace("ę", "e")
+                .Replace("ł", "l")
+                .Replace("ń", "n")
+                .Replace("ó", "o")
+                .Replace("ś", "s")
+                .Replace("ź", "z")
+                .Replace("ż", "z")
+                .Replace("Ą", "A")
+                .Replace("Ć", "C")
+                .Replace("Ę", "E")
+                .Replace("Ł", "L")
+                .Replace("Ń", "N")
+                .Replace("Ó", "O")
+                .Replace("Ś", "S")
+                .Replace("Ź", "Z")
+                .Replace("Ż", "Z");
         }
     }
 }
