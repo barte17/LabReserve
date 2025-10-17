@@ -7,12 +7,14 @@ interface NotificationDropdownProps {
   isOpen: boolean;
   onClose: () => void;
   triggerRef: React.RefObject<HTMLButtonElement>;
+  mobileRef?: React.RefObject<HTMLButtonElement>;
 }
 
 export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   isOpen,
   onClose,
-  triggerRef
+  triggerRef,
+  mobileRef
 }) => {
   const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -28,20 +30,26 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
   // Pobierz ostatnie powiadomienia gdy dropdown się otwiera
   useEffect(() => {
-    if (isOpen && notifications.length === 0) {
-      fetchNotifications(1, 5); // Pobierz 5 powiadomień (wyświetlimy 3, ale mamy zapas)
+    if (isOpen) {
+      fetchNotifications(1, 5); // Zawsze odśwież przy otwarciu (sync z sekcją powiadomień)
     }
-  }, [isOpen, fetchNotifications, notifications.length]);
+  }, [isOpen, fetchNotifications]);
 
   // Zamknij dropdown przy kliknięciu poza nim
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node) &&
-        triggerRef.current &&
-        !triggerRef.current.contains(event.target as Node)
-      ) {
+      const target = event.target as Node;
+      
+      // Sprawdź czy kliknięcie jest poza dropdown
+      const isOutsideDropdown = dropdownRef.current && !dropdownRef.current.contains(target);
+      
+      // Sprawdź czy kliknięcie nie jest w desktop przycisk
+      const isNotDesktopButton = triggerRef.current && !triggerRef.current.contains(target);
+      
+      // Sprawdź czy kliknięcie nie jest w mobile przycisk
+      const isNotMobileButton = !mobileRef?.current || !mobileRef.current.contains(target);
+      
+      if (isOutsideDropdown && isNotDesktopButton && isNotMobileButton) {
         onClose();
       }
     };
@@ -53,7 +61,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen, onClose, triggerRef]);
+  }, [isOpen, onClose, triggerRef, mobileRef]);
 
   const handleMarkAsRead = async (id: number) => {
     await markAsRead(id);
@@ -84,7 +92,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   return (
     <div
       ref={dropdownRef}
-      className="absolute right-0 top-full mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
+      className="absolute top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 z-50 right-0 w-80 sm:w-96 max-w-[calc(100vw-16px)]"
     >
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-100">

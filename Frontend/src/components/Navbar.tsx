@@ -15,6 +15,7 @@ export function Navbar() {
   const { unreadCount } = useNotifications();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const notificationButtonRef = useRef<HTMLButtonElement>(null);
+  const mobileNotificationButtonRef = useRef<HTMLButtonElement>(null);
 
   const handleLogout = async () => {
     setIsUserDropdownOpen(false);
@@ -130,12 +131,6 @@ export function Navbar() {
                     )}
                   </button>
 
-                  {/* Notification Dropdown */}
-                  <NotificationDropdown
-                    isOpen={isNotificationDropdownOpen}
-                    onClose={() => setIsNotificationDropdownOpen(false)}
-                    triggerRef={notificationButtonRef}
-                  />
                 </div>
 
                 {/* User Dropdown */}
@@ -231,8 +226,39 @@ export function Navbar() {
             )}
           </div>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
+          {/* Mobile menu */}
+          <div className="md:hidden flex items-center space-x-2">
+            {/* Mobile Notification Bell - tylko dla zalogowanych */}
+            {isLogged && (
+              <div className="relative">
+                <button
+                  ref={mobileNotificationButtonRef}
+                  onClick={() => setIsNotificationDropdownOpen(!isNotificationDropdownOpen)}
+                  className="relative flex items-center justify-center p-2 text-neutral-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200 rounded-lg"
+                  title={`Powiadomienia ${unreadCount > 0 ? `(${unreadCount} nieprzeczytanych)` : ''}`}
+                >
+                  <svg 
+                    className="w-6 h-6" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                  
+                  {/* Badge z licznikiem - mniejszy dla mobile */}
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center min-w-[16px] shadow-lg">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+              </div>
+            )}
+
+            {/* Mobile hamburger button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="inline-flex items-center justify-center p-2 rounded-lg text-neutral-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200"
@@ -247,6 +273,16 @@ export function Navbar() {
             </button>
           </div>
         </div>
+
+        {/* Globalny Notification Dropdown - działa dla desktop i mobile */}
+        {isLogged && (
+          <NotificationDropdown
+            isOpen={isNotificationDropdownOpen}
+            onClose={() => setIsNotificationDropdownOpen(false)}
+            triggerRef={notificationButtonRef}
+            mobileRef={mobileNotificationButtonRef}
+          />
+        )}
 
         {/* Mobile Navigation Menu */}
         {isMobileMenuOpen && (

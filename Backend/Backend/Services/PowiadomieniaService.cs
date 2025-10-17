@@ -75,7 +75,9 @@ namespace Backend.Services
                     }
                 }
 
-                // Utwórz powiadomienie
+                // Utwórz powiadomienie z czasem lokalnym (Europa/Warszawa UTC+1/+2)
+                var localTime = TimeZoneInfo.ConvertTime(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Central European Standard Time"));
+                
                 var powiadomienie = new Powiadomienie
                 {
                     UzytkownikId = uzytkownikId,
@@ -85,8 +87,8 @@ namespace Backend.Services
                     Priorytet = priorytet,
                     RezerwacjaId = rezerwacjaId,
                     ActionUrl = sanitizedActionUrl,
-                    DataUtworzenia = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                    DataWygasniecia = DateTime.SpecifyKind(DateTime.UtcNow.AddDays(30), DateTimeKind.Unspecified) // 30 dni ważności
+                    DataUtworzenia = DateTime.SpecifyKind(localTime, DateTimeKind.Unspecified),
+                    DataWygasniecia = DateTime.SpecifyKind(localTime.AddDays(30), DateTimeKind.Unspecified) // 30 dni ważności
                 };
 
                 _context.Powiadomienia.Add(powiadomienie);
@@ -116,7 +118,9 @@ namespace Backend.Services
                 if (strona < 1) strona = 1;
                 if (rozmiar < 1 || rozmiar > 100) rozmiar = 20; // Max 100 dla bezpieczeństwa
 
-                var teraz = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+                var teraz = DateTime.SpecifyKind(
+                    TimeZoneInfo.ConvertTime(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Central European Standard Time")), 
+                    DateTimeKind.Unspecified);
                 
                 return await _context.Powiadomienia
                     .Where(p => p.UzytkownikId == uzytkownikId && 
@@ -177,7 +181,9 @@ namespace Backend.Services
                     return 0;
                 }
 
-                var teraz = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+                var teraz = DateTime.SpecifyKind(
+                    TimeZoneInfo.ConvertTime(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Central European Standard Time")), 
+                    DateTimeKind.Unspecified);
                 
                 return await _context.Powiadomienia
                     .CountAsync(p => p.UzytkownikId == uzytkownikId && 
@@ -272,7 +278,9 @@ namespace Backend.Services
         {
             try
             {
-                var teraz = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+                var teraz = DateTime.SpecifyKind(
+                    TimeZoneInfo.ConvertTime(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Central European Standard Time")), 
+                    DateTimeKind.Unspecified);
                 
                 var wygasle = await _context.Powiadomienia
                     .Where(p => p.DataWygasniecia.HasValue && p.DataWygasniecia < teraz)
