@@ -9,11 +9,16 @@ namespace Backend.Services
     {
         private readonly AppDbContext _context;
         private readonly ILogger<PowiadomieniaService> _logger;
+        private readonly IRealTimePowiadomieniaService _realTimeService;
 
-        public PowiadomieniaService(AppDbContext context, ILogger<PowiadomieniaService> logger)
+        public PowiadomieniaService(
+            AppDbContext context, 
+            ILogger<PowiadomieniaService> logger,
+            IRealTimePowiadomieniaService realTimeService)
         {
             _context = context;
             _logger = logger;
+            _realTimeService = realTimeService;
         }
 
         public async Task<bool> WyslijPowiadomienieAsync(string uzytkownikId, string tytul, 
@@ -94,6 +99,34 @@ namespace Backend.Services
                 _context.Powiadomienia.Add(powiadomienie);
                 await _context.SaveChangesAsync();
 
+                // Wyślij real-time powiadomienie przez SignalR
+                try
+                {
+                    await _realTimeService.WyslijRealTimePowiadomienieAsync(uzytkownikId, new
+                    {
+                        id = powiadomienie.Id,
+                        tytul = powiadomienie.Tytul,
+                        tresc = powiadomienie.Tresc,
+                        typ = powiadomienie.Typ,
+                        priorytet = powiadomienie.Priorytet,
+                        czyPrzeczytane = powiadomienie.CzyPrzeczytane,
+                        dataUtworzenia = powiadomienie.DataUtworzenia.ToString("yyyy-MM-ddTHH:mm:ss"),
+                        actionUrl = powiadomienie.ActionUrl,
+                        rezerwacjaId = powiadomienie.RezerwacjaId
+                    });
+
+                    // Aktualizuj licznik nieprzeczytanych
+                    var nowyLicznik = await PobierzLiczbaNieprzeczytanychAsync(uzytkownikId);
+                    await _realTimeService.AktualizujLicznikAsync(uzytkownikId, nowyLicznik);
+
+                    _logger.LogInformation($"Wysłano real-time powiadomienie ID: {powiadomienie.Id} do użytkownika: {uzytkownikId}");
+                }
+                catch (Exception signalREx)
+                {
+                    _logger.LogError(signalREx, $"Błąd podczas wysyłania real-time powiadomienia ID: {powiadomienie.Id}");
+                    // Nie przerywaj procesu - powiadomienie zostało zapisane w bazie
+                }
+
                 _logger.LogInformation($"Wysłano powiadomienie ID: {powiadomienie.Id} do użytkownika: {uzytkownikId}");
                 return true;
             }
@@ -160,6 +193,18 @@ namespace Backend.Services
                 {
                     powiadomienie.CzyPrzeczytane = true;
                     await _context.SaveChangesAsync();
+                    
+                    // Aktualizuj licznik nieprzeczytanych przez SignalR
+                    try
+                    {
+                        var nowyLicznik = await PobierzLiczbaNieprzeczytanychAsync(uzytkownikId);
+                        await _realTimeService.AktualizujLicznikAsync(uzytkownikId, nowyLicznik);
+                    }
+                    catch (Exception signalREx)
+                    {
+                        _logger.LogError(signalREx, $"Błąd podczas aktualizacji licznika po oznaczeniu jako przeczytane");
+                    }
+                    
                     _logger.LogInformation($"Oznaczono powiadomienie {powiadomienieId} jako przeczytane");
                 }
 
@@ -219,6 +264,17 @@ namespace Backend.Services
                 _context.Powiadomienia.Remove(powiadomienie);
                 await _context.SaveChangesAsync();
                 
+                // Aktualizuj licznik nieprzeczytanych przez SignalR
+                try
+                {
+                    var nowyLicznik = await PobierzLiczbaNieprzeczytanychAsync(uzytkownikId);
+                    await _realTimeService.AktualizujLicznikAsync(uzytkownikId, nowyLicznik);
+                }
+                catch (Exception signalREx)
+                {
+                    _logger.LogError(signalREx, $"Błąd podczas aktualizacji licznika po usunięciu powiadomienia");
+                }
+                
                 _logger.LogInformation($"Usunięto powiadomienie {powiadomienieId} dla użytkownika {uzytkownikId}");
                 return true;
             }
@@ -263,6 +319,16 @@ namespace Backend.Services
                 // Usuń wszystkie powiadomienia w jednej operacji dla wydajności
                 _context.Powiadomienia.RemoveRange(powiadomieniaDoUsuniecia);
                 await _context.SaveChangesAsync();
+                
+                // Aktualizuj licznik na 0 przez SignalR
+                try
+                {
+                    await _realTimeService.AktualizujLicznikAsync(uzytkownikId, 0);
+                }
+                catch (Exception signalREx)
+                {
+                    _logger.LogError(signalREx, $"Błąd podczas aktualizacji licznika po usunięciu wszystkich powiadomień");
+                }
                 
                 _logger.LogInformation($"Usunięto {liczbaUsunietych} powiadomień dla użytkownika {uzytkownikId}");
                 return liczbaUsunietych;
