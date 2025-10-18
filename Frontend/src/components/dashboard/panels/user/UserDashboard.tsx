@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { fetchMojeRezerwacje } from '../../../../services/rezerwacjaService';
+import { fetchMyReservations } from '../../../../services/rezerwacjaService';
 
 interface Rezerwacja {
   id: number;
@@ -37,7 +37,7 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
 
   const loadRezerwacje = async () => {
     try {
-      const data = await fetchMojeRezerwacje();
+      const data = await fetchMyReservations();
       setRezerwacje(data);
     } catch (error) {
       console.error('Błąd pobierania rezerwacji:', error);

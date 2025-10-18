@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchMojeRezerwacje } from '../../../../services/rezerwacjaService';
+import { fetchMyReservations } from '../../../../services/rezerwacjaService';
 import { useToastContext } from '../../../ToastProvider';
 
 interface Rezerwacja {
@@ -35,7 +35,7 @@ export default function MojeRezerwacje() {
 
   const loadRezerwacje = async () => {
     try {
-      const data = await fetchMojeRezerwacje();
+      const data = await fetchMyReservations();
       setRezerwacje(data);
     } catch (error) {
       console.error('Błąd pobierania rezerwacji:', error);
