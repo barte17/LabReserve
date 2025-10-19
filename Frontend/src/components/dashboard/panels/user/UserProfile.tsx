@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { useToastContext } from '../../../ToastProvider';
+import { preferencesService } from '../../../../services/preferencesService';
+import type { UserPreferences, UpdatePreferences } from '../../../../services/preferencesService';
 
 interface UserProfileData {
   id: string;
@@ -19,11 +21,27 @@ export default function UserProfile() {
   const [editData, setEditData] = useState({ imie: '', nazwisko: '', email: '' });
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [preferences, setPreferences] = useState<UserPreferences | null>(null);
+  const [preferencesLoading, setPreferencesLoading] = useState(true);
   const { showSuccess, showError } = useToastContext();
 
   useEffect(() => {
     loadUserProfile();
+    loadUserPreferences();
   }, []);
+
+  const loadUserPreferences = async () => {
+    try {
+      setPreferencesLoading(true);
+      const userPrefs = await preferencesService.getUserPreferences();
+      setPreferences(userPrefs);
+    } catch (error) {
+      console.error('Błąd pobierania preferencji:', error);
+      showError('Błąd podczas pobierania preferencji');
+    } finally {
+      setPreferencesLoading(false);
+    }
+  };
 
   const loadUserProfile = async () => {
     try {
@@ -141,6 +159,38 @@ export default function UserProfile() {
       'Niezatwierdzony': 'Oczekuje na zatwierdzenie'
     };
     return roleNames[role] || role;
+  };
+
+  const handlePreferenceChange = async (type: 'emailNotifications' | 'theme', key?: string, value?: boolean | string) => {
+    if (!preferences) return;
+
+    try {
+      let updateData: UpdatePreferences = {};
+
+      if (type === 'emailNotifications' && key && typeof value === 'boolean') {
+        updateData.emailNotifications = {
+          ...preferences.emailNotifications,
+          [key]: value
+        };
+        setPreferences(prev => prev ? {
+          ...prev,
+          emailNotifications: {
+            ...prev.emailNotifications,
+            [key]: value
+          }
+        } : null);
+      } else if (type === 'theme' && typeof value === 'string') {
+        updateData.theme = value;
+        setPreferences(prev => prev ? { ...prev, theme: value } : null);
+      }
+
+      await preferencesService.updatePreferences(updateData);
+    } catch (error) {
+      console.error('Błąd aktualizacji preferencji:', error);
+      showError('Błąd podczas aktualizacji preferencji');
+      // Przywróć poprzedni stan
+      await loadUserPreferences();
+    }
   };
 
   if (loading) {
@@ -341,32 +391,79 @@ export default function UserProfile() {
 
       {/* Preferencje */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">⚙️ Preferencje</h2>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium text-gray-900">Powiadomienia email</p>
-              <p className="text-sm text-gray-500">Otrzymuj powiadomienia o statusie rezerwacji</p>
-            </div>
-            <input
-              type="checkbox"
-              className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-            />
+        <h2 className="text-xl font-bold text-gray-900 mb-6">⚙️ Preferencje</h2>
+        
+        {preferencesLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
           </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium text-gray-900">Przypomnienia</p>
-              <p className="text-sm text-gray-500">Przypomnienia o nadchodzących rezerwacjach</p>
+        ) : preferences ? (
+          <div className="space-y-8">
+            {/* Powiadomienia Email */}
+            <div className="border-b border-gray-100 pb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">📧 Powiadomienia Email</h3>
+              <div className="space-y-5">
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex-1">
+                    <p className="text-base font-medium text-gray-900 mb-1">Zmiany statusu rezerwacji</p>
+                    <p className="text-sm text-gray-600">Otrzymuj email gdy status Twojej rezerwacji się zmieni</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={preferences.emailNotifications.statusChange}
+                    onChange={(e) => handlePreferenceChange('emailNotifications', 'statusChange', e.target.checked)}
+                    className="ml-4 w-5 h-5 text-red-600 border-gray-300 rounded focus:ring-red-500 focus:ring-2"
+                  />
+                </div>
+                
+                {/* Opcja tylko dla opiekunów */}
+                {profileData?.roles.includes('Opiekun') && (
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex-1">
+                      <p className="text-base font-medium text-gray-900 mb-1">Nowe rezerwacje sal</p>
+                      <p className="text-sm text-gray-600">Otrzymuj email o nowych rezerwacjach Twoich sal i stanowisk</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={preferences.emailNotifications.newReservations}
+                      onChange={(e) => handlePreferenceChange('emailNotifications', 'newReservations', e.target.checked)}
+                      className="ml-4 w-5 h-5 text-red-600 border-gray-300 rounded focus:ring-red-500 focus:ring-2"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
-            <input
-              type="checkbox"
-              className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-            />
+
+            {/* Theme */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">🎨 Wygląd</h3>
+              <div className="space-y-5">
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex-1">
+                    <p className="text-base font-medium text-gray-900 mb-1">Tryb ciemny</p>
+                    <p className="text-sm text-gray-600">Przełącz na ciemny motyw interfejsu (funkcja w rozwoju)</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={preferences.theme === 'dark'}
+                    onChange={(e) => handlePreferenceChange('theme', undefined, e.target.checked ? 'dark' : 'normal')}
+                    className="ml-4 w-5 h-5 text-red-600 border-gray-300 rounded focus:ring-red-500 focus:ring-2"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-        <p className="text-sm text-gray-500 text-center mt-4">
-          Funkcja powiadomień będzie dostępna wkrótce
-        </p>
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-gray-500">Nie udało się załadować preferencji</p>
+            <button
+              onClick={loadUserPreferences}
+              className="mt-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              Spróbuj ponownie
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

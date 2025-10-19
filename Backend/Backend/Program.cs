@@ -106,6 +106,9 @@ builder.Services.AddScoped<Backend.Services.IImageProcessingService, Backend.Ser
 builder.Services.AddScoped<Backend.Services.IPowiadomieniaService, Backend.Services.PowiadomieniaService>();
 builder.Services.AddScoped<Backend.Services.IRealTimePowiadomieniaService, Backend.Services.RealTimePowiadomieniaService>();
 
+// Register User Preferences Service
+builder.Services.AddScoped<Backend.Services.IUserPreferencesService, Backend.Services.UserPreferencesService>();
+
 // Register Background Service for expired reservations
 builder.Services.AddHostedService<Backend.Services.ExpiredReservationsService>();
 
