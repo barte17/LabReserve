@@ -1,5 +1,6 @@
 ﻿using Backend.Dto;
 using Backend.Models;
+using Backend.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -21,13 +22,15 @@ namespace Backend.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IConfiguration _config;
         private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly IAuditService _auditService;
         private static readonly SemaphoreSlim _refreshSemaphore = new(1, 1); // Mutex dla refresh
 
-        public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IConfiguration config)
+        public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IConfiguration config, IAuditService auditService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _config = config;
+            _auditService = auditService;
         }
 
         private string GenerateRefreshToken()
@@ -97,6 +100,10 @@ namespace Backend.Controllers
             if (result.Succeeded)
             {
                 await _userManager.AddToRoleAsync(user, "Niezatwierdzony");
+                
+                // Log rejestracji nowego użytkownika
+                await _auditService.LogAsync("REJESTRACJA_UZYTKOWNIKA", "User", null, 
+                    $"Email: {dto.Email}, Imie: {dto.Imie}, Nazwisko: {dto.Nazwisko}, Rola: Niezatwierdzony");
             }
 
             if (!result.Succeeded)
@@ -122,6 +129,9 @@ namespace Backend.Controllers
             
             if (user == null)
             {
+                // Log nieudanego logowania - nieistniejący email
+                await _auditService.LogAsync("LOGOWANIE_NIEUDANE", "User", null, $"Email: {dto.Email}, Powod: Nieistniejacy email");
+
                 await delay;
                 return BadRequest(new { 
                     message = "Nieprawidłowy email lub hasło",
@@ -175,6 +185,9 @@ namespace Backend.Controllers
                 };
                 Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
 
+                // Log udanego logowania
+                await _auditService.LogAsync("LOGOWANIE_UDANE", "User", null, $"Email: {dto.Email}");
+
                 await delay;
                 return Ok(new
                 {
@@ -197,6 +210,10 @@ namespace Backend.Controllers
             var newFailedAttempts = await _userManager.GetAccessFailedCountAsync(user);
             var maxAttempts = 5; // From Identity configuration
             var remainingAttempts = maxAttempts - newFailedAttempts;
+
+            // Log nieudanego logowania - błędne hasło
+            await _auditService.LogAsync("LOGOWANIE_NIEUDANE", "User", null, 
+                $"Email: {dto.Email}, Powod: Bledne haslo, Pozostalo prob: {remainingAttempts}");
 
             await delay;
 
@@ -358,6 +375,9 @@ namespace Backend.Controllers
 
             // Usuń refresh token cookie
             Response.Cookies.Delete("refreshToken");
+
+            // Log wylogowania
+            await _auditService.LogAsync("WYLOGOWANIE", "User", null, $"Email: {username}");
 
             await HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
             return Ok();

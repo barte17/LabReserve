@@ -16,15 +16,18 @@ namespace Backend.Controllers
         private readonly AppDbContext _context;
         private readonly IPowiadomieniaService _powiadomieniaService;
         private readonly IRealTimePowiadomieniaService _realTimeService;
+        private readonly IAuditService _auditService;
 
         public RezerwacjaController(
             AppDbContext context,
             IPowiadomieniaService powiadomieniaService,
-            IRealTimePowiadomieniaService realTimeService)
+            IRealTimePowiadomieniaService realTimeService,
+            IAuditService auditService)
         {
             _context = context;
             _powiadomieniaService = powiadomieniaService;
             _realTimeService = realTimeService;
+            _auditService = auditService;
         }
 
         [HttpGet]
@@ -151,6 +154,10 @@ namespace Backend.Controllers
 
             _context.Rezerwacje.Add(rezerwacja);
             await _context.SaveChangesAsync();
+
+            // Log tworzenia rezerwacji
+            await _auditService.LogAsync("UTWORZENIE_REZERWACJI", "Rezerwacja", rezerwacja.Id,
+                $"Sala {dto.SalaId}, {dto.DataStart:dd.MM.yyyy HH:mm} - {dto.DataKoniec:dd.MM.yyyy HH:mm}");
 
             // Wyślij powiadomienie do opiekuna sali
             await WyslijPowiadomienieDlaOpiekuna(rezerwacja);
@@ -379,6 +386,10 @@ namespace Backend.Controllers
             rezerwacja.Status = dto.Status;
             await _context.SaveChangesAsync();
 
+            // Log zmiany statusu przez admina
+            await _auditService.LogAsync("ZMIANA_STATUSU_REZERWACJI", "Rezerwacja", id,
+                $"{oldStatus} → {dto.Status} (Admin)");
+
             // Wyślij powiadomienie do użytkownika o zmianie statusu
             await WyslijPowiadomienieOZmianieStatusu(rezerwacja, oldStatus, dto.Status);
 
@@ -435,6 +446,10 @@ namespace Backend.Controllers
             {
                 return BadRequest("Nie można anulować rezerwacji która już się rozpoczęła.");
             }
+
+            // Log usunięcia rezerwacji
+            await _auditService.LogAsync("USUNIECIE_REZERWACJI", "Rezerwacja", id,
+                $"Status: {rezerwacja.Status}, Termin: {rezerwacja.DataStart:dd.MM.yyyy HH:mm}");
 
             _context.Rezerwacje.Remove(rezerwacja);
             await _context.SaveChangesAsync();
@@ -617,6 +632,10 @@ namespace Backend.Controllers
             var oldStatus = rezerwacja.Status;
             rezerwacja.Status = dto.Status;
             await _context.SaveChangesAsync();
+
+            // Log zmiany statusu przez opiekuna
+            await _auditService.LogAsync("ZMIANA_STATUSU_REZERWACJI", "Rezerwacja", id,
+                $"{oldStatus} → {dto.Status} (Opiekun)");
 
             // Wyślij powiadomienie do użytkownika o zmianie statusu
             await WyslijPowiadomienieOZmianieStatusu(rezerwacja, oldStatus, dto.Status);

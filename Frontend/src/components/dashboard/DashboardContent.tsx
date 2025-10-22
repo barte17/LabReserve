@@ -21,6 +21,7 @@ import UserProfile from './panels/user/UserProfile';
 
 // Import adminowych komponentów
 import AdminDashboard from './panels/admin/AdminDashboard';
+import Logi from './panels/admin/Logi';
 
 interface DashboardContentProps {
   role: string;
@@ -47,6 +48,8 @@ export default function DashboardContent({ role, activeSection, onSectionChange,
         return <UsersListAdmin autoFilter={autoAdd === 'uzytkownicy-niezatwierdzeni' ? 'niezatwierdzony' : undefined} />;
       case 'rezerwacje':
         return <RezerwacjeList autoFilter={autoFilterRezerwacje || undefined} onAutoFilterProcessed={onAutoFilterProcessed} />;
+      case 'logi':
+        return <Logi />;
       default:
         return <AdminDashboard />;
     }

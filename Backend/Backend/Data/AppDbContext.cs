@@ -13,6 +13,7 @@ namespace Backend.Data
         public DbSet<Zdjecie> Zdjecia { get; set; }
         public DbSet<Rezerwacja> Rezerwacje { get; set; }
         public DbSet<Powiadomienie> Powiadomienia { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
 
         public DbSet<ApplicationUser> Uzytkownicy { get; set; } = null!;
 

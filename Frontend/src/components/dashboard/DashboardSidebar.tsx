@@ -50,7 +50,8 @@ export default function DashboardSidebar({
       { id: 'sale', label: 'Zarządzanie salami', icon: '🏢', description: 'Dodaj, edytuj sale' },
       { id: 'stanowiska', label: 'Zarządzanie stanowiskami', icon: '💻', description: 'Dodaj, edytuj stanowiska' },
       { id: 'uzytkownicy', label: 'Użytkownicy', icon: '👥', description: 'Zarządzaj kontami' },
-      { id: 'rezerwacje', label: 'Wszystkie rezerwacje', icon: '📅', description: 'Podgląd rezerwacji' }
+      { id: 'rezerwacje', label: 'Wszystkie rezerwacje', icon: '📅', description: 'Podgląd rezerwacji' },
+      { id: 'logi', label: 'Logi', icon: '📋', description: 'Historia działań' }
     ],
     opiekun: [
       { id: 'dashboard', label: 'Dashboard', icon: '📊', description: 'Przegląd moich sal' },
