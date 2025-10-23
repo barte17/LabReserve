@@ -4,6 +4,8 @@ import { fetchSale } from '../../../../services/salaService';
 import { fetchStanowiska } from '../../../../services/stanowiskoService';
 import { fetchUserStats, fetchRezerwacjeStats } from '../../../../services/statsService';
 import { checkExpiredReservations } from '../../../../services/rezerwacjaService';
+import { auditLogService } from '../../../../services/auditLogService';
+import type { AuditLog } from '../../../../services/auditLogService';
 import toast from 'react-hot-toast';
 
 interface AdminDashboardProps {
@@ -69,6 +71,9 @@ export default function AdminDashboard({ onSectionChange }: AdminDashboardProps 
       href: '/panel?view=admin&section=rezerwacje'
     }
   ]);
+
+  const [recentActivities, setRecentActivities] = useState<AuditLog[]>([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(true);
 
   const loadStats = async () => {
       try {
@@ -154,16 +159,71 @@ export default function AdminDashboard({ onSectionChange }: AdminDashboardProps 
       }
     };
 
+  const loadRecentActivities = async () => {
+    try {
+      setActivitiesLoading(true);
+      const response = await auditLogService.getAuditLogs({
+        sortBy: 'Timestamp',
+        sortOrder: 'desc',
+        page: 1,
+        pageSize: 5
+      });
+      setRecentActivities(response.logs);
+    } catch (error) {
+      console.error('Błąd ładowania ostatnich aktywności:', error);
+    } finally {
+      setActivitiesLoading(false);
+    }
+  };
+
+  const getActivityIcon = (action: string) => {
+    switch (action) {
+      case 'UTWORZENIE_REZERWACJI': return '📅';
+      case 'ZMIANA_STATUSU_REZERWACJI': return '🔄';
+      case 'USUNIECIE_REZERWACJI': return '❌';
+      case 'LOGOWANIE_UDANE': return '✅';
+      case 'LOGOWANIE_NIEUDANE': return '❌';
+      case 'WYLOGOWANIE': return '🚪';
+      case 'REJESTRACJA_UZYTKOWNIKA': return '👤';
+      default: return '📋';
+    }
+  };
+
+  const getActivityColor = (action: string) => {
+    switch (action) {
+      case 'UTWORZENIE_REZERWACJI': return 'bg-green-100 text-green-600';
+      case 'ZMIANA_STATUSU_REZERWACJI': return 'bg-blue-100 text-blue-600';
+      case 'USUNIECIE_REZERWACJI': return 'bg-red-100 text-red-600';
+      case 'LOGOWANIE_UDANE': return 'bg-green-100 text-green-600';
+      case 'LOGOWANIE_NIEUDANE': return 'bg-yellow-100 text-yellow-600';
+      case 'WYLOGOWANIE': return 'bg-gray-100 text-gray-600';
+      case 'REJESTRACJA_UZYTKOWNIKA': return 'bg-purple-100 text-purple-600';
+      default: return 'bg-gray-100 text-gray-600';
+    }
+  };
+
+  const formatActivityTime = (timestamp: string) => {
+    const now = new Date();
+    const activityTime = new Date(timestamp);
+    const diffMs = now.getTime() - activityTime.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffMins < 60) {
+      return `${diffMins} min. temu`;
+    } else if (diffHours < 24) {
+      return `${diffHours} godz. temu`;
+    } else {
+      return `${diffDays} dni temu`;
+    }
+  };
+
   useEffect(() => {
     loadStats();
+    loadRecentActivities();
   }, []);
 
-  const recentActivities = [
-    { action: 'Dodano nową salę', details: 'Sala A101 - Laboratorium IT', time: '2 godz. temu', icon: '🏢' },
-    { action: 'Nowy użytkownik', details: 'jan.kowalski@example.com', time: '4 godz. temu', icon: '👤' },
-    { action: 'Zatwierdzono rezerwację', details: 'Sala B205 - 15:00-17:00', time: '6 godz. temu', icon: '✅' },
-    { action: 'Dodano stanowisko', details: 'Stanowisko PC-12 w sali A101', time: '1 dzień temu', icon: '💻' },
-  ];
 
   return (
     <div className="space-y-4">
@@ -309,31 +369,50 @@ export default function AdminDashboard({ onSectionChange }: AdminDashboardProps 
       {/* Recent Activity */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">
-            Ostatnie aktywności (do zrobienia w przyszłości)
-          </h2>
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold text-gray-900">
+              📋 Ostatnie aktywności
+            </h2>
+            <button
+              onClick={() => handleSectionChange('logi')}
+              className="px-3 py-1.5 text-sm bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+            >
+              Zobacz wszystkie logi
+            </button>
+          </div>
         </div>
         <div className="p-6">
-          <div className="space-y-4">
-            {recentActivities.map((activity, index) => (
-              <div key={index} className="flex items-start space-x-3">
-                <div className="flex-shrink-0 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-sm">
-                  {activity.icon}
+          {activitiesLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-600"></div>
+            </div>
+          ) : recentActivities.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              Brak ostatnich aktywności
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {recentActivities.map((activity, index) => (
+                <div key={activity.id || index} className="flex items-start space-x-3">
+                  <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm ${getActivityColor(activity.action)}`}>
+                    {getActivityIcon(activity.action)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900">
+                      {activity.action.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
+                    </p>
+                    <p className="text-sm text-gray-500 truncate">
+                      {activity.userEmail && `${activity.userEmail}`}
+                      {activity.details && ` - ${activity.details}`}
+                    </p>
+                  </div>
+                  <div className="flex-shrink-0 text-xs text-gray-400">
+                    {formatActivityTime(activity.timestamp)}
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900">
-                    {activity.action}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    {activity.details}
-                  </p>
-                </div>
-                <div className="flex-shrink-0 text-xs text-gray-400">
-                  {activity.time}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
