@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { fetchMojeSale } from '../../services/salaService';
 import { fetchMojeStanowiska } from '../../services/stanowiskoService';
 import { fetchMojeRezerwacje } from '../../services/rezerwacjaService';
@@ -21,6 +22,8 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ role, availableRoles, onRoleChange, initialSection }: DashboardLayoutProps) {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState(initialSection || 'dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [autoAdd, setAutoAdd] = useState<string | null>(null);
@@ -70,6 +73,14 @@ export default function DashboardLayout({ role, availableRoles, onRoleChange, in
 
   const handleSectionChange = useCallback((section: string, shouldAutoAdd: boolean = false, options?: { autoFilter?: string }) => {
     setActiveSection(section);
+    
+    // Zapisz aktywną sekcję w localStorage dla danego panelu
+    localStorage.setItem(`lastSection_${role}`, section);
+    
+    // Aktualizuj URL z nową sekcją
+    const currentView = searchParams.get('view') || role;
+    navigate(`/panel?view=${currentView}&section=${section}`, { replace: true });
+    
     // Set autoAdd based on section and type
     if (shouldAutoAdd) {
       if (section === 'uzytkownicy') {
@@ -93,7 +104,7 @@ export default function DashboardLayout({ role, availableRoles, onRoleChange, in
     }
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+  }, [role, searchParams, navigate]);
 
   return (
     <div className="min-h-screen bg-gray-50">

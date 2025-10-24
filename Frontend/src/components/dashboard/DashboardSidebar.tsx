@@ -73,7 +73,12 @@ export default function DashboardSidebar({
 
   const handleRoleSwitch = (newRole: string) => {
     onRoleChange(newRole);
-    navigate(`/panel?view=${newRole}`);
+    
+    // Sprawdź czy jest zapisana sekcja dla nowego panelu
+    const savedSection = localStorage.getItem(`lastSection_${newRole}`);
+    const targetSection = savedSection || 'dashboard';
+    
+    navigate(`/panel?view=${newRole}&section=${targetSection}`);
     onClose();
   };
 

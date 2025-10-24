@@ -45,6 +45,7 @@ export default function UserDashboard() {
   // Sprawdź view z URL lub ustaw domyślny
   useEffect(() => {
     const viewParam = searchParams.get('view');
+    const sectionParam = searchParams.get('section');
     
     if (viewParam) {
       // Sprawdź czy user ma uprawnienia do tego widoku
@@ -57,6 +58,15 @@ export default function UserDashboard() {
         setSelectedRole(viewParam);
         // Zapisz ostatni wybrany panel w localStorage
         localStorage.setItem('lastSelectedPanel', viewParam);
+        
+        // Jeśli nie ma sekcji w URL, sprawdź czy jest zapisana w localStorage
+        if (!sectionParam) {
+          const savedSection = localStorage.getItem(`lastSection_${viewParam}`);
+          if (savedSection) {
+            // Aktualizuj URL z zapisaną sekcją
+            navigate(`/panel?view=${viewParam}&section=${savedSection}`, { replace: true });
+          }
+        }
       } else {
         // Przekieruj do domyślnego panelu jeśli brak uprawnień
         const defaultRole = getDefaultRole();
@@ -72,7 +82,11 @@ export default function UserDashboard() {
         ? lastPanel 
         : defaultRole;
       
-      navigate(`/panel?view=${targetRole}`);
+      // Sprawdź czy jest zapisana sekcja dla tego panelu
+      const savedSection = localStorage.getItem(`lastSection_${targetRole}`);
+      const targetSection = savedSection || 'dashboard';
+      
+      navigate(`/panel?view=${targetRole}&section=${targetSection}`);
     }
   }, [searchParams, hasRole, navigate, availableRoles]);
 

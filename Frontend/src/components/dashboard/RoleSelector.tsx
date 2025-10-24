@@ -18,7 +18,12 @@ export default function RoleSelector({ availableRoles, onRoleSelect }: RoleSelec
 
   const handleRoleClick = (roleKey: string) => {
     onRoleSelect(roleKey);
-    navigate(`/panel?view=${roleKey}`);
+    
+    // Sprawdź czy jest zapisana sekcja dla wybranego panelu
+    const savedSection = localStorage.getItem(`lastSection_${roleKey}`);
+    const targetSection = savedSection || 'dashboard';
+    
+    navigate(`/panel?view=${roleKey}&section=${targetSection}`);
   };
 
   return (

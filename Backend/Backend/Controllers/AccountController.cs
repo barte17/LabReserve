@@ -198,6 +198,10 @@ namespace Backend.Controllers
             
             if (result.IsLockedOut)
             {
+                // Log blokady konta
+                await _auditService.LogAsync("BLOKADA_KONTA", "User", null, 
+                    $"Email: {dto.Email}, Powod: Zbyt wiele nieudanych prob logowania, Czas blokady: 15 minut");
+
                 await delay;
                 return BadRequest(new { 
                     message = "Konto zostało zablokowane na 15 minut z powodu zbyt wielu nieudanych prób logowania.",
@@ -362,29 +366,19 @@ namespace Backend.Controllers
         public async Task<IActionResult> Logout()
         {
             var username = User.Identity?.Name;
-            string userEmail = "Nieznany";
-            
             if (!string.IsNullOrEmpty(username))
             {
                 var user = await _userManager.FindByNameAsync(username);
                 if (user != null)
                 {
-                    userEmail = user.Email ?? username;
                     user.RefreshToken = null;
                     user.RefreshTokenExpiryTime = DateTime.UtcNow;
                     await _userManager.UpdateAsync(user);
-                }
-                else
-                {
-                    userEmail = username; // Fallback to username if user not found
                 }
             }
 
             // Usuń refresh token cookie
             Response.Cookies.Delete("refreshToken");
-
-            // Log wylogowania z poprawnym emailem
-            await _auditService.LogAsync("WYLOGOWANIE", "User", null, $"Email: {userEmail}");
 
             await HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
             return Ok();
