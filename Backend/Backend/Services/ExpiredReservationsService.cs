@@ -190,7 +190,7 @@ public class ExpiredReservationsService : BackgroundService
                 rezerwacja.UzytkownikId,
                 tytul,
                 tresc,
-                "anulowanie",
+                "rezerwacja",
                 "high",
                 rezerwacja.Id,
                 "/panel?view=user&section=rezerwacje"

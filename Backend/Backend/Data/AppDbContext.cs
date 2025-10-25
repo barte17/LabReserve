@@ -49,6 +49,12 @@ namespace Backend.Data
 
                 entity.HasIndex(e => e.DataUtworzenia)
                     .HasDatabaseName("IX_Powiadomienia_DataUtworzenia");
+
+                // Konfiguracja cascade delete dla RezerwacjaId
+                entity.HasOne(p => p.Rezerwacja)
+                    .WithMany()
+                    .HasForeignKey(p => p.RezerwacjaId)
+                    .OnDelete(DeleteBehavior.Cascade); // Automatyczne usuwanie powiadomień przy usuwaniu rezerwacji
             });
         }
 

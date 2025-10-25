@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchRezerwacje, updateStatus, deleteRezerwacja, type RezerwacjaDetailsDto } from "../services/rezerwacjaService";
+import { fetchRezerwacje, updateStatus, deleteRezerwacja, cancelReservation, type RezerwacjaDetailsDto } from "../services/rezerwacjaService";
 import { LoadingTable } from "./LoadingStates";
 import { useMinimumLoadingDelay } from "../hooks/useMinimumLoadingDelay";
 
@@ -49,8 +49,23 @@ export default function RezerwacjeList({ autoFilter, onAutoFilterProcessed }: Re
     }
   };
 
+  const handleCancel = async (id: number) => {
+    if (!window.confirm("Czy na pewno chcesz anulować tę rezerwację?")) return;
+    
+    try {
+      await cancelReservation(id);
+      setRezerwacje(prev => 
+        prev.map(rez => rez.id === id ? { ...rez, status: "anulowane" } : rez)
+      );
+      setError("");
+    } catch (error) {
+      console.error("Błąd podczas anulowania:", error);
+      setError("Nie udało się anulować rezerwacji");
+    }
+  };
+
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Czy na pewno chcesz usunąć tę rezerwację?")) return;
+    if (!window.confirm("Czy na pewno chcesz PERMANENTNIE usunąć tę rezerwację? Ta operacja jest nieodwracalna!")) return;
     
     try {
       await deleteRezerwacja(id);
@@ -356,59 +371,63 @@ export default function RezerwacjeList({ autoFilter, onAutoFilterProcessed }: Re
 
               <div className="list-item-actions">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-3">
                     <span className="text-sm font-medium text-gray-700">Status:</span>
+                    
+                    {/* Anuluj - po lewej stronie, dostępne dla wszystkich */}
+                    {rez.status !== 'anulowane' && (
+                      <button
+                        onClick={() => handleCancel(rez.id)}
+                        className="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105 bg-gray-100 text-gray-600 hover:bg-orange-50 hover:text-orange-700 hover:shadow-md border border-gray-200"
+                      >
+                        🚫 Anuluj
+                      </button>
+                    )}
+                    
                     <button
                       onClick={() => handleStatusChange(rez.id, 'oczekujące')}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105 ${
                         rez.status === 'oczekujące' 
-                          ? 'bg-yellow-100 text-yellow-800 ring-2 ring-yellow-300' 
-                          : 'bg-gray-100 text-gray-600 hover:bg-yellow-50 hover:text-yellow-700'
+                          ? 'bg-yellow-100 text-yellow-800 ring-2 ring-yellow-300 shadow-sm' 
+                          : 'bg-gray-100 text-gray-600 hover:bg-yellow-50 hover:text-yellow-700 hover:shadow-md border border-gray-200'
                       }`}
                     >
                       ⏳ Oczekujące
                     </button>
+                    
                     <button
                       onClick={() => handleStatusChange(rez.id, 'zaakceptowano')}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105 ${
                         rez.status === 'zaakceptowano' 
-                          ? 'bg-green-100 text-green-800 ring-2 ring-green-300' 
-                          : 'bg-gray-100 text-gray-600 hover:bg-green-50 hover:text-green-700'
+                          ? 'bg-green-100 text-green-800 ring-2 ring-green-300 shadow-sm' 
+                          : 'bg-gray-100 text-gray-600 hover:bg-green-50 hover:text-green-700 hover:shadow-md border border-gray-200'
                       }`}
                     >
                       ✅ Zaakceptuj
                     </button>
+                    
                     <button
                       onClick={() => handleStatusChange(rez.id, 'odrzucono')}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105 ${
                         rez.status === 'odrzucono' 
-                          ? 'bg-red-100 text-red-800 ring-2 ring-red-300' 
-                          : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-700'
+                          ? 'bg-red-100 text-red-800 ring-2 ring-red-300 shadow-sm' 
+                          : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-700 hover:shadow-md border border-gray-200'
                       }`}
                     >
                       ❌ Odrzuć
                     </button>
-                    <button
-                      onClick={() => handleStatusChange(rez.id, 'anulowane')}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                        rez.status === 'anulowane' 
-                          ? 'bg-gray-100 text-gray-800 ring-2 ring-gray-300' 
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-50 hover:text-gray-700'
-                      }`}
-                    >
-                      🚫 Anuluj
-                    </button>
                   </div>
                   
-                  <button
-                    onClick={() => handleDelete(rez.id)}
-                    className="btn btn-danger btn-sm ml-4"
-                  >
-                    <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    Usuń
-                  </button>
+                  {/* Usuń TYLKO anulowane rezerwacje - w sekcji statusów */}
+                  {rez.status === 'anulowane' && (
+                    <button
+                      onClick={() => handleDelete(rez.id)}
+                      className="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105 bg-red-100 text-red-700 hover:bg-red-200 hover:text-red-800 hover:shadow-md border border-red-200 ml-3"
+                      title="Usuń permanentnie (tylko anulowane rezerwacje)"
+                    >
+                      🗑️ Usuń
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

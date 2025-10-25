@@ -127,7 +127,31 @@ export const deleteRezerwacja = async (id: number) => {
   const res = await authenticatedFetch(`/api/rezerwacja/${id}`, {
     method: "DELETE"
   });
-  if (!res.ok) throw new Error("Błąd usuwania rezerwacji");
+  
+  if (!res.ok) {
+    let errorMessage = "Błąd usuwania rezerwacji";
+    
+    try {
+      const errorData = await res.json();
+      if (errorData.message) {
+        errorMessage = errorData.message;
+      } else if (errorData.error) {
+        errorMessage = errorData.error;
+      }
+    } catch {
+      // Jeśli nie można sparsować JSON, użyj domyślnej wiadomości
+      if (res.status === 404) {
+        errorMessage = "Rezerwacja nie została znaleziona";
+      } else if (res.status === 403) {
+        errorMessage = "Brak uprawnień do usunięcia tej rezerwacji";
+      } else if (res.status === 400) {
+        const text = await res.text();
+        errorMessage = text || "Nie można usunąć tej rezerwacji";
+      }
+    }
+    
+    throw new Error(errorMessage);
+  }
 };
 
 export const cancelReservation = async (id: number) => {

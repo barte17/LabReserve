@@ -400,61 +400,183 @@ namespace Backend.Controllers
         [Authorize]
         public async Task<IActionResult> CancelReservation(int id)
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var isAdmin = User.IsInRole("Admin");
-
-            var rezerwacja = await _context.Rezerwacje
-                .FirstOrDefaultAsync(r => r.Id == id && (isAdmin || r.UzytkownikId == userId));
-
-            if (rezerwacja == null)
-                return NotFound("Rezerwacja nie istnieje lub nie masz do niej uprawnień");
-
-            // Sprawdź czy rezerwacja nie jest już anulowana
-            if (rezerwacja.Status == "anulowane")
-                return BadRequest("Rezerwacja jest już anulowana");
-
-            // Sprawdź czy można anulować (np. nie można anulować rezerwacji która już się rozpoczęła)
-            var nowUnspecified = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);
-            if (rezerwacja.DataStart <= nowUnspecified && !isAdmin)
+            try
             {
-                return BadRequest("Nie można anulować rezerwacji która już się rozpoczęła");
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var isAdmin = User.IsInRole("Admin");
+
+                var rezerwacja = await _context.Rezerwacje
+                    .Include(r => r.Sala)
+                    .Include(r => r.Stanowisko)
+                    .FirstOrDefaultAsync(r => r.Id == id && (isAdmin || r.UzytkownikId == userId));
+
+                if (rezerwacja == null)
+                    return NotFound("Rezerwacja nie istnieje lub nie masz do niej uprawnień");
+
+                // Sprawdź czy rezerwacja nie jest już anulowana
+                if (rezerwacja.Status == "anulowane")
+                    return BadRequest("Rezerwacja jest już anulowana");
+
+                // Sprawdź czy można anulować (nie można anulować rezerwacji która już się rozpoczęła, chyba że admin)
+                var nowUnspecified = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);
+                if (rezerwacja.DataStart <= nowUnspecified && !isAdmin)
+                {
+                    return BadRequest("Nie można anulować rezerwacji która już się rozpoczęła");
+                }
+
+                var oldStatus = rezerwacja.Status;
+                
+                // Zmień status na anulowane zamiast usuwać
+                rezerwacja.Status = "anulowane";
+                await _context.SaveChangesAsync();
+
+                // Log anulowania rezerwacji
+                try
+                {
+                    var lokalizacjaOpis = await GetLokalizacjaStringAsync(rezerwacja);
+                    await _auditService.LogAsync("ANULOWANIE_REZERWACJI", "Rezerwacja", id,
+                        $"Status: {oldStatus} → anulowane, Termin: {rezerwacja.DataStart:dd.MM.yyyy HH:mm}, " +
+                        $"Lokalizacja: {lokalizacjaOpis}");
+                }
+                catch (Exception auditEx)
+                {
+                    // Nie blokuj operacji z powodu błędu audytu
+                    Console.WriteLine($"[WARNING] Błąd audytu przy anulowaniu rezerwacji {id}: {auditEx.Message}");
+                }
+
+                return Ok(new { message = "Rezerwacja została anulowana", status = "anulowane" });
             }
-
-            // Zmień status na anulowane zamiast usuwać
-            rezerwacja.Status = "anulowane";
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Rezerwacja została anulowana", status = "anulowane" });
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] Błąd podczas anulowania rezerwacji {id}: {ex.Message}");
+                Console.WriteLine($"[ERROR] StackTrace: {ex.StackTrace}");
+                
+                return StatusCode(500, new { 
+                    message = "Wystąpił błąd podczas anulowania rezerwacji.", 
+                    error = ex.Message 
+                });
+            }
         }
 
         [HttpDelete("{id}")]
         [Authorize]
         public async Task<IActionResult> Delete(int id)
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var isAdmin = User.IsInRole("Admin");
-
-            var rezerwacja = await _context.Rezerwacje
-                .FirstOrDefaultAsync(r => r.Id == id && (isAdmin || r.UzytkownikId == userId));
-
-            if (rezerwacja == null)
-                return NotFound();
-
-            // Sprawdź czy można anulować (np. nie można anulować rezerwacji która już się rozpoczęła)
-            var nowUnspecified = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);
-            if (rezerwacja.DataStart <= nowUnspecified && !isAdmin)
+            try
             {
-                return BadRequest("Nie można anulować rezerwacji która już się rozpoczęła.");
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var isAdmin = User.IsInRole("Admin");
+
+                var rezerwacja = await _context.Rezerwacje
+                    .Include(r => r.Sala)
+                    .Include(r => r.Stanowisko)
+                    .FirstOrDefaultAsync(r => r.Id == id && (isAdmin || r.UzytkownikId == userId));
+
+                if (rezerwacja == null)
+                    return NotFound("Rezerwacja nie istnieje lub nie masz do niej uprawnień");
+
+                // TYLKO anulowane rezerwacje mogą być usuwane (trwale) - lepsza praktyka biznesowa
+                if (rezerwacja.Status != "anulowane")
+                {
+                    return BadRequest("Można usuwać tylko anulowane rezerwacje. Użyj funkcji 'Anuluj' zamiast 'Usuń'.");
+                }
+
+                // Sprawdź czy można usunąć (nie można usunąć rezerwacji która już się rozpoczęła, chyba że admin)
+                var nowUnspecified = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);
+                if (rezerwacja.DataStart <= nowUnspecified && !isAdmin)
+                {
+                    return BadRequest("Nie można usunąć rezerwacji która już się rozpoczęła.");
+                }
+
+                // Przygotuj dane do audytu przed usunięciem (bezpieczne pobieranie lokalizacji)
+                var lokalizacjaOpis = await GetLokalizacjaStringAsync(rezerwacja);
+                var auditDetails = $"Status: {rezerwacja.Status ?? "brak"}, " +
+                                 $"Termin: {rezerwacja.DataStart:dd.MM.yyyy HH:mm}, " +
+                                 $"Lokalizacja: {lokalizacjaOpis}";
+
+                // Usuń rezerwację (cascade delete automatycznie usunie powiązane powiadomienia)
+                _context.Rezerwacje.Remove(rezerwacja);
+                await _context.SaveChangesAsync();
+
+                // Log usunięcia rezerwacji - TYLKO po udanym usunięciu
+                try
+                {
+                    await _auditService.LogAsync("USUNIECIE_REZERWACJI", "Rezerwacja", id, auditDetails);
+                }
+                catch (Exception auditEx)
+                {
+                    // Nie blokuj operacji z powodu błędu audytu - tylko loguj
+                    Console.WriteLine($"[WARNING] Błąd audytu przy usuwaniu rezerwacji {id}: {auditEx.Message}");
+                }
+
+                return NoContent();
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] Błąd podczas usuwania rezerwacji {id}: {ex.Message}");
+                Console.WriteLine($"[ERROR] StackTrace: {ex.StackTrace}");
+                
+                return StatusCode(500, new { 
+                    message = "Wystąpił błąd podczas usuwania rezerwacji.", 
+                    error = ex.Message 
+                });
+            }
+        }
 
-            // Log usunięcia rezerwacji
-            await _auditService.LogAsync("USUNIECIE_REZERWACJI", "Rezerwacja", id,
-                $"Status: {rezerwacja.Status}, Termin: {rezerwacja.DataStart:dd.MM.yyyy HH:mm}");
+        // Metoda pomocnicza do bezpiecznego generowania opisu lokalizacji
+        private async Task<string> GetLokalizacjaStringAsync(Rezerwacja rezerwacja)
+        {
+            try
+            {
+                // Sprawdź najpierw już załadowane obiekty
+                if (rezerwacja.Sala != null)
+                {
+                    return $"Sala {rezerwacja.Sala.Numer} ({rezerwacja.Sala.Budynek})";
+                }
+                
+                if (rezerwacja.Stanowisko != null)
+                {
+                    return $"Stanowisko {rezerwacja.Stanowisko.Nazwa}";
+                }
 
-            _context.Rezerwacje.Remove(rezerwacja);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+                // Jeśli obiekty nie są załadowane, pobierz z bazy danych
+                if (rezerwacja.SalaId.HasValue)
+                {
+                    var sala = await _context.Sale
+                        .Where(s => s.Id == rezerwacja.SalaId.Value)
+                        .Select(s => new { s.Numer, s.Budynek })
+                        .FirstOrDefaultAsync();
+                    
+                    if (sala != null)
+                    {
+                        return $"Sala {sala.Numer} ({sala.Budynek})";
+                    }
+                    
+                    return $"Sala ID: {rezerwacja.SalaId.Value}";
+                }
+                
+                if (rezerwacja.StanowiskoId.HasValue)
+                {
+                    var stanowisko = await _context.Stanowiska
+                        .Where(s => s.Id == rezerwacja.StanowiskoId.Value)
+                        .Select(s => s.Nazwa)
+                        .FirstOrDefaultAsync();
+                    
+                    if (!string.IsNullOrEmpty(stanowisko))
+                    {
+                        return $"Stanowisko {stanowisko}";
+                    }
+                    
+                    return $"Stanowisko ID: {rezerwacja.StanowiskoId.Value}";
+                }
+                
+                return "Nieznana lokalizacja";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[WARNING] Błąd podczas pobierania lokalizacji: {ex.Message}");
+                return "Błąd pobierania lokalizacji";
+            }
         }
 
         private async Task<bool> CheckAvailability(int? salaId, int? stanowiskoId, DateTime start, DateTime end)
