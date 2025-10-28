@@ -13,3 +13,10 @@ export const fetchRezerwacjeStats = async () => {
   if (!res.ok) throw new Error("Błąd pobierania statystyk rezerwacji");
   return res.json();
 };
+
+// Publiczny endpoint dla liczby użytkowników - dostępny bez autoryzacji
+export const fetchPublicUserCount = async () => {
+  const res = await fetch("/api/account/public-count");
+  if (!res.ok) throw new Error("Błąd pobierania liczby użytkowników");
+  return res.json();
+};

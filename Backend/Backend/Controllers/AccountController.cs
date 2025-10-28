@@ -443,6 +443,35 @@ public async Task<IActionResult> Me()
             });
         }
 
+        // Publiczny endpoint dla strony głównej - tylko liczba użytkowników (bez wrażliwych danych)
+        [HttpGet("public-count")]
+        public async Task<ActionResult<object>> GetPublicUserCount()
+        {
+            try
+            {
+                // Policz tylko zatwierdzone konta (bez roli "Niezatwierdzony")
+                var users = await _userManager.Users.ToListAsync();
+                var confirmedUsers = 0;
+
+                foreach (var user in users)
+                {
+                    var roles = await _userManager.GetRolesAsync(user);
+                    // Policz wszystkich z wyjątkiem niezatwierdzonych
+                    if (!roles.Contains("Niezatwierdzony"))
+                    {
+                        confirmedUsers++;
+                    }
+                }
+
+                return Ok(new { TotalUsers = confirmedUsers });
+            }
+            catch (Exception ex)
+            {
+                // W przypadku błędu zwróć szacowaną liczbę
+                return Ok(new { TotalUsers = 0 });
+            }
+        }
+
     }
 
 }

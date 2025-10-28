@@ -32,17 +32,6 @@ export default function MojePowiadomienia() {
     }
   };
 
-  const handleTestNotification = async () => {
-    try {
-      await apiRequest('/api/powiadomienia/test', {
-        method: 'POST'
-      }, 'Błąd podczas wysyłania testowego powiadomienia');
-      
-      showSuccess('Testowe powiadomienie zostało wysłane! Sprawdź dzwonek w navbarze.');
-    } catch (error) {
-      showError('Wystąpił błąd podczas wysyłania testowego powiadomienia');
-    }
-  };
 
   const handleDeleteAll = async () => {
     if (!confirm('Czy na pewno chcesz usunąć wszystkie powiadomienia? Ta operacja jest nieodwracalna.')) {
@@ -107,13 +96,6 @@ export default function MojePowiadomienia() {
             className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
           >
             🗑️ Usuń wszystkie
-          </button>
-          
-          <button
-            onClick={handleTestNotification}
-            className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
-          >
-            🧪 Testuj powiadomienie
           </button>
         </div>
       </div>

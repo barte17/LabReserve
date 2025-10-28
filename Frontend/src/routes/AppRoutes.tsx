@@ -6,7 +6,7 @@ import SalaDetails from "../pages/SalaDetails";
 import StanowiskoDetails from "../pages/StanowiskoDetails";
 import Login from '../pages/Login';
 import Register from '../pages/Register';
-import Home from '../pages/Home';
+import HomePage from '../pages/HomePage';
 import ReservationPage from '../pages/ReservationPage';
 import PublicRoute from "../routes/PublicRoute";
 import { AdminRoute } from "../routes/AdminRoute";
@@ -17,7 +17,7 @@ import ProtectedRoute from "../routes/ProtectedRoute";
 export function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
+      <Route path="/" element={<HomePage />} />
       
       <Route path="/stanowiska" element={
         <PageErrorBoundary fallbackPath="/" fallbackText="Strona główna">
