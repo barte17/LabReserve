@@ -25,6 +25,7 @@ namespace Backend.Controllers
         {
             var sale = await _context.Sale
                 .Include(s => s.Opiekun)
+                .Include(s => s.Zdjecia)
                 .Select(s => new SalaDto
                 {
                     Id = s.Id,
@@ -37,7 +38,8 @@ namespace Backend.Controllers
                     Opis = s.Opis,
                     IdOpiekuna = s.IdOpiekuna,
                     ImieOpiekuna = s.Opiekun != null ? s.Opiekun.Imie : null,
-                    NazwiskoOpiekuna = s.Opiekun != null ? s.Opiekun.Nazwisko : null
+                    NazwiskoOpiekuna = s.Opiekun != null ? s.Opiekun.Nazwisko : null,
+                    PierwszeZdjecie = s.Zdjecia.OrderBy(z => z.Id).FirstOrDefault() != null ? s.Zdjecia.OrderBy(z => z.Id).FirstOrDefault()!.Url : null
                 })
                 .ToListAsync();
 

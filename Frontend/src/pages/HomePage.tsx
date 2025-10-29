@@ -106,7 +106,7 @@ const HomePage: React.FC = () => {
                     <div className="text-white text-2xl font-bold">30</div>
                   </div>
                   <div className="bg-blue-500/20 p-3 rounded-lg">
-                    <div className="text-blue-300 text-sm">Aktywni Użytkownicy</div>
+                    <div className="text-blue-300 text-sm">Użytkownicy</div>
                     <div className="text-white text-2xl font-bold">Ponad 100</div>
                   </div>
                 </div>

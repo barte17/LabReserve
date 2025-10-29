@@ -21,9 +21,25 @@ namespace Backend.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Stanowisko>>> GetAll()
+        public async Task<ActionResult<IEnumerable<StanowiskoDto>>> GetAll()
         {
-            return await _context.Stanowiska.Include(s => s.Sala).ToListAsync();
+            var stanowiska = await _context.Stanowiska
+                .Include(s => s.Sala)
+                .Include(s => s.Zdjecia)
+                .Select(s => new StanowiskoDto
+                {
+                    Id = s.Id,
+                    SalaId = s.SalaId,
+                    Nazwa = s.Nazwa,
+                    Typ = s.Typ,
+                    Opis = s.Opis,
+                    SalaNumer = s.Sala.Numer,
+                    SalaBudynek = s.Sala.Budynek,
+                    PierwszeZdjecie = s.Zdjecia.OrderBy(z => z.Id).FirstOrDefault() != null ? s.Zdjecia.OrderBy(z => z.Id).FirstOrDefault()!.Url : null
+                })
+                .ToListAsync();
+
+            return Ok(stanowiska);
         }
 
         [HttpPost]

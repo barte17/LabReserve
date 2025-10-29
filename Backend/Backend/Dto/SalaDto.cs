@@ -13,6 +13,7 @@
         public string? IdOpiekuna { get; set; }
         public string? ImieOpiekuna { get; set; }
         public string? NazwiskoOpiekuna { get; set; }
+        public string? PierwszeZdjecie { get; set; }
     }
 
     public class CreateSalaDto
