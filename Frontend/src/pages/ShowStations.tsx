@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getStations } from "../services/api";
-import { LoadingStationCard } from "../components/LoadingStates";
-import { useMinimumLoadingDelay } from "../hooks/useMinimumLoadingDelay";
 import { LazyImage } from "../components/LazyImage";
+import { SkeletonGrid } from "../components/SkeletonLoading";
 
 type Stanowisko = {
   id: number;
@@ -22,9 +21,6 @@ export default function Stanowiska() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterTyp, setFilterTyp] = useState("");
-  const [availabilityDate, setAvailabilityDate] = useState("");
-  const [availabilityTimeFrom, setAvailabilityTimeFrom] = useState("");
-  const [availabilityTimeTo, setAvailabilityTimeTo] = useState("");
 
   useEffect(() => {
     document.title = "Stanowiska - System Rezerwacji";
@@ -34,76 +30,38 @@ export default function Stanowiska() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Sprawdzanie dostępności (placeholder - w przyszłości API call)
-  const isAvailableInTimeSlot = (stanowisko: Stanowisko) => {
-    // Jeśli nie ma filtrów czasowych, pokaż wszystkie
-    if (!availabilityDate || !availabilityTimeFrom || !availabilityTimeTo) {
-      return true;
-    }
-    
-    // TODO: Tutaj będzie wywołanie API do sprawdzenia dostępności
-    // return await checkAvailability(stanowisko.id, availabilityDate, availabilityTimeFrom, availabilityTimeTo);
-    
-    // Tymczasowo zwracam true - w przyszłości prawdziwe sprawdzanie
-    return true;
-  };
-
   // Filtrowanie stanowisk
   const filteredStanowiska = stanowiska.filter(stanowisko => {
     const matchesSearch = stanowisko.nazwa.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          stanowisko.id.toString().includes(searchTerm);
     const matchesTyp = filterTyp === "" || stanowisko.typ === filterTyp;
-    const matchesAvailability = isAvailableInTimeSlot(stanowisko);
     
-    return matchesSearch && matchesTyp && matchesAvailability;
+    return matchesSearch && matchesTyp;
   });
 
   // Unikalne typy do filtra
   const uniqueTypy = [...new Set(stanowiska.map(s => s.typ).filter(Boolean))];
 
-  const shouldShowLoading = useMinimumLoadingDelay(loading, {
-    minimumDelay: 200,
-    minimumDuration: 600
-  });
-
-  if (shouldShowLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header skeleton */}
-          <div className="mb-8">
-            <div className="h-8 bg-gray-300 rounded w-52 mb-2 animate-pulse"></div>
-            <div className="h-4 bg-gray-200 rounded w-96 animate-pulse"></div>
-          </div>
-
-          {/* Filtry skeleton */}
-          <div className="filters-panel mb-8">
-            <div className="filters-grid">
-              <div className="form-group">
-                <div className="h-4 bg-gray-200 rounded w-32 mb-2 animate-pulse"></div>
-                <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Skeleton dla filtrów */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-8 animate-pulse">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+                <div className="h-12 bg-gray-200 rounded-xl"></div>
               </div>
-              <div className="form-group">
-                <div className="h-4 bg-gray-200 rounded w-28 mb-2 animate-pulse"></div>
-                <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+              <div>
+                <div className="h-4 bg-gray-200 rounded w-28 mb-2"></div>
+                <div className="h-12 bg-gray-200 rounded-xl"></div>
               </div>
             </div>
           </div>
-
-          {/* Statystyki skeleton */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="card animate-pulse">
-                <div className="card-body text-center">
-                  <div className="h-8 bg-gray-300 rounded w-12 mx-auto mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-20 mx-auto"></div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Karty stanowisk skeleton */}
-          <LoadingStationCard count={6} />
+          
+          {/* Skeleton dla kart stanowisk */}
+          <SkeletonGrid count={6} type="station" />
         </div>
       </div>
     );
@@ -116,7 +74,7 @@ export default function Stanowiska() {
 
         {/* Filtry */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -150,54 +108,6 @@ export default function Stanowiska() {
                 ))}
               </select>
             </div>
-          </div>
-          
-          {/* Filtry dostępności */}
-          <div className="border-t border-gray-200 pt-6">
-            <h3 className="text-sm font-medium text-gray-900 mb-4 flex items-center">
-              <svg className="w-4 h-4 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Sprawdź dostępność w terminie
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">Data</label>
-                <input
-                  type="date"
-                  value={availabilityDate}
-                  onChange={(e) => setAvailabilityDate(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">Od godziny</label>
-                <input
-                  type="time"
-                  value={availabilityTimeFrom}
-                  onChange={(e) => setAvailabilityTimeFrom(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">Do godziny</label>
-                <input
-                  type="time"
-                  value={availabilityTimeTo}
-                  onChange={(e) => setAvailabilityTimeTo(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-                />
-              </div>
-            </div>
-            {availabilityDate && availabilityTimeFrom && availabilityTimeTo && (
-              <div className="mt-3 text-sm text-green-600 bg-green-50 rounded-lg p-3">
-                <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Filtrowanie stanowisk dostępnych {availabilityDate} od {availabilityTimeFrom} do {availabilityTimeTo}
-              </div>
-            )}
           </div>
         </div>
 
@@ -248,7 +158,7 @@ export default function Stanowiska() {
                 </div>
 
                 {/* Treść karty */}
-                <div className="p-6 flex flex-col h-full">
+                <div className="p-4 flex flex-col h-full">
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <h3 className="text-xl font-bold text-gray-900 mb-1">
@@ -265,7 +175,7 @@ export default function Stanowiska() {
 
                   {/* Informacje - flex-grow zapewnia wypełnienie przestrzeni */}
                   <div className="flex-grow">
-                    <div className="space-y-3 mb-6">
+                    <div className="space-y-2 mb-3">
                       <div className="flex items-center text-sm text-gray-600">
                         <svg className="w-4 h-4 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
@@ -294,9 +204,9 @@ export default function Stanowiska() {
 
                     {/* Opis */}
                     {stanowisko.opis && (
-                      <div className="mb-6">
+                      <div className="mb-2">
                         <p 
-                          className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3"
+                          className="text-sm text-gray-700 bg-gray-50 rounded-lg p-2"
                           style={{
                             display: '-webkit-box',
                             WebkitLineClamp: 3,

@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getRooms } from "../services/api";
-import { LoadingRoomCard } from "../components/LoadingStates";
-import { useMinimumLoadingDelay } from "../hooks/useMinimumLoadingDelay";
 import { LazyImage } from "../components/LazyImage";
+import { SkeletonGrid } from "../components/SkeletonLoading";
 
 type Sala = {
   id: number;
@@ -26,9 +25,6 @@ export default function Sale() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterBudynek, setFilterBudynek] = useState("");
-  const [availabilityDate, setAvailabilityDate] = useState("");
-  const [availabilityTimeFrom, setAvailabilityTimeFrom] = useState("");
-  const [availabilityTimeTo, setAvailabilityTimeTo] = useState("");
 
   useEffect(() => {
     document.title = "Sale - System Rezerwacji";
@@ -38,76 +34,38 @@ export default function Sale() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Sprawdzanie dostępności (placeholder - w przyszłości API call)
-  const isAvailableInTimeSlot = (sala: Sala) => {
-    // Jeśli nie ma filtrów czasowych, pokaż wszystkie
-    if (!availabilityDate || !availabilityTimeFrom || !availabilityTimeTo) {
-      return true;
-    }
-    
-    // TODO: Tutaj będzie wywołanie API do sprawdzenia dostępności
-    // return await checkAvailability(sala.id, availabilityDate, availabilityTimeFrom, availabilityTimeTo);
-    
-    // Tymczasowo zwracam true - w przyszłości prawdziwe sprawdzanie
-    return true;
-  };
-
   // Filtrowanie sal
   const filteredSale = sale.filter(sala => {
     const matchesSearch = sala.numer.toString().includes(searchTerm) || 
                          sala.budynek.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesBudynek = filterBudynek === "" || sala.budynek === filterBudynek;
-    const matchesAvailability = isAvailableInTimeSlot(sala);
     
-    return matchesSearch && matchesBudynek && matchesAvailability;
+    return matchesSearch && matchesBudynek;
   });
 
   // Unikalne budynki do filtra
   const uniqueBudynki = [...new Set(sale.map(sala => sala.budynek))];
 
-  const shouldShowLoading = useMinimumLoadingDelay(loading, {
-    minimumDelay: 200, // Pokaż loading tylko jeśli ładowanie trwa dłużej niż 200ms
-    minimumDuration: 600 // Jeśli już się pokazał, trzymaj minimum 600ms
-  });
-
-  if (shouldShowLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header skeleton */}
-          <div className="mb-8">
-            <div className="h-8 bg-gray-300 rounded w-48 mb-2 animate-pulse"></div>
-            <div className="h-4 bg-gray-200 rounded w-80 animate-pulse"></div>
-          </div>
-
-          {/* Filtry skeleton */}
-          <div className="filters-panel mb-8">
-            <div className="filters-grid">
-              <div className="form-group">
-                <div className="h-4 bg-gray-200 rounded w-24 mb-2 animate-pulse"></div>
-                <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Skeleton dla filtrów */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-8 animate-pulse">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+                <div className="h-12 bg-gray-200 rounded-xl"></div>
               </div>
-              <div className="form-group">
-                <div className="h-4 bg-gray-200 rounded w-32 mb-2 animate-pulse"></div>
-                <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+              <div>
+                <div className="h-4 bg-gray-200 rounded w-20 mb-2"></div>
+                <div className="h-12 bg-gray-200 rounded-xl"></div>
               </div>
             </div>
           </div>
-
-          {/* Statystyki skeleton */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="card animate-pulse">
-                <div className="card-body text-center">
-                  <div className="h-8 bg-gray-300 rounded w-12 mx-auto mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-16 mx-auto"></div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Karty sal skeleton */}
-          <LoadingRoomCard count={6} />
+          
+          {/* Skeleton dla kart sal */}
+          <SkeletonGrid count={6} type="room" />
         </div>
       </div>
     );
@@ -120,7 +78,7 @@ export default function Sale() {
 
         {/* Filtry */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -154,54 +112,6 @@ export default function Sale() {
                 ))}
               </select>
             </div>
-          </div>
-          
-          {/* Filtry dostępności */}
-          <div className="border-t border-gray-200 pt-6">
-            <h3 className="text-sm font-medium text-gray-900 mb-4 flex items-center">
-              <svg className="w-4 h-4 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Sprawdź dostępność w terminie
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">Data</label>
-                <input
-                  type="date"
-                  value={availabilityDate}
-                  onChange={(e) => setAvailabilityDate(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">Od godziny</label>
-                <input
-                  type="time"
-                  value={availabilityTimeFrom}
-                  onChange={(e) => setAvailabilityTimeFrom(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">Do godziny</label>
-                <input
-                  type="time"
-                  value={availabilityTimeTo}
-                  onChange={(e) => setAvailabilityTimeTo(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-                />
-              </div>
-            </div>
-            {availabilityDate && availabilityTimeFrom && availabilityTimeTo && (
-              <div className="mt-3 text-sm text-green-600 bg-green-50 rounded-lg p-3">
-                <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Filtrowanie sal dostępnych {availabilityDate} od {availabilityTimeFrom} do {availabilityTimeTo}
-              </div>
-            )}
           </div>
         </div>
 
@@ -252,7 +162,7 @@ export default function Sale() {
                 </div>
 
                 {/* Treść karty */}
-                <div className="p-6 flex flex-col h-full">
+                <div className="p-4 flex flex-col h-full">
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <h3 className="text-xl font-bold text-gray-900 mb-1">
@@ -269,7 +179,7 @@ export default function Sale() {
 
                   {/* Informacje - flex-grow zapewnia wypełnienie przestrzeni */}
                   <div className="flex-grow">
-                    <div className="space-y-3 mb-6">
+                    <div className="space-y-2 mb-3">
                       <div className="flex items-center text-sm text-gray-600">
                         <svg className="w-4 h-4 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -307,9 +217,9 @@ export default function Sale() {
 
                     {/* Opis */}
                     {sala.opis && (
-                      <div className="mb-6">
+                      <div className="mb-2">
                         <p 
-                          className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3"
+                          className="text-sm text-gray-700 bg-gray-50 rounded-lg p-2"
                           style={{
                             display: '-webkit-box',
                             WebkitLineClamp: 3,
