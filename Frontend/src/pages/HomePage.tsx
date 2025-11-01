@@ -239,52 +239,6 @@ const HomePage: React.FC = () => {
         </div>
       </footer>
 
-      {/* CSS Animations */}
-      <style jsx>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
-        @keyframes slideInLeft {
-          from { opacity: 0; transform: translateX(-50px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-        
-        @keyframes slideInRight {
-          from { opacity: 0; transform: translateX(50px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-        
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(30px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .animate-fade-in {
-          animation: fadeIn 0.8s ease-out;
-        }
-        
-        .animate-slide-in-left {
-          animation: slideInLeft 0.8s ease-out 0.2s both;
-        }
-        
-        .animate-slide-in-left-delay {
-          animation: slideInLeft 0.8s ease-out 0.4s both;
-        }
-        
-        .animate-slide-in-left-delay-2 {
-          animation: slideInLeft 0.8s ease-out 0.6s both;
-        }
-        
-        .animate-slide-in-right {
-          animation: slideInRight 0.8s ease-out 0.4s both;
-        }
-        
-        .animate-fade-in-up {
-          animation: fadeInUp 0.6s ease-out both;
-        }
-      `}</style>
     </div>
   );
 };

@@ -206,15 +206,16 @@ export default function Stanowiska() {
                     {stanowisko.opis && (
                       <div className="mb-2">
                         <p 
-                          className="text-sm text-gray-700 bg-gray-50 rounded-lg p-2"
+                          className="text-gray-700 bg-gray-50 rounded-lg p-2"
                           style={{
                             display: '-webkit-box',
-                            WebkitLineClamp: 3,
+                            WebkitLineClamp: 4,
                             WebkitBoxOrient: 'vertical',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             lineHeight: '1.4',
-                            maxHeight: 'calc(1.4em * 3)'
+                            maxHeight: '6.5em',
+                            fontSize: '14px'
                           }}
                         >
                           {stanowisko.opis}
