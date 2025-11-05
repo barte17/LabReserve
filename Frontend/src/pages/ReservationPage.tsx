@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { createReservation, getAvailableHours, getAvailableDays } from '../services/rezerwacjaService';
 import type { AvailableDayDto } from '../services/rezerwacjaService';
 import { getUserFromToken } from '../services/authService';
 import { FormErrorBoundary } from '../components/ErrorBoundary';
+import { useRealtimeCalendar } from '../hooks/useRealtimeCalendar';
 
 interface AvailableHour {
   godzina: string;
@@ -48,6 +49,8 @@ export default function ReservationPage() {
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
   const [calendarLoading, setCalendarLoading] = useState(false);
+  const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
   // Ustaw minimalną datę na dzisiaj
   const today = new Date();
@@ -86,7 +89,7 @@ export default function ReservationPage() {
     }
   }, [currentMonth, salaId, stanowiskoId]);
 
-  const fetchAvailableHours = async () => {
+  const fetchAvailableHours = useCallback(async () => {
     if (!selectedDate) return;
     
     try {
@@ -113,9 +116,9 @@ export default function ReservationPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedDate, salaId, stanowiskoId]);
 
-  const fetchAvailableDays = async () => {
+  const fetchAvailableDays = useCallback(async () => {
     try {
       setCalendarLoading(true);
       const days = await getAvailableDays({
@@ -136,7 +139,43 @@ export default function ReservationPage() {
     } finally {
       setCalendarLoading(false);
     }
-  };
+  }, [salaId, stanowiskoId, currentMonth]);
+
+  // Real-time calendar handlers (po definicji funkcji fetch)
+  const handleAvailabilityChanged = useCallback(async (data: any) => {
+    console.log('[ReservationPage] Availability changed:', data);
+    setLastUpdate(new Date());
+
+    // If selected date matches changed date, refresh hours
+    if (selectedDate) {
+      // Use the same date formatting logic as fetchAvailableHours
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      const selectedDateStr = `${year}-${month}-${day}`;
+      
+      console.log(`[ReservationPage] Date comparison: selected="${selectedDateStr}", changed="${data.changedDate}"`);
+      console.log('[ReservationPage] Full data object:', data);
+      
+      if (selectedDateStr === data.changedDate) {
+        console.log('[ReservationPage] Refreshing hours for selected date');
+        await fetchAvailableHours();
+      } else {
+        console.log('[ReservationPage] Dates do not match - not refreshing hours');
+      }
+    } else {
+      console.log('[ReservationPage] No selected date - not refreshing hours');
+    }
+
+    // Always refresh available days to update day indicators
+    console.log('[ReservationPage] Refreshing available days');
+    await fetchAvailableDays();
+  }, [selectedDate, fetchAvailableHours, fetchAvailableDays]);
+
+  const handleConnectionStateChanged = useCallback((isConnected: boolean) => {
+    setIsRealtimeConnected(isConnected);
+    console.log('[ReservationPage] Real-time connection state:', isConnected);
+  }, []);
 
   // Funkcje kalendarza
   const generateCalendarDays = (): CalendarDay[] => {
@@ -334,6 +373,13 @@ export default function ReservationPage() {
       await createReservation(reservationData);
       setSuccess('Rezerwacja została złożona pomyślnie!');
       
+      // Odśwież dostępność po utworzeniu rezerwacji
+      setLastUpdate(new Date());
+      await fetchAvailableDays();
+      if (selectedDate) {
+        await fetchAvailableHours();
+      }
+      
       // Przekieruj po 2 sekundach
       setTimeout(() => {
         navigate('/panel?view=user&section=moje-rezerwacje');
@@ -351,13 +397,45 @@ export default function ReservationPage() {
     return `${hours}:00`;
   };
 
+  // Setup real-time calendar (na końcu po zdefiniowaniu wszystkich funkcji)
+  useRealtimeCalendar({
+    salaId,
+    stanowiskoId,
+    onAvailabilityChanged: handleAvailabilityChanged,
+    onConnectionStateChanged: handleConnectionStateChanged
+  });
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
+      <style>{`
+        @keyframes pulse-subtle {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.8; transform: scale(1.02); }
+        }
+        .animate-pulse-once {
+          animation: pulse-subtle 0.6s ease-in-out;
+        }
+      `}</style>
       <div className="max-w-2xl mx-auto px-4">
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">
-            Rezerwacja: {resourceName}
-          </h1>
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold text-gray-900">
+              Rezerwacja: {resourceName}
+            </h1>
+            
+            {/* Real-time status indicator */}
+            <div className="flex items-center gap-2 text-sm">
+              <div className={`w-2 h-2 rounded-full ${isRealtimeConnected ? 'bg-green-400' : 'bg-gray-400'}`}></div>
+              <span className={isRealtimeConnected ? 'text-green-600' : 'text-gray-500'}>
+                {isRealtimeConnected ? 'Na żywo' : 'Offline'}
+              </span>
+              {lastUpdate && (
+                <span className="text-xs text-gray-400 ml-2">
+                  Aktualizacja: {lastUpdate.toLocaleTimeString()}
+                </span>
+              )}
+            </div>
+          </div>
           
 
           <FormErrorBoundary 
@@ -498,13 +576,16 @@ export default function ReservationPage() {
                         type="button"
                         onClick={() => hour.dostepna ? handleStartHourChange(formatHour(hour.godzina)) : null}
                         disabled={!hour.dostepna}
-                        className={`p-2 text-sm rounded border transition-colors ${
+                        className={`p-2 text-sm rounded border transition-all duration-300 ${
                           !hour.dostepna
                             ? 'bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed'
                             : selectedStartHour === formatHour(hour.godzina)
-                              ? 'bg-blue-600 text-white border-blue-600'
-                              : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'
-                        }`}
+                              ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50 hover:border-blue-200'
+                        } ${lastUpdate && 'animate-pulse-once'}`}
+                        style={{
+                          animation: lastUpdate ? 'pulse-subtle 0.6s ease-in-out' : undefined
+                        }}
                       >
                         <div className="text-center">
                           {formatHour(hour.godzina)}
