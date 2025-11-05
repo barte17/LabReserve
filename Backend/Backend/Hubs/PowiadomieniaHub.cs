@@ -73,5 +73,61 @@ namespace Backend.Hubs
                 return 0;
             }
         }
+
+        // === CALENDAR REAL-TIME METHODS ===
+        
+        public async Task JoinCalendarGroup(int? salaId, int? stanowiskoId)
+        {
+            var userId = Context.UserIdentifier;
+            if (string.IsNullOrEmpty(userId)) return;
+
+            try
+            {
+                if (salaId.HasValue)
+                {
+                    var groupName = $"Calendar_Sala_{salaId}";
+                    await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+                    _logger.LogDebug($"Użytkownik {userId} dołączył do grupy kalendarza: {groupName}");
+                }
+
+                if (stanowiskoId.HasValue)
+                {
+                    var groupName = $"Calendar_Stanowisko_{stanowiskoId}";
+                    await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+                    _logger.LogDebug($"Użytkownik {userId} dołączył do grupy kalendarza: {groupName}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Błąd podczas dołączania użytkownika {userId} do grupy kalendarza");
+            }
+        }
+
+        public async Task LeaveCalendarGroup(int? salaId, int? stanowiskoId)
+        {
+            var userId = Context.UserIdentifier;
+            if (string.IsNullOrEmpty(userId)) return;
+
+            try
+            {
+                if (salaId.HasValue)
+                {
+                    var groupName = $"Calendar_Sala_{salaId}";
+                    await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName);
+                    _logger.LogDebug($"Użytkownik {userId} opuścił grupę kalendarza: {groupName}");
+                }
+
+                if (stanowiskoId.HasValue)
+                {
+                    var groupName = $"Calendar_Stanowisko_{stanowiskoId}";
+                    await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName);
+                    _logger.LogDebug($"Użytkownik {userId} opuścił grupę kalendarza: {groupName}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Błąd podczas opuszczania grupy kalendarza przez użytkownika {userId}");
+            }
+        }
     }
 }

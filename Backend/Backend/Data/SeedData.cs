@@ -127,7 +127,7 @@ namespace Backend.Data
                     SalaId = sala1.Id,
                     UzytkownikId = "test-nauczyciel",
                     Opis = "3 Rezerwacja sali testowa dla nauczyciela",
-                    Status = "anulowano"
+                    Status = "anulowane"
                 };
 
                 db.Rezerwacje.Add(rezerwacja4);

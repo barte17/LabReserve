@@ -17,17 +17,20 @@ namespace Backend.Controllers
         private readonly IPowiadomieniaService _powiadomieniaService;
         private readonly IRealTimePowiadomieniaService _realTimeService;
         private readonly IAuditService _auditService;
+        private readonly IRealtimeAvailabilityService _realtimeAvailabilityService;
 
         public RezerwacjaController(
             AppDbContext context,
             IPowiadomieniaService powiadomieniaService,
             IRealTimePowiadomieniaService realTimeService,
-            IAuditService auditService)
+            IAuditService auditService,
+            IRealtimeAvailabilityService realtimeAvailabilityService)
         {
             _context = context;
             _powiadomieniaService = powiadomieniaService;
             _realTimeService = realTimeService;
             _auditService = auditService;
+            _realtimeAvailabilityService = realtimeAvailabilityService;
         }
 
         [HttpGet]
@@ -161,6 +164,13 @@ namespace Backend.Controllers
 
             // Wyślij powiadomienie do opiekuna sali
             await WyslijPowiadomienieDlaOpiekuna(rezerwacja);
+
+            // Powiadom o zmianie dostępności kalendarza (real-time)
+            await _realtimeAvailabilityService.NotifyAvailabilityChangedAsync(
+                rezerwacja.SalaId, 
+                rezerwacja.StanowiskoId, 
+                rezerwacja.DataStart.Date, 
+                rezerwacja.Status);
 
             // Zwróć tylko podstawowe
             var result = new RezerwacjaDetailsDto
@@ -317,7 +327,7 @@ namespace Backend.Controllers
             var dayEnd = DateTime.SpecifyKind(dto.Data.Date.AddDays(1), DateTimeKind.Unspecified);
             
             var allConflicts = await _context.Rezerwacje
-                .Where(r => r.Status != "anulowane" && 
+                .Where(r => (r.Status == "oczekujące" || r.Status == "zaakceptowano") && 
                            r.DataStart < dayEnd && 
                            r.DataKoniec > dayStart)
                 .Where(r => 
@@ -393,6 +403,13 @@ namespace Backend.Controllers
             // Wyślij powiadomienie do użytkownika o zmianie statusu
             await WyslijPowiadomienieOZmianieStatusu(rezerwacja, oldStatus, dto.Status);
 
+            // Powiadom o zmianie dostępności kalendarza (real-time)
+            await _realtimeAvailabilityService.NotifyAvailabilityChangedAsync(
+                rezerwacja.SalaId, 
+                rezerwacja.StanowiskoId, 
+                rezerwacja.DataStart.Date, 
+                dto.Status);
+
             return NoContent();
         }
 
@@ -443,6 +460,13 @@ namespace Backend.Controllers
                     // Nie blokuj operacji z powodu błędu audytu
                     Console.WriteLine($"[WARNING] Błąd audytu przy anulowaniu rezerwacji {id}: {auditEx.Message}");
                 }
+
+                // Powiadom o zmianie dostępności kalendarza (real-time)
+                await _realtimeAvailabilityService.NotifyAvailabilityChangedAsync(
+                    rezerwacja.SalaId, 
+                    rezerwacja.StanowiskoId, 
+                    rezerwacja.DataStart.Date, 
+                    "anulowane");
 
                 return Ok(new { message = "Rezerwacja została anulowana", status = "anulowane" });
             }
@@ -594,7 +618,7 @@ namespace Backend.Controllers
                     
                 // Potem sprawdź konflikty w jednym zapytaniu
                 var hasConflicts = await _context.Rezerwacje
-                    .Where(r => r.Status != "anulowane" && 
+                    .Where(r => (r.Status == "oczekujące" || r.Status == "zaakceptowano") && 
                                r.DataStart < endUnspecified && 
                                r.DataKoniec > startUnspecified)
                     .Where(r => r.StanowiskoId == stanowiskoId.Value || r.SalaId == targetSalaId)
@@ -606,7 +630,7 @@ namespace Backend.Controllers
             {
                 // Dla sali - jedno zapytanie sprawdzające konflikty sali i wszystkich stanowisk w tej sali
                 var hasConflicts = await _context.Rezerwacje
-                    .Where(r => r.Status != "anulowane" && 
+                    .Where(r => (r.Status == "oczekujące" || r.Status == "zaakceptowano") && 
                                r.DataStart < endUnspecified && 
                                r.DataKoniec > startUnspecified)
                     .Where(r => r.SalaId == salaId.Value || r.Stanowisko.SalaId == salaId.Value)
@@ -762,6 +786,13 @@ namespace Backend.Controllers
             // Wyślij powiadomienie do użytkownika o zmianie statusu
             await WyslijPowiadomienieOZmianieStatusu(rezerwacja, oldStatus, dto.Status);
 
+            // Powiadom o zmianie dostępności kalendarza (real-time)
+            await _realtimeAvailabilityService.NotifyAvailabilityChangedAsync(
+                rezerwacja.SalaId, 
+                rezerwacja.StanowiskoId, 
+                rezerwacja.DataStart.Date, 
+                dto.Status);
+
             return NoContent();
         }
 
@@ -835,6 +866,7 @@ namespace Backend.Controllers
                 info = "Check server console logs for actual background service activity"
             });
         }
+
 
         // Metody pomocnicze dla powiadomień
         private async Task WyslijPowiadomienieDlaOpiekuna(Rezerwacja rezerwacja)

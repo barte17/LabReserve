@@ -111,6 +111,9 @@ builder.Services.AddScoped<Backend.Services.IUserPreferencesService, Backend.Ser
 
 // Register Audit Service
 builder.Services.AddScoped<Backend.Services.IAuditService, Backend.Services.AuditService>();
+
+// Register Realtime Availability Service
+builder.Services.AddScoped<Backend.Services.IRealtimeAvailabilityService, Backend.Services.RealtimeAvailabilityService>();
 builder.Services.AddHttpContextAccessor();
 
 // Register Background Service for expired reservations
