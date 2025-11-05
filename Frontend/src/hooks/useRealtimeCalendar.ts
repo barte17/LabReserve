@@ -25,25 +25,37 @@ export const useRealtimeCalendar = ({
   const { connection, isConnected } = useSignalR();
   const lastDataRef = useRef<AvailabilityChangedData | null>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const sequenceRef = useRef<number>(0); // For race condition handling
+  const heartbeatRef = useRef<NodeJS.Timeout | null>(null); // For connection resilience
 
-  // Debounced handler to prevent duplicate events
+  // Enhanced handler with race condition protection and better debouncing
   const handleAvailabilityChanged = useCallback((data: AvailabilityChangedData) => {
-    // Clear existing timer
+    // Increment sequence for race condition handling
+    const currentSequence = ++sequenceRef.current;
+    
+    // Clear existing timer for better debouncing
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
     }
 
-    // Debounce similar events within 500ms
+    // Enhanced debouncing with sequence check
     debounceTimerRef.current = setTimeout(() => {
+      // Race condition check - ignore if newer event came in
+      if (currentSequence !== sequenceRef.current) {
+        console.log('[RealtimeCalendar] Skipping outdated event (race condition)');
+        return;
+      }
+
       const lastData = lastDataRef.current;
       
-      // Skip if this is a duplicate event
+      // Enhanced duplicate detection
       if (lastData && 
           lastData.SalaId === data.SalaId && 
           lastData.StanowiskoId === data.StanowiskoId &&
           lastData.ChangedDate === data.ChangedDate &&
           lastData.NewStatus === data.NewStatus &&
-          Math.abs(data.Timestamp - lastData.Timestamp) < 1000) {
+          Math.abs(data.Timestamp - lastData.Timestamp) < 2000) { // Increased to 2s
         console.log('[RealtimeCalendar] Skipping duplicate event');
         return;
       }
@@ -58,7 +70,7 @@ export const useRealtimeCalendar = ({
       } else {
         console.log('[RealtimeCalendar] Event not relevant to current resource');
       }
-    }, 200); // 200ms debounce
+    }, 500); // Increased to 500ms for better batching
   }, [salaId, stanowiskoId, onAvailabilityChanged]);
 
   // Connection state change handler
@@ -106,14 +118,45 @@ export const useRealtimeCalendar = ({
     // Join group
     joinGroup();
 
-    // Cleanup function
+    // Setup connection resilience heartbeat
+    const setupHeartbeat = () => {
+      heartbeatRef.current = setInterval(() => {
+        if (!isConnected && onAvailabilityChanged) {
+          console.log('[RealtimeCalendar] Connection lost - triggering backup refresh');
+          // Trigger a fake update to refresh data
+          onAvailabilityChanged({
+            SalaId: salaId,
+            StanowiskoId: stanowiskoId,
+            ChangedDate: new Date().toISOString().split('T')[0],
+            NewStatus: 'backup-refresh',
+            Timestamp: Date.now()
+          });
+        }
+      }, 30000); // Check every 30 seconds
+    };
+
+    if (salaId || stanowiskoId) {
+      setupHeartbeat();
+    }
+
+    // Enhanced cleanup function
     return () => {
       console.log('[RealtimeCalendar] Cleaning up real-time calendar');
       
-      // Clear debounce timer
+      // Enhanced memory cleanup
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
       }
+      
+      if (heartbeatRef.current) {
+        clearInterval(heartbeatRef.current);
+        heartbeatRef.current = null;
+      }
+      
+      // Reset refs to prevent memory leaks
+      lastDataRef.current = null;
+      sequenceRef.current = 0;
 
       // Remove event listener
       connection.off('AvailabilityChanged', handleAvailabilityChanged);

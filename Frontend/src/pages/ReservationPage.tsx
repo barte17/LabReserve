@@ -51,6 +51,7 @@ export default function ReservationPage() {
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [showUpdateIndicator, setShowUpdateIndicator] = useState(false);
 
   // Ustaw minimalną datę na dzisiaj
   const today = new Date();
@@ -141,12 +142,16 @@ export default function ReservationPage() {
     }
   }, [salaId, stanowiskoId, currentMonth]);
 
-  // Real-time calendar handlers (po definicji funkcji fetch)
+  // Enhanced real-time calendar handlers with smart refresh
   const handleAvailabilityChanged = useCallback(async (data: any) => {
     console.log('[ReservationPage] Availability changed:', data);
     setLastUpdate(new Date());
 
-    // If selected date matches changed date, refresh hours
+    // Smart refresh strategy
+    let shouldRefreshHours = false;
+    let shouldRefreshDays = false;
+
+    // Always refresh hours if selected date matches changed date
     if (selectedDate) {
       // Use the same date formatting logic as fetchAvailableHours
       const year = selectedDate.getFullYear();
@@ -155,21 +160,56 @@ export default function ReservationPage() {
       const selectedDateStr = `${year}-${month}-${day}`;
       
       console.log(`[ReservationPage] Date comparison: selected="${selectedDateStr}", changed="${data.changedDate}"`);
-      console.log('[ReservationPage] Full data object:', data);
       
       if (selectedDateStr === data.changedDate) {
-        console.log('[ReservationPage] Refreshing hours for selected date');
-        await fetchAvailableHours();
-      } else {
-        console.log('[ReservationPage] Dates do not match - not refreshing hours');
+        console.log('[ReservationPage] Date matches - will refresh hours');
+        shouldRefreshHours = true;
       }
-    } else {
-      console.log('[ReservationPage] No selected date - not refreshing hours');
     }
 
-    // Always refresh available days to update day indicators
-    console.log('[ReservationPage] Refreshing available days');
-    await fetchAvailableDays();
+    // Smart days refresh - only when status changes might affect day availability
+    const statusChangesAvailability = 
+      data.newStatus === 'odrzucono' || 
+      data.newStatus === 'anulowane' ||
+      data.newStatus === 'oczekujące' ||
+      data.newStatus === 'zaakceptowano' ||
+      data.newStatus === 'backup-refresh'; // Special case for connection resilience
+
+    if (statusChangesAvailability) {
+      console.log(`[ReservationPage] Status "${data.newStatus}" affects availability - will refresh days`);
+      shouldRefreshDays = true;
+    } else {
+      console.log(`[ReservationPage] Status "${data.newStatus}" doesn't affect availability - skipping days refresh`);
+    }
+
+    // Execute smart refreshes
+    const refreshPromises = [];
+    
+    if (shouldRefreshHours) {
+      console.log('[ReservationPage] Refreshing hours for selected date');
+      refreshPromises.push(fetchAvailableHours());
+    }
+    
+    if (shouldRefreshDays) {
+      console.log('[ReservationPage] Refreshing available days');
+      refreshPromises.push(fetchAvailableDays());
+    }
+
+    // Execute in parallel for better performance
+    if (refreshPromises.length > 0) {
+      // Show update indicator
+      setShowUpdateIndicator(true);
+      
+      await Promise.all(refreshPromises);
+      console.log(`[ReservationPage] Smart refresh completed: ${refreshPromises.length} operations`);
+      
+      // Hide indicator after 3 seconds
+      setTimeout(() => {
+        setShowUpdateIndicator(false);
+      }, 3000);
+    } else {
+      console.log('[ReservationPage] No refresh needed based on smart analysis');
+    }
   }, [selectedDate, fetchAvailableHours, fetchAvailableDays]);
 
   const handleConnectionStateChanged = useCallback((isConnected: boolean) => {
@@ -415,6 +455,13 @@ export default function ReservationPage() {
         .animate-pulse-once {
           animation: pulse-subtle 0.6s ease-in-out;
         }
+        @keyframes fade-in {
+          0% { opacity: 0; transform: translateY(-8px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.3s ease-out;
+        }
       `}</style>
       <div className="max-w-2xl mx-auto px-4">
         <div className="bg-white rounded-lg shadow-md p-6">
@@ -423,17 +470,27 @@ export default function ReservationPage() {
               Rezerwacja: {resourceName}
             </h1>
             
-            {/* Real-time status indicator */}
-            <div className="flex items-center gap-2 text-sm">
-              <div className={`w-2 h-2 rounded-full ${isRealtimeConnected ? 'bg-green-400' : 'bg-gray-400'}`}></div>
-              <span className={isRealtimeConnected ? 'text-green-600' : 'text-gray-500'}>
-                {isRealtimeConnected ? 'Na żywo' : 'Offline'}
-              </span>
-              {lastUpdate && (
-                <span className="text-xs text-gray-400 ml-2">
-                  Aktualizacja: {lastUpdate.toLocaleTimeString()}
-                </span>
+            <div className="flex items-center gap-4">
+              {/* Subtle update indicator */}
+              {showUpdateIndicator && (
+                <div className="flex items-center gap-2 text-sm bg-blue-50 border border-blue-200 rounded-full px-3 py-1 animate-fade-in">
+                  <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></div>
+                  <span className="text-blue-700 font-medium">Zaktualizowano</span>
+                </div>
               )}
+              
+              {/* Real-time status indicator */}
+              <div className="flex items-center gap-2 text-sm">
+                <div className={`w-2 h-2 rounded-full ${isRealtimeConnected ? 'bg-green-400' : 'bg-gray-400'}`}></div>
+                <span className={isRealtimeConnected ? 'text-green-600' : 'text-gray-500'}>
+                  {isRealtimeConnected ? 'Na żywo' : 'Offline'}
+                </span>
+                {lastUpdate && (
+                  <span className="text-xs text-gray-400 ml-2">
+                    Aktualizacja: {lastUpdate.toLocaleTimeString()}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           
