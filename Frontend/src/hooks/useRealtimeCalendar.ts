@@ -118,16 +118,20 @@ export const useRealtimeCalendar = ({
       // Remove event listener
       connection.off('AvailabilityChanged', handleAvailabilityChanged);
       
-      // Leave groups
-      if (salaId) {
-        connection.invoke('LeaveCalendarGroup', salaId, null).catch(error => {
-          console.error('[RealtimeCalendar] Error leaving sala group:', error);
-        });
-      }
-      if (stanowiskoId) {
-        connection.invoke('LeaveCalendarGroup', null, stanowiskoId).catch(error => {
-          console.error('[RealtimeCalendar] Error leaving stanowisko group:', error);
-        });
+      // Leave groups only if connection is still active
+      if (connection.state === 'Connected') {
+        if (salaId) {
+          connection.invoke('LeaveCalendarGroup', salaId, null).catch(error => {
+            console.error('[RealtimeCalendar] Error leaving sala group:', error);
+          });
+        }
+        if (stanowiskoId) {
+          connection.invoke('LeaveCalendarGroup', null, stanowiskoId).catch(error => {
+            console.error('[RealtimeCalendar] Error leaving stanowisko group:', error);
+          });
+        }
+      } else {
+        console.log('[RealtimeCalendar] Connection not active, skipping group leave operations');
       }
     };
   }, [connection, isConnected, salaId, stanowiskoId, handleAvailabilityChanged]);
