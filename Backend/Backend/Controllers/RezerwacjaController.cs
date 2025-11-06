@@ -347,7 +347,7 @@ namespace Backend.Controllers
             var startHour = czynnaOd?.Hours ?? 8;
             var endHour = czynnaDo?.Hours ?? 20;
 
-            for (int hour = startHour; hour <= endHour; hour++)
+            for (int hour = startHour; hour < endHour; hour++)
             {
                 var startTime = dto.Data.Date.AddHours(hour);
                 var endTime = startTime.AddHours(1);
@@ -644,22 +644,33 @@ namespace Backend.Controllers
 
         private async Task<bool> CheckDayAvailability(int? salaId, int? stanowiskoId, DateTime date)
         {
-            Sala? sala = null;
+            // KROK 1: Pobierz metadane o godzinach otwarcia (analogicznie do GetAvailableHours)
+            TimeSpan? czynnaOd = null, czynnaDo = null;
+            int? targetSalaId = null;
+            
             if (salaId.HasValue)
             {
-                sala = await _context.Sale.FindAsync(salaId.Value);
+                var sala = await _context.Sale
+                    .Where(s => s.Id == salaId.Value)
+                    .Select(s => new { s.CzynnaOd, s.CzynnaDo })
+                    .FirstOrDefaultAsync();
+                    
+                if (sala == null) return false;
+                czynnaOd = sala.CzynnaOd;
+                czynnaDo = sala.CzynnaDo;
+                targetSalaId = salaId.Value;
             }
             else if (stanowiskoId.HasValue)
             {
                 var stanowisko = await _context.Stanowiska
-                    .Include(s => s.Sala)
-                    .FirstOrDefaultAsync(s => s.Id == stanowiskoId.Value);
-                sala = stanowisko?.Sala;
-            }
-
-            if (sala == null) 
-            {
-                return false;
+                    .Where(s => s.Id == stanowiskoId.Value)
+                    .Select(s => new { s.Sala.CzynnaOd, s.Sala.CzynnaDo, s.SalaId })
+                    .FirstOrDefaultAsync();
+                    
+                if (stanowisko == null) return false;
+                czynnaOd = stanowisko.CzynnaOd;
+                czynnaDo = stanowisko.CzynnaDo;
+                targetSalaId = stanowisko.SalaId;
             }
 
             if (date.Date < DateTime.Now.Date)
@@ -667,13 +678,17 @@ namespace Backend.Controllers
                 return false;
             }
 
-            var hoursToCheck = new[] { 9, 10, 11, 14, 15, 16, 17 };
-            
-            foreach (int hour in hoursToCheck)
+            // KROK 2: Używaj tych samych godzin co GetAvailableHours
+            var startHour = czynnaOd?.Hours ?? 8;
+            var endHour = czynnaDo?.Hours ?? 20;
+
+            // KROK 3: Sprawdź każdą godzinę rozpoczęcia (hour < endHour, tak jak w GetAvailableHours)
+            for (int hour = startHour; hour < endHour; hour++)
             {
                 var startTime = date.Date.AddHours(hour);
                 var endTime = startTime.AddHours(1);
 
+                // Pomiń godziny z przeszłości
                 if (startTime <= DateTime.Now)
                 {
                     continue;
@@ -686,11 +701,11 @@ namespace Backend.Controllers
                 
                 if (isAvailable) 
                 {
-                    return true;
+                    return true; // Znaleziono przynajmniej jedną dostępną godzinę
                 }
             }
 
-            return false;
+            return false; // Brak dostępnych godzin w tym dniu
         }
 
         private bool IsWithinOpeningHours(Sala sala, DateTime start, DateTime end)
