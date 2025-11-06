@@ -346,12 +346,11 @@ export default function ReservationPage() {
         }
       }
       
-      // Sprawdź czy godzina zakończenia istnieje w availableHours (może być niedostępna - to tylko punkt końcowy)
-      const endHourExists = availableHours.find(h => formatHour(h.godzina) === hourStr);
-      
-      if (allHoursAvailable && endHourExists) {
+      // Godzina zakończenia nie musi być w availableHours (to są godziny rozpoczęcia)
+      // Wystarczy sprawdzić czy wszystkie godziny w przedziale są dostępne
+      if (allHoursAvailable) {
         endHours.push(hourStr);
-      } else if (!allHoursAvailable) {
+      } else {
         // Jeśli jakaś godzina w przedziale jest niedostępna, przerwij
         break;
       }
