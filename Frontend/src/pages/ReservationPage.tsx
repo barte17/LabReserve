@@ -563,15 +563,16 @@ export default function ReservationPage() {
                         onClick={() => handleDateSelect(day)}
                         disabled={day.isDisabled}
                         className={`
-                          p-2 text-sm rounded-md transition-colors relative
+                          p-2 text-sm rounded-md transition-all duration-200 relative
                           ${day.isCurrentMonth ? 'text-gray-900' : 'text-gray-400'}
-                          ${day.isToday ? 'bg-blue-100 text-blue-600 font-semibold' : ''}
-                          ${day.isSelected ? 'bg-blue-600 text-white' : ''}
-                          ${day.isDisabled 
-                            ? 'cursor-not-allowed opacity-50 bg-gray-100' 
-                            : day.hasAvailableHours 
-                              ? 'hover:bg-blue-50 cursor-pointer bg-green-50 border border-green-200' 
-                              : 'hover:bg-gray-50 cursor-pointer bg-red-50 border border-red-200'
+                          ${day.isToday && !day.isSelected ? 'bg-blue-100 text-blue-600 font-semibold' : ''}
+                          ${day.isSelected 
+                            ? 'bg-blue-600 text-white font-bold border-4 border-blue-800 shadow-lg transform scale-105' 
+                            : day.isDisabled 
+                              ? 'cursor-not-allowed opacity-50 bg-gray-100 border border-gray-200' 
+                              : day.hasAvailableHours 
+                                ? 'hover:bg-blue-50 cursor-pointer bg-green-50 border border-green-200 hover:border-green-300' 
+                                : 'hover:bg-gray-50 cursor-pointer bg-red-50 border border-red-200 hover:border-red-300'
                           }
                         `}
                       >

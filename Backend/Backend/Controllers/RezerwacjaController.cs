@@ -75,13 +75,16 @@ namespace Backend.Controllers
             var rezerwacje = await _context.Rezerwacje
                 .Include(r => r.Sala)
                 .Include(r => r.Stanowisko)
+                    .ThenInclude(s => s.Sala)
                 .Where(r => r.UzytkownikId == userId)
                 .Select(r => new RezerwacjaDetailsDto
                 {
                     Id = r.Id,
                     SalaId = r.SalaId,
-                    SalaNumer = r.Sala != null ? r.Sala.Numer.ToString() : null,
-                    SalaBudynek = r.Sala != null ? r.Sala.Budynek : null,
+                    SalaNumer = r.Sala != null ? r.Sala.Numer.ToString() : 
+                               (r.Stanowisko != null ? r.Stanowisko.Sala.Numer.ToString() : null),
+                    SalaBudynek = r.Sala != null ? r.Sala.Budynek : 
+                                 (r.Stanowisko != null ? r.Stanowisko.Sala.Budynek : null),
                     StanowiskoId = r.StanowiskoId,
                     StanowiskoNazwa = r.Stanowisko != null ? r.Stanowisko.Nazwa : null,
                     UzytkownikId = r.UzytkownikId,
