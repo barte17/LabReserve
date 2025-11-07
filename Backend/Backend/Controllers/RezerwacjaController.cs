@@ -75,13 +75,16 @@ namespace Backend.Controllers
             var rezerwacje = await _context.Rezerwacje
                 .Include(r => r.Sala)
                 .Include(r => r.Stanowisko)
+                    .ThenInclude(s => s.Sala)
                 .Where(r => r.UzytkownikId == userId)
                 .Select(r => new RezerwacjaDetailsDto
                 {
                     Id = r.Id,
                     SalaId = r.SalaId,
-                    SalaNumer = r.Sala != null ? r.Sala.Numer.ToString() : null,
-                    SalaBudynek = r.Sala != null ? r.Sala.Budynek : null,
+                    SalaNumer = r.Sala != null ? r.Sala.Numer.ToString() : 
+                               (r.Stanowisko != null ? r.Stanowisko.Sala.Numer.ToString() : null),
+                    SalaBudynek = r.Sala != null ? r.Sala.Budynek : 
+                                 (r.Stanowisko != null ? r.Stanowisko.Sala.Budynek : null),
                     StanowiskoId = r.StanowiskoId,
                     StanowiskoNazwa = r.Stanowisko != null ? r.Stanowisko.Nazwa : null,
                     UzytkownikId = r.UzytkownikId,
@@ -246,24 +249,93 @@ namespace Backend.Controllers
 
                 var startOfMonth = new DateTime(dto.Year, dto.Month, 1);
                 var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);
+
+                // KROK 1: Pobierz metadane o godzinach otwarcia JEDNYM zapytaniem (jak w CheckDayAvailability)
+                TimeSpan? czynnaOd = null, czynnaDo = null;
+                int? targetSalaId = null;
                 
+                if (dto.SalaId.HasValue)
+                {
+                    var sala = await _context.Sale
+                        .Where(s => s.Id == dto.SalaId.Value)
+                        .Select(s => new { s.CzynnaOd, s.CzynnaDo })
+                        .FirstOrDefaultAsync();
+                        
+                    if (sala == null) return BadRequest("Sala nie istnieje.");
+                    czynnaOd = sala.CzynnaOd;
+                    czynnaDo = sala.CzynnaDo;
+                    targetSalaId = dto.SalaId.Value;
+                }
+                else // dto.StanowiskoId.HasValue
+                {
+                    var stanowisko = await _context.Stanowiska
+                        .Where(s => s.Id == dto.StanowiskoId.Value)
+                        .Select(s => new { s.Sala.CzynnaOd, s.Sala.CzynnaDo, s.SalaId })
+                        .FirstOrDefaultAsync();
+                        
+                    if (stanowisko == null) return BadRequest("Stanowisko nie istnieje.");
+                    czynnaOd = stanowisko.CzynnaOd;
+                    czynnaDo = stanowisko.CzynnaDo;
+                    targetSalaId = stanowisko.SalaId;
+                }
+
+                // KROK 2: Pobierz WSZYSTKIE konflikty dla CAŁEGO MIESIĄCA JEDNYM zapytaniem
+                var monthStart = DateTime.SpecifyKind(startOfMonth, DateTimeKind.Unspecified);
+                var monthEnd = DateTime.SpecifyKind(endOfMonth.AddDays(1), DateTimeKind.Unspecified);
+                
+                var allConflicts = await _context.Rezerwacje
+                    .Where(r => (r.Status == "oczekujące" || r.Status == "zaakceptowano") && 
+                               r.DataStart < monthEnd && 
+                               r.DataKoniec > monthStart)
+                    .Where(r => 
+                        // Konflikty dla sali
+                        (dto.SalaId.HasValue && r.SalaId == dto.SalaId.Value) ||
+                        // Konflikty stanowisk w tej sali
+                        (dto.SalaId.HasValue && r.StanowiskoId.HasValue && r.Stanowisko.SalaId == dto.SalaId.Value) ||
+                        // Konflikty konkretnego stanowiska
+                        (dto.StanowiskoId.HasValue && r.StanowiskoId == dto.StanowiskoId.Value) ||
+                        // Konflikty całej sali dla stanowiska
+                        (dto.StanowiskoId.HasValue && r.SalaId == targetSalaId))
+                    .Select(r => new { r.DataStart, r.DataKoniec })
+                    .ToListAsync();
+
+                // KROK 3: Sprawdź dostępność dni w pamięci (0 zapytań do bazy)
                 var availableDays = new List<AvailableDayDto>();
+                var startHour = czynnaOd?.Hours ?? 8;
+                var endHour = czynnaDo?.Hours ?? 20;
                 
                 for (var date = startOfMonth; date <= endOfMonth; date = date.AddDays(1))
                 {
-                    // Pozwól na rezerwacje w weekendy
-                    var isPast = date.Date < DateTime.Now.Date; // Użyj DateTime.Now zamiast UtcNow
-                    
+                    var isPast = date.Date < DateTime.Now.Date;
                     var hasAvailableHours = false;
+                    
                     if (!isPast)
                     {
-                        try
+                        // Sprawdź czy jakąkolwiek godzinę w tym dniu jest dostępna (w pamięci)
+                        for (int hour = startHour; hour < endHour; hour++)
                         {
-                            hasAvailableHours = await CheckDayAvailability(dto.SalaId, dto.StanowiskoId, date);
-                        }
-                        catch
-                        {
-                            hasAvailableHours = false;
+                            var startTime = date.Date.AddHours(hour);
+                            var endTime = startTime.AddHours(1);
+
+                            // Pomiń godziny z przeszłości
+                            if (startTime <= DateTime.Now)
+                            {
+                                continue;
+                            }
+
+                            var startTimeUnspecified = DateTime.SpecifyKind(startTime, DateTimeKind.Unspecified);
+                            var endTimeUnspecified = DateTime.SpecifyKind(endTime, DateTimeKind.Unspecified);
+
+                            // Sprawdź w pamięci - bez zapytań do bazy!
+                            var hasConflict = allConflicts.Any(c => 
+                                c.DataStart < endTimeUnspecified && 
+                                c.DataKoniec > startTimeUnspecified);
+                            
+                            if (!hasConflict) 
+                            {
+                                hasAvailableHours = true;
+                                break; // Znaleziono przynajmniej jedną dostępną godzinę, koniec sprawdzania
+                            }
                         }
                     }
                     
@@ -678,11 +750,30 @@ namespace Backend.Controllers
                 return false;
             }
 
-            // KROK 2: Używaj tych samych godzin co GetAvailableHours
+            // KROK 2: Pobierz WSZYSTKIE konflikty dla całego dnia JEDNYM zapytaniem (analogicznie do GetAvailableHours)
+            var dayStart = DateTime.SpecifyKind(date.Date, DateTimeKind.Unspecified);
+            var dayEnd = DateTime.SpecifyKind(date.Date.AddDays(1), DateTimeKind.Unspecified);
+            
+            var allConflicts = await _context.Rezerwacje
+                .Where(r => (r.Status == "oczekujące" || r.Status == "zaakceptowano") && 
+                           r.DataStart < dayEnd && 
+                           r.DataKoniec > dayStart)
+                .Where(r => 
+                    // Konflikty dla sali
+                    (salaId.HasValue && r.SalaId == salaId.Value) ||
+                    // Konflikty stanowisk w tej sali
+                    (salaId.HasValue && r.StanowiskoId.HasValue && r.Stanowisko.SalaId == salaId.Value) ||
+                    // Konflikty konkretnego stanowiska
+                    (stanowiskoId.HasValue && r.StanowiskoId == stanowiskoId.Value) ||
+                    // Konflikty całej sali dla stanowiska
+                    (stanowiskoId.HasValue && r.SalaId == targetSalaId))
+                .Select(r => new { r.DataStart, r.DataKoniec })
+                .ToListAsync();
+
+            // KROK 3: Sprawdź dostępność w pamięci (0 zapytań do bazy) - identycznie jak GetAvailableHours
             var startHour = czynnaOd?.Hours ?? 8;
             var endHour = czynnaDo?.Hours ?? 20;
 
-            // KROK 3: Sprawdź każdą godzinę rozpoczęcia (hour < endHour, tak jak w GetAvailableHours)
             for (int hour = startHour; hour < endHour; hour++)
             {
                 var startTime = date.Date.AddHours(hour);
@@ -697,9 +788,12 @@ namespace Backend.Controllers
                 var startTimeUnspecified = DateTime.SpecifyKind(startTime, DateTimeKind.Unspecified);
                 var endTimeUnspecified = DateTime.SpecifyKind(endTime, DateTimeKind.Unspecified);
 
-                var isAvailable = await CheckAvailability(salaId, stanowiskoId, startTimeUnspecified, endTimeUnspecified);
+                // Sprawdź w pamięci - bez zapytań do bazy! (jak w GetAvailableHours)
+                var hasConflict = allConflicts.Any(c => 
+                    c.DataStart < endTimeUnspecified && 
+                    c.DataKoniec > startTimeUnspecified);
                 
-                if (isAvailable) 
+                if (!hasConflict) 
                 {
                     return true; // Znaleziono przynajmniej jedną dostępną godzinę
                 }

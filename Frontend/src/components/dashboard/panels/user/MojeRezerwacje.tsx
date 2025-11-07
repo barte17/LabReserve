@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchMyReservations } from '../../../../services/rezerwacjaService';
+import { fetchMyReservations, cancelReservation } from '../../../../services/rezerwacjaService';
 import { useToastContext } from '../../../ToastProvider';
 
 interface Rezerwacja {
@@ -23,6 +23,7 @@ export default function MojeRezerwacje() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState(''); // 'sala', 'stanowisko', ''
   const [showCompleted, setShowCompleted] = useState(false);
   const [sortBy, setSortBy] = useState('newest');
   const [currentPage, setCurrentPage] = useState(1);
@@ -42,6 +43,22 @@ export default function MojeRezerwacje() {
       showError('Błąd podczas pobierania rezerwacji');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCancelReservation = async (id: number) => {
+    if (!window.confirm('Czy na pewno chcesz anulować tę rezerwację?')) {
+      return;
+    }
+
+    try {
+      await cancelReservation(id);
+      showSuccess('Rezerwacja została anulowana');
+      // Odświeżamy listę rezerwacji
+      await loadRezerwacje();
+    } catch (error) {
+      console.error('Błąd anulowania rezerwacji:', error);
+      showError('Błąd podczas anulowania rezerwacji');
     }
   };
 
@@ -69,11 +86,16 @@ export default function MojeRezerwacje() {
       // Filtr statusu
       const matchesStatus = statusFilter === '' || r.status === statusFilter;
       
+      // Filtr typu (sala/stanowisko)
+      const matchesType = typeFilter === '' || 
+        (typeFilter === 'sala' && !r.stanowiskoNazwa) ||
+        (typeFilter === 'stanowisko' && r.stanowiskoNazwa);
+      
       // Filtr zakończonych
       const isCompleted = new Date(r.dataKoniec) < today;
       const matchesCompleted = showCompleted || !isCompleted;
       
-      return matchesSearch && matchesStatus && matchesCompleted;
+      return matchesSearch && matchesStatus && matchesType && matchesCompleted;
     });
 
     // Sortowanie
@@ -99,7 +121,7 @@ export default function MojeRezerwacje() {
   // Reset strony przy zmianie filtrów
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, showCompleted, sortBy]);
+  }, [searchTerm, statusFilter, typeFilter, showCompleted, sortBy]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -156,17 +178,35 @@ export default function MojeRezerwacje() {
         </div>
 
         {/* Kontrolki sortowania i filtrowania */}
-        <div className="mb-4 flex flex-wrap items-center gap-4">
-          <label className="flex items-center space-x-2 text-sm">
-            <input
-              type="checkbox"
-              checked={showCompleted}
-              onChange={(e) => setShowCompleted(e.target.checked)}
-              className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-            />
-            <span className="text-gray-700">Pokaż zakończone</span>
-          </label>
+        <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          {/* Lewy róg - Typ */}
+          <div className="flex items-center space-x-2">
+            <label className="text-sm font-medium text-gray-700">Typ:</label>
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="px-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm bg-white"
+            >
+              <option value="">📋 Wszystkie</option>
+              <option value="sala">🏢 Sale</option>
+              <option value="stanowisko">🖥️ Stanowiska</option>
+            </select>
+          </div>
 
+          {/* Środek - Pokaż zakończone */}
+          <div className="flex justify-center">
+            <label className="flex items-center space-x-2 text-sm">
+              <input
+                type="checkbox"
+                checked={showCompleted}
+                onChange={(e) => setShowCompleted(e.target.checked)}
+                className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+              />
+              <span className="text-gray-700">Pokaż zakończone</span>
+            </label>
+          </div>
+
+          {/* Prawy róg - Sortuj według */}
           <div className="flex items-center space-x-2">
             <label className="text-sm font-medium text-gray-700">Sortuj według:</label>
             <select
@@ -280,31 +320,142 @@ export default function MojeRezerwacje() {
           <div className="p-6">
             <div className="space-y-4">
               {paginatedRezerwacje.map((rezerwacja) => (
-                <div key={rezerwacja.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+                <div key={rezerwacja.id} className={`border rounded-lg p-3 sm:p-4 hover:shadow-sm transition-shadow ${
+                  rezerwacja.stanowiskoId 
+                    ? 'border-blue-200 bg-blue-50/30' // Stanowisko - niebieskie tło
+                    : 'border-green-200 bg-green-50/30' // Sala - zielone tło
+                }`}>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <span className="text-lg">
-                          {getStatusIcon(rezerwacja.status)}
-                        </span>
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          Sala {rezerwacja.salaNumer}{rezerwacja.salaBudynek}
-                          {rezerwacja.stanowiskoNazwa && ` - ${rezerwacja.stanowiskoNazwa}`}
-                        </h3>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(rezerwacja.status)}`}>
-                          {rezerwacja.status}
-                        </span>
+                      {/* Header - różny layout dla mobile i desktop */}
+                      <div className="mb-4">
+                        {/* Mobile Layout */}
+                        <div className="block sm:hidden">
+                          <div className="text-center mb-3">
+                            <span className="text-2xl mb-2 block">
+                              {getStatusIcon(rezerwacja.status)}
+                            </span>
+                            {rezerwacja.stanowiskoId ? (
+                              <div className="space-y-1">
+                                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                                  🖥️ STANOWISKO
+                                </span>
+                                <h3 className="text-lg font-semibold text-gray-900">
+                                  {rezerwacja.stanowiskoNazwa}
+                                </h3>
+                                <p className="text-sm text-gray-600">
+                                  sala {rezerwacja.salaNumer} - {rezerwacja.salaBudynek}
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="space-y-1">
+                                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                                  🏢 SALA
+                                </span>
+                                <h3 className="text-lg font-semibold text-gray-900">
+                                  Sala {rezerwacja.salaNumer} - {rezerwacja.salaBudynek}
+                                </h3>
+                              </div>
+                            )}
+                            <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(rezerwacja.status)}`}>
+                              {rezerwacja.status}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Desktop Layout */}
+                        <div className="hidden sm:flex sm:justify-between sm:items-start">
+                          <div className="flex items-center space-x-3">
+                            <span className="text-lg">
+                              {getStatusIcon(rezerwacja.status)}
+                            </span>
+                            {rezerwacja.stanowiskoId ? (
+                              <div className="flex items-center space-x-2">
+                                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs font-medium">
+                                  🖥️ STANOWISKO
+                                </span>
+                                <h3 className="text-lg font-semibold text-gray-900">
+                                  {rezerwacja.stanowiskoNazwa}
+                                </h3>
+                                <span className="text-sm text-gray-600">
+                                  (sala {rezerwacja.salaNumer} - {rezerwacja.salaBudynek})
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center space-x-2">
+                                <span className="px-2 py-1 bg-green-100 text-green-800 rounded-md text-xs font-medium">
+                                  🏢 SALA
+                                </span>
+                                <h3 className="text-lg font-semibold text-gray-900">
+                                  Sala {rezerwacja.salaNumer} - {rezerwacja.salaBudynek}
+                                </h3>
+                              </div>
+                            )}
+                          </div>
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(rezerwacja.status)}`}>
+                            {rezerwacja.status}
+                          </span>
+                        </div>
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-3">
-                        <div>
-                          <span className="font-medium">Data:</span> {new Date(rezerwacja.dataStart).toLocaleDateString('pl-PL')}
+                      {/* Details - różny layout dla mobile i desktop */}
+                      <div className="mb-3">
+                        {/* Mobile Layout - wyśrodkowane karty */}
+                        <div className="block sm:hidden space-y-3">
+                          <div className="bg-gray-50 rounded-lg p-3 text-center">
+                            <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Data</div>
+                            <div className="font-semibold text-gray-900">
+                              {new Date(rezerwacja.dataStart).toLocaleDateString('pl-PL')}
+                            </div>
+                          </div>
+                          <div className="bg-gray-50 rounded-lg p-3 text-center">
+                            <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Godziny</div>
+                            <div className="font-semibold text-gray-900">
+                              {new Date(rezerwacja.dataStart).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })} - {new Date(rezerwacja.dataKoniec).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </div>
+                          <div className="bg-gray-50 rounded-lg p-3 text-center">
+                            <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Utworzono</div>
+                            <div className="font-semibold text-gray-900">
+                              {new Date(rezerwacja.dataUtworzenia).toLocaleDateString('pl-PL')}
+                            </div>
+                          </div>
+                          {/* Przycisk anulowania na mobile */}
+                          {(rezerwacja.status === 'oczekujące' || rezerwacja.status === 'zaakceptowano') && (
+                            <div className="text-center pt-2">
+                              <button
+                                onClick={() => handleCancelReservation(rezerwacja.id)}
+                                className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 hover:border-red-300 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                              >
+                                🗑️ Anuluj rezerwację
+                              </button>
+                            </div>
+                          )}
                         </div>
-                        <div>
-                          <span className="font-medium">Godziny:</span> {new Date(rezerwacja.dataStart).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })} - {new Date(rezerwacja.dataKoniec).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
-                        </div>
-                        <div>
-                          <span className="font-medium">Utworzono:</span> {new Date(rezerwacja.dataUtworzenia).toLocaleDateString('pl-PL')}
+
+                        {/* Desktop Layout - grid */}
+                        <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600 items-center">
+                          <div>
+                            <span className="font-medium">Data:</span> {new Date(rezerwacja.dataStart).toLocaleDateString('pl-PL')}
+                          </div>
+                          <div>
+                            <span className="font-medium">Godziny:</span> {new Date(rezerwacja.dataStart).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })} - {new Date(rezerwacja.dataKoniec).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                          <div>
+                            <span className="font-medium">Utworzono:</span> {new Date(rezerwacja.dataUtworzenia).toLocaleDateString('pl-PL')}
+                          </div>
+                          <div className="flex justify-end">
+                            {(rezerwacja.status === 'oczekujące' || rezerwacja.status === 'zaakceptowano') ? (
+                              <button
+                                onClick={() => handleCancelReservation(rezerwacja.id)}
+                                className="px-3 py-2 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 hover:border-red-300 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                              >
+                                🗑️ Anuluj
+                              </button>
+                            ) : (
+                              <div></div>
+                            )}
+                          </div>
                         </div>
                       </div>
                       
