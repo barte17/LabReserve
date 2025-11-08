@@ -44,30 +44,60 @@ const Toast = ({ message, type, title, actionUrl, actionLabel, onClose, duration
   const getToastStyles = () => {
     switch (type) {
       case 'success':
-        return 'bg-green-500 text-white';
+        return 'bg-white border-l-4 border-emerald-500 text-gray-800 shadow-lg';
       case 'error':
-        return 'bg-red-500 text-white';
+        return 'bg-white border-l-4 border-red-500 text-gray-800 shadow-lg';
       case 'warning':
-        return 'bg-yellow-500 text-black';
+        return 'bg-white border-l-4 border-amber-500 text-gray-800 shadow-lg';
       case 'info':
-        return 'bg-blue-500 text-white';
+        return 'bg-white border-l-4 border-blue-500 text-gray-800 shadow-lg';
       default:
-        return 'bg-gray-500 text-white';
+        return 'bg-white border-l-4 border-gray-400 text-gray-800 shadow-lg';
     }
   };
 
   const getIcon = () => {
     switch (type) {
       case 'success':
-        return '✓';
+        return (
+          <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center">
+            <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+        );
       case 'error':
-        return '✕';
+        return (
+          <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center">
+            <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </div>
+        );
       case 'warning':
-        return '⚠';
+        return (
+          <div className="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center">
+            <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+            </svg>
+          </div>
+        );
       case 'info':
-        return 'ℹ';
+        return (
+          <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+        );
       default:
-        return '';
+        return (
+          <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
+            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+        );
     }
   };
 
@@ -79,20 +109,31 @@ const Toast = ({ message, type, title, actionUrl, actionLabel, onClose, duration
   };
 
   return (
-    <div className={`fixed top-4 right-4 z-[70] p-4 rounded-lg shadow-lg min-w-80 max-w-md ${getToastStyles()}`}>
+    <div className={`
+      animate-in slide-in-from-right-full duration-300 ease-out
+      p-4 rounded-lg min-w-80 max-w-md backdrop-blur-sm
+      border-2 border-gray-300 ring-2 ring-gray-100/60 shadow-xl
+      ${getToastStyles()}
+    `}>
       <div className="flex items-start space-x-3">
-        <span className="text-lg mt-0.5">{getIcon()}</span>
+        <div className="flex-shrink-0 mt-0.5">
+          {getIcon()}
+        </div>
         
         <div className="flex-1 min-w-0">
           {title && (
-            <div className="font-semibold text-sm mb-1">{title}</div>
+            <div className="font-semibold text-sm text-gray-900 mb-1 leading-tight">
+              {title}
+            </div>
           )}
-          <div className={`${title ? 'text-sm' : ''} break-words`}>{message}</div>
+          <div className={`${title ? 'text-sm text-gray-600' : 'text-sm text-gray-800'} break-words leading-relaxed`}>
+            {message}
+          </div>
           
           {actionUrl && actionLabel && (
             <button
               onClick={handleActionClick}
-              className="mt-2 text-sm underline hover:no-underline opacity-90 hover:opacity-100"
+              className="mt-3 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors duration-150 hover:underline"
             >
               {actionLabel}
             </button>
@@ -101,9 +142,12 @@ const Toast = ({ message, type, title, actionUrl, actionLabel, onClose, duration
         
         <button 
           onClick={onClose}
-          className="text-lg hover:opacity-70 ml-2"
+          className="flex-shrink-0 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors duration-150 rounded-full hover:bg-gray-100"
+          aria-label="Zamknij powiadomienie"
         >
-          ×
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
         </button>
       </div>
     </div>
@@ -151,18 +195,26 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <ToastContext.Provider value={{ showToast, showSuccess, showError, showWarning, showInfo, showNotification }}>
       {children}
-      <div className="fixed top-4 right-4 z-[70] space-y-2">
-        {toasts.map((toast) => (
-          <Toast
+      <div className="fixed top-4 right-4 z-[70] space-y-3 max-w-sm w-full pointer-events-none">
+        {toasts.map((toast, index) => (
+          <div
             key={toast.id}
-            message={toast.message}
-            type={toast.type}
-            title={toast.title}
-            actionUrl={toast.actionUrl}
-            actionLabel={toast.actionLabel}
-            duration={toast.duration}
-            onClose={() => removeToast(toast.id)}
-          />
+            className="pointer-events-auto transform transition-all duration-300 ease-out"
+            style={{ 
+              transform: `translateY(${index * 4}px)`,
+              zIndex: 70 - index 
+            }}
+          >
+            <Toast
+              message={toast.message}
+              type={toast.type}
+              title={toast.title}
+              actionUrl={toast.actionUrl}
+              actionLabel={toast.actionLabel}
+              duration={toast.duration}
+              onClose={() => removeToast(toast.id)}
+            />
+          </div>
         ))}
       </div>
     </ToastContext.Provider>

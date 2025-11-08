@@ -7,6 +7,7 @@ interface NotificationItemProps {
   onMarkAsReadOnHover?: (id: number) => void;
   onDelete: (id: number) => void;
   compact?: boolean;
+  truncate?: boolean;
 }
 
 export const NotificationItem: React.FC<NotificationItemProps> = ({
@@ -14,7 +15,8 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   onMarkAsRead,
   onMarkAsReadOnHover,
   onDelete,
-  compact = false
+  compact = false,
+  truncate = false
 }) => {
   const handleMouseEnter = () => {
     if (!notification.czyPrzeczytane && onMarkAsReadOnHover) {
@@ -52,6 +54,19 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     return date.toLocaleDateString('pl-PL');
   };
 
+  const truncateText = (text: string, maxLength: number) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength).trim() + '...';
+  };
+
+  const getTruncatedContent = () => {
+    if (!truncate) return notification.tresc;
+    
+    // W compact mode skracamy więcej
+    const maxLength = compact ? 80 : 120;
+    return truncateText(notification.tresc, maxLength);
+  };
+
   return (
     <div 
       className={`
@@ -75,8 +90,11 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
             )}
           </div>
           
-          <p className={`mb-2 ${compact ? 'text-xs' : 'text-sm'} ${!notification.czyPrzeczytane ? 'text-gray-700' : 'text-gray-500'}`}>
-            {notification.tresc}
+          <p 
+            className={`mb-2 ${compact ? 'text-xs' : 'text-sm'} ${!notification.czyPrzeczytane ? 'text-gray-700' : 'text-gray-500'} ${truncate ? 'line-clamp-2' : ''}`}
+            title={truncate ? notification.tresc : undefined}
+          >
+            {getTruncatedContent()}
           </p>
           
           <div className="flex items-center justify-between">
