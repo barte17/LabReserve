@@ -87,7 +87,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
   if (!isOpen) return null;
 
-  const recentNotifications = notifications.slice(0, 3); // Max 3 powiadomienia
+  const recentNotifications = notifications.slice(0, 5); // Max 5 powiadomień
 
   return (
     <div
@@ -96,18 +96,11 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     >
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-100">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-gray-900">Powiadomienia</h3>
-          {unreadCount > 0 && (
-            <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full">
-              {unreadCount} nowych
-            </span>
-          )}
-        </div>
+        <h3 className="text-sm font-medium text-gray-900">Powiadomienia</h3>
       </div>
 
-      {/* Content */}
-      <div>
+      {/* Content z ograniczoną wysokością i scrollem */}
+      <div className="max-h-[50vh] sm:max-h-[400px] overflow-y-auto">
         {loading && recentNotifications.length === 0 ? (
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
@@ -128,6 +121,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                   onMarkAsReadOnHover={markAsReadOnHover}
                   onDelete={handleDelete}
                   compact={true}
+                  truncate={true}
                 />
               </div>
             ))}
@@ -135,11 +129,11 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         )}
       </div>
 
-      {/* Footer - zawsze widoczny */}
-      <div className="px-4 py-3 border-t border-gray-100">
+      {/* Sticky Footer - zawsze widoczny na dole */}
+      <div className="sticky bottom-0 px-4 py-3 border-t border-gray-100 bg-white rounded-b-lg">
         <button
           onClick={handleViewAll}
-          className="w-full text-center text-sm text-blue-600 hover:text-blue-800 font-medium"
+          className="w-full text-center text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
         >
           Zobacz wszystkie powiadomienia
         </button>
