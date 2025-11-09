@@ -101,7 +101,7 @@ namespace Backend.Controllers
         }
 
         [HttpPost]
-        [Authorize]
+        [Authorize(Roles = "Student,Nauczyciel,Opiekun,Admin")]
         public async Task<IActionResult> Create([FromBody] CreateRezerwacjaDto dto)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -114,6 +114,20 @@ namespace Backend.Controllers
             {
                 return BadRequest("Należy podać albo SalaId albo StanowiskoId, ale nie oba.");
             }
+
+            // Dodatkowa autoryzacja - rezerwacja sal tylko dla Nauczyciel, Opiekun, Admin
+            if (dto.SalaId != null)
+            {
+                if (!User.IsInRole("Nauczyciel") && !User.IsInRole("Opiekun") && !User.IsInRole("Admin"))
+                {
+                    return StatusCode(403, new { 
+                        message = "Tylko nauczyciele, opiekunowie i administratorzy mogą rezerwować sale.",
+                        errorCode = "INSUFFICIENT_PERMISSIONS_SALA"
+                    });
+                }
+            }
+
+            // Rezerwacja stanowisk - wszyscy zalogowani z rolami biznesowymi (już sprawdzone przez [Authorize])
 
             // Walidacja czasu - rezerwacja musi być na pełne godziny
             if (dto.DataStart.Minute != 0 || dto.DataStart.Second != 0 ||

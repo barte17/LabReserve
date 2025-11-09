@@ -29,7 +29,7 @@ export default function UsersListAdmin({ autoFilter }: UsersListAdminProps = {})
   const [itemsPerPage] = useState(10);
   const { showSuccess, showError } = useToastContext();
 
-  const allRoles = ["Student", "Nauczyciel", "Opiekun", "Admin", "Niezatwierdzony"];
+  const allRoles = ["Uzytkownik", "Student", "Nauczyciel", "Opiekun", "Admin"];
   
   useEffect(() => {
     fetchUsers()
@@ -46,8 +46,15 @@ export default function UsersListAdmin({ autoFilter }: UsersListAdminProps = {})
       user.nazwisko.toLowerCase().includes(searchLower) ||
       user.email.toLowerCase().includes(searchLower);
     
-    const matchesRole = roleFilter === "" || 
-      (user.roles && user.roles.some(role => role.toLowerCase() === roleFilter.toLowerCase()));
+    let matchesRole = true;
+    if (roleFilter !== "") {
+      if (roleFilter.toLowerCase() === "uzytkownik") {
+        // Filtrowanie dla użytkowników z tylko podstawową rolą
+        matchesRole = user.roles && user.roles.length === 1 && user.roles[0] === "Uzytkownik";
+      } else {
+        matchesRole = user.roles && user.roles.some(role => role.toLowerCase() === roleFilter.toLowerCase());
+      }
+    }
     
     return matchesSearch && matchesRole;
   });
@@ -78,12 +85,22 @@ export default function UsersListAdmin({ autoFilter }: UsersListAdminProps = {})
 
   const handleSaveRoles = async () => {
     if (!editRolesUserId) return;
+    
+    // Walidacja - każdy użytkownik musi mieć rolę "Uzytkownik"
+    const finalRoles = [...editRoles];
+    if (!finalRoles.includes("Uzytkownik")) {
+      finalRoles.push("Uzytkownik");
+      setEditRoles(finalRoles);
+      showError("Każdy użytkownik musi mieć podstawową rolę 'Uzytkownik'. Zostanie automatycznie dodana.");
+      return;
+    }
+    
     setChangingRoleId(editRolesUserId);
     try {
-      await changeUserRoles(editRolesUserId, editRoles);
+      await changeUserRoles(editRolesUserId, finalRoles);
       setUsers((prev) =>
         prev.map((u) =>
-          u.id === editRolesUserId ? { ...u, roles: editRoles } : u
+          u.id === editRolesUserId ? { ...u, roles: finalRoles } : u
         )
       );
       setEditRolesUserId(null);
@@ -128,10 +145,10 @@ export default function UsersListAdmin({ autoFilter }: UsersListAdminProps = {})
             >
               <option value="">Wszystkie role</option>
               <option value="admin">Admin</option>
-              <option value="student">Student</option>
-              <option value="niezatwierdzony">Niezatwierdzony</option>
               <option value="opiekun">Opiekun</option>
               <option value="nauczyciel">Nauczyciel</option>
+              <option value="student">Student</option>
+              <option value="uzytkownik">Tylko podstawowa rola</option>
             </select>
           </div>
         </div>
@@ -152,7 +169,13 @@ export default function UsersListAdmin({ autoFilter }: UsersListAdminProps = {})
               <div className="flex space-x-1">
                 {u.roles && u.roles.length > 0 ? (
                   u.roles.map(role => (
-                    <span key={role} className="badge badge-info">{role}</span>
+                    <span key={role} className={`badge ${
+                      role === "Admin" ? "badge-error" :
+                      role === "Opiekun" ? "badge-warning" :
+                      role === "Nauczyciel" ? "badge-info" :
+                      role === "Student" ? "badge-success" :
+                      "badge-neutral"
+                    }`}>{role}</span>
                   ))
                 ) : (
                   <span className="badge badge-neutral">Brak ról</span>

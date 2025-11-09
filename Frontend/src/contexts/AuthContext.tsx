@@ -13,6 +13,9 @@ interface AuthContextType {
   isLogged: boolean;
   isLoading: boolean;
   hasRole: (role: string) => boolean;
+  hasBusinessRole: () => boolean;
+  canReserveStanowiska: () => boolean;
+  canReserveSale: () => boolean;
   refreshAuth: () => void;
   logout: () => void;
 }
@@ -107,6 +110,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return user?.roles.includes(role) ?? false;
   };
 
+  // Sprawdza czy użytkownik ma jakąkolwiek rolę biznesową (nie tylko "Uzytkownik")
+  const hasBusinessRole = (): boolean => {
+    if (!user?.roles) return false;
+    return user.roles.some(role => role !== "Uzytkownik");
+  };
+
+  // Sprawdza czy użytkownik może tworzyć rezerwacje stanowisk
+  const canReserveStanowiska = (): boolean => {
+    return hasRole("Student") || hasRole("Nauczyciel") || hasRole("Opiekun") || hasRole("Admin");
+  };
+
+  // Sprawdza czy użytkownik może tworzyć rezerwacje sal
+  const canReserveSale = (): boolean => {
+    return hasRole("Nauczyciel") || hasRole("Opiekun") || hasRole("Admin");
+  };
+
   const logout = async () => {
     try {
       const { logout: authLogout } = await import('../services/authService');
@@ -150,7 +169,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isLogged, isLoading, hasRole, refreshAuth, logout }}>
+    <AuthContext.Provider value={{ user, isLogged, isLoading, hasRole, hasBusinessRole, canReserveStanowiska, canReserveSale, refreshAuth, logout }}>
       {children}
     </AuthContext.Provider>
   );

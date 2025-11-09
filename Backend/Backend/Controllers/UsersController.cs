@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Backend.Data;
+using Backend.Services;
 
 namespace Backend.Controllers
 {
@@ -17,11 +18,16 @@ namespace Backend.Controllers
 
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly AppDbContext _context;
+        private readonly IPowiadomieniaService _powiadomieniaService;
+        private readonly IAuditService _auditService;
 
-        public UsersController(UserManager<ApplicationUser> userManager, AppDbContext context)
+        public UsersController(UserManager<ApplicationUser> userManager, AppDbContext context, 
+            IPowiadomieniaService powiadomieniaService, IAuditService auditService)
         {
             _userManager = userManager;
             _context = context;
+            _powiadomieniaService = powiadomieniaService;
+            _auditService = auditService;
         }
 
         [HttpGet("opiekunowie")]
@@ -79,14 +85,109 @@ namespace Backend.Controllers
             if (user == null) return NotFound();
 
             var currentRoles = await _userManager.GetRolesAsync(user);
+            
+            // Sprawdź czy faktycznie coś się zmieniło
+            var oldRolesSet = currentRoles.OrderBy(r => r).ToList();
+            var newRolesSet = dto.Roles.OrderBy(r => r).ToList();
+            var rolesChanged = !oldRolesSet.SequenceEqual(newRolesSet);
+            
+            if (!rolesChanged)
+            {
+                return Ok(new { message = "Role są już aktualne." });
+            }
+
             var removeResult = await _userManager.RemoveFromRolesAsync(user, currentRoles);
             if (!removeResult.Succeeded) return BadRequest("Nie udało się usunąć starych ról");
 
             var addResult = await _userManager.AddToRolesAsync(user, dto.Roles);
             if (!addResult.Succeeded) return BadRequest("Nie udało się dodać nowych ról");
 
-            return Ok(new { message = "Role zostały pomyślnie zaktualizowane." });
+            // Przygotuj dane dla powiadomienia i audytu
+            var adminUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var adminUser = await _userManager.FindByIdAsync(adminUserId);
+            var adminName = adminUser != null ? $"{adminUser.Imie} {adminUser.Nazwisko}" : "Administrator";
+            
+            var oldRolesText = oldRolesSet.Count > 0 ? string.Join(", ", oldRolesSet) : "brak ról";
+            var newRolesText = newRolesSet.Count > 0 ? string.Join(", ", newRolesSet) : "brak ról";
 
+            try
+            {
+                // Wyślij powiadomienie użytkownikowi o zmianie ról
+                var tytul = "Zmiana uprawnien w systemie";
+                var tresc = GenerateRoleChangeMessage(oldRolesSet, newRolesSet, adminName);
+                
+                await _powiadomieniaService.WyslijPowiadomienieAsync(
+                    uzytkownikId: id,
+                    tytul: tytul,
+                    tresc: tresc,
+                    typ: "system",
+                    priorytet: "high"
+                );
+
+                // Log audit
+                await _auditService.LogAsync(
+                    "ZMIANA_ROL_UZYTKOWNIKA", 
+                    "User", 
+                    null, 
+                    $"Użytkownik: {user.Email} ({user.Imie} {user.Nazwisko}), " +
+                    $"Stare role: [{oldRolesText}], " +
+                    $"Nowe role: [{newRolesText}], " +
+                    $"Admin: {adminName}"
+                );
+            }
+            catch (Exception ex)
+            {
+                // Nie przerywaj procesu zmiany ról jeśli powiadomienie się nie udało
+                System.Console.WriteLine($"Błąd podczas wysyłania powiadomienia o zmianie ról: {ex.Message}");
+            }
+
+            return Ok(new { message = "Role zostały pomyślnie zaktualizowane." });
+        }
+
+        private string GenerateRoleChangeMessage(List<string> oldRoles, List<string> newRoles, string adminName)
+        {
+            var addedRoles = newRoles.Except(oldRoles).ToList();
+            var removedRoles = oldRoles.Except(newRoles).ToList();
+            
+            var message = $"Administrator {adminName} zmienil Twoje uprawnienia w systemie. ";
+            
+            if (addedRoles.Any())
+            {
+                message += $"Dodane role: {string.Join(", ", addedRoles)}. ";
+            }
+            
+            if (removedRoles.Any())
+            {
+                message += $"Usuniete role: {string.Join(", ", removedRoles)}. ";
+            }
+            
+            message += $"Twoje aktualne role: {string.Join(", ", newRoles)}. ";
+            
+            if (addedRoles.Contains("Student"))
+            {
+                message += "Mozesz teraz rezerwowac stanowiska laboratoryjne. ";
+            }
+            if (addedRoles.Contains("Nauczyciel"))
+            {
+                message += "Mozesz teraz rezerwowac sale i stanowiska laboratoryjne. ";
+            }
+            if (addedRoles.Contains("Opiekun"))
+            {
+                message += "Mozesz teraz zarzadzac przypisanymi salami laboratoryjnymi. ";
+            }
+            if (addedRoles.Contains("Admin"))
+            {
+                message += "Masz teraz pelne uprawnienia administratora systemu. ";
+            }
+            
+            if (removedRoles.Any() && !newRoles.Any(r => r != "Uzytkownik"))
+            {
+                message += "Twoje konto wymaga ponownej aktywacji do korzystania z funkcji rezerwacji. ";
+            }
+            
+            message += "Jesli dalej masz problemy z uprawnieniami, odswiez strone. W razie dalszych problemow skontaktuj sie ze wsparciem.";
+            
+            return message;
         }
 
 

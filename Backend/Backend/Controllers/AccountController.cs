@@ -57,9 +57,11 @@ namespace Backend.Controllers
                 authClaims.Add(new Claim(ClaimTypes.Role, role));
             }
 
+            // Każdy użytkownik powinien mieć przynajmniej rolę "Uzytkownik"
+            // Jeśli nie ma ról, oznacza to błąd systemu
             if (!roles.Any())
             {
-                authClaims.Add(new Claim(ClaimTypes.Role, "Niezatwierdzony"));
+                throw new InvalidOperationException("Użytkownik nie ma przypisanych ról");
             }
 
             var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
@@ -99,11 +101,11 @@ namespace Backend.Controllers
             var result = await _userManager.CreateAsync(user, dto.Password);
             if (result.Succeeded)
             {
-                await _userManager.AddToRoleAsync(user, "Niezatwierdzony");
+                await _userManager.AddToRoleAsync(user, "Uzytkownik");
                 
                 // Log rejestracji nowego użytkownika
                 await _auditService.LogAsync("REJESTRACJA_UZYTKOWNIKA", "User", null, 
-                    $"Email: {dto.Email}, Imie: {dto.Imie}, Nazwisko: {dto.Nazwisko}, Rola: Niezatwierdzony");
+                    $"Email: {dto.Email}, Imie: {dto.Imie}, Nazwisko: {dto.Nazwisko}, Rola: Uzytkownik");
             }
 
             if (!result.Succeeded)
@@ -417,20 +419,25 @@ public async Task<IActionResult> Me()
             // Policz użytkowników według ról
             var adminCount = 0;
             var opiekunCount = 0;
-            var regularCount = 0;
-            var unconfirmedCount = 0;
+            var nauczycielCount = 0;
+            var studentCount = 0;
+            var unconfirmedCount = 0; // Tylko rola "Uzytkownik" bez ról biznesowych
 
             foreach (var user in users)
             {
                 var roles = await _userManager.GetRolesAsync(user);
+                
+                // Priorytet: Admin > Opiekun > Nauczyciel > Student > Niezatwierdzony
                 if (roles.Contains("Admin"))
                     adminCount++;
                 else if (roles.Contains("Opiekun"))
                     opiekunCount++;
-                else if (roles.Contains("Niezatwierdzony"))
-                    unconfirmedCount++;
-                else // Other confirmed roles (User, etc.)
-                    regularCount++;
+                else if (roles.Contains("Nauczyciel"))
+                    nauczycielCount++;
+                else if (roles.Contains("Student"))
+                    studentCount++;
+                else if (roles.Contains("Uzytkownik") && roles.Count == 1)
+                    unconfirmedCount++; // Tylko podstawowa rola = niezatwierdzony
             }
 
             return Ok(new
@@ -438,7 +445,8 @@ public async Task<IActionResult> Me()
                 TotalUsers = users.Count,
                 AdminUsers = adminCount,
                 OpiekunUsers = opiekunCount,
-                RegularUsers = regularCount,
+                NauczycielUsers = nauczycielCount,
+                StudentUsers = studentCount,
                 UnconfirmedUsers = unconfirmedCount
             });
         }
@@ -456,8 +464,8 @@ public async Task<IActionResult> Me()
                 foreach (var user in users)
                 {
                     var roles = await _userManager.GetRolesAsync(user);
-                    // Policz wszystkich z wyjątkiem niezatwierdzonych
-                    if (!roles.Contains("Niezatwierdzony"))
+                    // Policz tylko użytkowników z rolami biznesowymi (nie tylko "Uzytkownik")
+                    if (roles.Any(r => r != "Uzytkownik"))
                     {
                         confirmedUsers++;
                     }
