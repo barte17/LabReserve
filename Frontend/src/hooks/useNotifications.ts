@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSignalR } from './useSignalR';
 import { notificationService } from '../services/notificationService';
 import type { NotificationData } from '../types/notification';
+import { useAuth } from '../contexts/AuthContext';
 
 export const useNotifications = () => {
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
@@ -9,6 +10,7 @@ export const useNotifications = () => {
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const { connection, isConnected } = useSignalR();
+  const { user, isLogged } = useAuth();
 
   // Pobierz powiadomienia z API
   const fetchNotifications = useCallback(async (strona = 1, rozmiar = 20, append = false) => {
@@ -162,12 +164,23 @@ export const useNotifications = () => {
     };
   }, [connection, isConnected]);
 
+  // Reset stanu przy zmianie użytkownika (wylogowanie/logowanie)
+  useEffect(() => {
+    if (!isLogged || !user) {
+      // Wyczyść stan powiadomień gdy użytkownik się wylogowuje
+      setNotifications([]);
+      setUnreadCount(0);
+      setInitialized(false);
+      setLoading(false);
+    }
+  }, [user?.id, isLogged]); // Reaguj na zmianę ID użytkownika lub stanu logowania
+
   // Początkowe załadowanie danych
   useEffect(() => {
-    if (isConnected && !initialized) {
+    if (isConnected && !initialized && isLogged) {
       fetchNotifications(1, 20); // Automatycznie załaduj powiadomienia przy połączeniu
     }
-  }, [isConnected, initialized, fetchNotifications]);
+  }, [isConnected, initialized, fetchNotifications, isLogged]);
 
   return {
     notifications,

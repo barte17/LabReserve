@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchMyReservations } from '../../../../services/rezerwacjaService';
 import { fetchStanowiskoById } from '../../../../services/stanowiskoService';
+import { useAuth } from '../../../../contexts/AuthContext';
+import UnauthorizedMessage from '../../../UnauthorizedMessage';
 
 interface Rezerwacja {
   id: number;
@@ -25,6 +27,7 @@ export default function RezerwujSale() {
   const navigate = useNavigate();
   const [ostatnieRezerwacje, setOstatnieRezerwacje] = useState<Rezerwacja[]>([]);
   const [loading, setLoading] = useState(true);
+  const { canReserveSale, canReserveStanowiska, hasBusinessRole } = useAuth();
 
   useEffect(() => {
     loadOstatnieRezerwacje();

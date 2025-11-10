@@ -12,6 +12,7 @@ interface NotificationListProps {
   externalMarkAsRead?: (id: number) => Promise<boolean>;
   externalMarkAsReadOnHover?: (id: number) => Promise<boolean>;
   externalDeleteNotification?: (id: number) => Promise<boolean>;
+  externalFetchNotifications?: (strona?: number, rozmiar?: number, append?: boolean) => Promise<any>;
 }
 
 export const NotificationList: React.FC<NotificationListProps> = ({ 
@@ -21,7 +22,8 @@ export const NotificationList: React.FC<NotificationListProps> = ({
   externalLoading,
   externalMarkAsRead,
   externalMarkAsReadOnHover,
-  externalDeleteNotification
+  externalDeleteNotification,
+  externalFetchNotifications
 }) => {
   const hookData = useNotifications();
   
@@ -29,7 +31,7 @@ export const NotificationList: React.FC<NotificationListProps> = ({
   const notifications = externalNotifications ?? hookData.notifications;
   const loading = externalLoading ?? hookData.loading;
   const initialized = hookData.initialized;
-  const fetchNotifications = hookData.fetchNotifications;
+  const fetchNotifications = externalFetchNotifications ?? hookData.fetchNotifications;
   const markAsRead = externalMarkAsRead ?? hookData.markAsRead;
   const markAsReadOnHover = externalMarkAsReadOnHover ?? hookData.markAsReadOnHover;
   const deleteNotification = externalDeleteNotification ?? hookData.deleteNotification;

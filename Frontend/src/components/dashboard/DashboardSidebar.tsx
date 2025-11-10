@@ -40,7 +40,7 @@ export default function DashboardSidebar({
   onClose,
   stats
 }: DashboardSidebarProps) {
-  const { user, logout } = useAuth();
+  const { user, logout, hasBusinessRole } = useAuth();
   const navigate = useNavigate();
 
   // Konfiguracja menu dla różnych ról
@@ -61,7 +61,7 @@ export default function DashboardSidebar({
     ],
     user: [
       { id: 'dashboard', label: 'Dashboard', icon: '📊', description: 'Przegląd aktywności' },
-      { id: 'rezerwuj', label: 'Rezerwuj salę', icon: '📅', description: 'Nowa rezerwacja' },
+      ...(hasBusinessRole() ? [{ id: 'rezerwuj', label: 'Rezerwuj salę', icon: '📅', description: 'Nowa rezerwacja' }] : []),
       { id: 'moje-rezerwacje', label: 'Moje rezerwacje', icon: '📋', description: 'Historia rezerwacji' },
       { id: 'powiadomienia', label: 'Moje powiadomienia', icon: '🔔', description: 'Powiadomienia systemowe' },
       { id: 'profil', label: 'Profil', icon: '👤', description: 'Ustawienia konta' }

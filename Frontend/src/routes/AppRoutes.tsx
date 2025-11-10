@@ -13,6 +13,7 @@ import { AdminRoute } from "../routes/AdminRoute";
 import { PageErrorBoundary } from "../components/ErrorBoundary";
 import UserDashboard from "../components/dashboard/UserDashboard";
 import ProtectedRoute from "../routes/ProtectedRoute";
+import { BusinessRoleRoute } from "../routes/BusinessRoleRoute";
 
 export function AppRoutes() {
   return (
@@ -50,9 +51,11 @@ export function AppRoutes() {
       } />
       
       <Route path="/reservation" element={
-        <PageErrorBoundary fallbackPath="/" fallbackText="Strona główna">
-          <ReservationPage />
-        </PageErrorBoundary>
+        <BusinessRoleRoute type="business_roles">
+          <PageErrorBoundary fallbackPath="/" fallbackText="Strona główna">
+            <ReservationPage />
+          </PageErrorBoundary>
+        </BusinessRoleRoute>
       } />
       
 

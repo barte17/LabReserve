@@ -5,6 +5,8 @@ import type { AvailableDayDto } from '../services/rezerwacjaService';
 import { getUserFromToken } from '../services/authService';
 import { FormErrorBoundary } from '../components/ErrorBoundary';
 import { useRealtimeCalendar } from '../hooks/useRealtimeCalendar';
+import { useAuth } from '../contexts/AuthContext';
+import UnauthorizedMessage from '../components/UnauthorizedMessage';
 
 interface AvailableHour {
   godzina: string;
@@ -31,12 +33,14 @@ interface CalendarDay {
 export default function ReservationPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { canReserveSale, canReserveStanowiska } = useAuth();
   
   const salaId = searchParams.get('salaId') ? parseInt(searchParams.get('salaId')!) : undefined;
   const stanowiskoId = searchParams.get('stanowiskoId') ? parseInt(searchParams.get('stanowiskoId')!) : undefined;
   const resourceName = searchParams.get('name') || '';
   
   const [isLogged, setIsLogged] = useState(false);
+  const [permissionError, setPermissionError] = useState<string | null>(null);
   
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
@@ -75,7 +79,23 @@ export default function ReservationPage() {
       navigate('/login');
       return;
     }
-  }, [salaId, stanowiskoId, navigate]);
+    
+    // Sprawdź uprawnienia do konkretnego typu rezerwacji
+    if (salaId && !canReserveSale()) {
+      // Student próbuje zarezerwować salę
+      setPermissionError("Nie masz uprawnień do rezerwacji sal. Tylko nauczyciele, opiekunowie i administratorzy mogą rezerwować sale.");
+      return;
+    }
+    
+    if (stanowiskoId && !canReserveStanowiska()) {
+      // Użytkownik bez ról biznesowych próbuje zarezerwować stanowisko
+      setPermissionError("Nie masz uprawnień do rezerwacji stanowisk. Skontaktuj się z administratorem aby aktywować swoje konto.");
+      return;
+    }
+    
+    // Jeśli dotarliśmy tutaj, użytkownik ma uprawnienia
+    setPermissionError(null);
+  }, [salaId, stanowiskoId, navigate, canReserveSale, canReserveStanowiska]);
 
   useEffect(() => {
     if (selectedDate) {
@@ -443,6 +463,39 @@ export default function ReservationPage() {
     onAvailabilityChanged: handleAvailabilityChanged,
     onConnectionStateChanged: handleConnectionStateChanged
   });
+
+  // Jeśli użytkownik nie ma uprawnień, pokaż komunikat
+  if (permissionError) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8 flex items-center justify-center">
+        <div className="max-w-md mx-auto px-4">
+          <div className="bg-white rounded-lg shadow-md p-6 text-center">
+            <div className="mb-4">
+              <svg className="w-16 h-16 mx-auto text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 0h12a2 2 0 002-2v-4a2 2 0 00-2-2H6a2 2 0 00-2 2v4a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h1 className="text-xl font-bold text-gray-900 mb-4">Brak uprawnień</h1>
+            <p className="text-gray-600 mb-6">{permissionError}</p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => window.history.back()}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+              >
+                ← Wstecz
+              </button>
+              <button
+                onClick={() => navigate('/')}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                🏠 Strona główna
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">

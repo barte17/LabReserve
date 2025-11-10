@@ -68,15 +68,6 @@ export default function MojePowiadomienia() {
               </span>
             </div>
             
-            {/* Licznik nieprzeczytanych */}
-            {unreadCount > 0 && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Nieprzeczytane:</span>
-                <span className="bg-red-100 text-red-800 text-sm font-medium px-2.5 py-0.5 rounded-full">
-                  {unreadCount}
-                </span>
-              </div>
-            )}
           </div>
         </div>
 
@@ -108,6 +99,7 @@ export default function MojePowiadomienia() {
           externalMarkAsRead={markAsRead}
           externalMarkAsReadOnHover={markAsReadOnHover}
           externalDeleteNotification={deleteNotification}
+          externalFetchNotifications={fetchNotifications}
         />
       </div>
     </div>

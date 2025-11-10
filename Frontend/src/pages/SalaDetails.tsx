@@ -4,6 +4,8 @@ import { fetchSalaById } from "../services/salaService";
 import ImageGallery from "../components/ImageGallery";
 import { LoadingCard } from "../components/LoadingStates";
 import { useMinimumLoadingDelay } from "../hooks/useMinimumLoadingDelay";
+import { useAuth } from "../contexts/AuthContext";
+import UnauthorizedMessage from "../components/UnauthorizedMessage";
 
 type SalaDetails = {
   id: number;
@@ -32,6 +34,7 @@ export default function SalaDetails() {
   const [sala, setSala] = useState<SalaDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { canReserveSale } = useAuth();
 
   useEffect(() => {
     if (!id) {
@@ -222,15 +225,24 @@ export default function SalaDetails() {
             {/* Akcje */}
             <div className="card border-primary-200 bg-gradient-to-br from-primary-50 to-white mt-auto">
               <div className="card-body p-0">
-                <button 
-                  onClick={() => navigate(`/reservation?salaId=${sala.id}&name=Sala ${sala.numer} (${sala.budynek})`)}
-                  className="btn btn-primary w-full py-6 px-6 text-base font-semibold transform hover:scale-105 transition-all duration-200 focus:outline-none border border-red-600/20 hover:border-red-500/30"
-                >
-                  <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  Zarezerwuj
-                </button>
+                {canReserveSale() ? (
+                  <button 
+                    onClick={() => navigate(`/reservation?salaId=${sala.id}&name=Sala ${sala.numer} (${sala.budynek})`)}
+                    className="btn btn-primary w-full py-6 px-6 text-base font-semibold transform hover:scale-105 transition-all duration-200 focus:outline-none border border-red-600/20 hover:border-red-500/30"
+                  >
+                    <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Zarezerwuj
+                  </button>
+                ) : (
+                  <div className="btn btn-secondary w-full py-6 px-6 text-base font-semibold cursor-not-allowed opacity-60 border border-gray-300">
+                    <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 0h12a2 2 0 002-2v-4a2 2 0 00-2-2H6a2 2 0 00-2 2v4a2 2 0 002 2z" />
+                    </svg>
+                    Brak uprawnień do rezerwacji
+                  </div>
+                )}
               </div>
             </div>
           </div>
