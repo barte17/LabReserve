@@ -18,19 +18,22 @@ namespace Backend.Controllers
         private readonly IRealTimePowiadomieniaService _realTimeService;
         private readonly IAuditService _auditService;
         private readonly IRealtimeAvailabilityService _realtimeAvailabilityService;
+        private readonly IEmailService _emailService;
 
         public RezerwacjaController(
             AppDbContext context,
             IPowiadomieniaService powiadomieniaService,
             IRealTimePowiadomieniaService realTimeService,
             IAuditService auditService,
-            IRealtimeAvailabilityService realtimeAvailabilityService)
+            IRealtimeAvailabilityService realtimeAvailabilityService,
+            IEmailService emailService)
         {
             _context = context;
             _powiadomieniaService = powiadomieniaService;
             _realTimeService = realTimeService;
             _auditService = auditService;
             _realtimeAvailabilityService = realtimeAvailabilityService;
+            _emailService = emailService;
         }
 
         [HttpGet]
@@ -1077,6 +1080,53 @@ namespace Backend.Controllers
 
                         Console.WriteLine($"[DEBUG] Wysyłam powiadomienie do opiekuna {opiekunId}");
                         Console.WriteLine($"[DEBUG] Tytuł: {tytul}");
+
+                        // Sprawdź preferencje email opiekuna
+                        var userPreferencesService = HttpContext.RequestServices.GetRequiredService<IUserPreferencesService>();
+                        var shouldSendEmail = await userPreferencesService.ShouldSendEmailNotificationAsync(opiekunId, "NewReservations");
+                        
+                        if (shouldSendEmail)
+                        {
+                            Console.WriteLine($"[DEBUG] Wysyłam email do opiekuna {opiekunId}");
+                            
+                            // Pobierz dane opiekuna do wysłania emaila
+                            var opiekun = await _context.Users
+                                .Where(u => u.Id == opiekunId)
+                                .Select(u => new { u.Email, u.Imie, u.Nazwisko })
+                                .FirstOrDefaultAsync();
+                            
+                            if (opiekun != null && !string.IsNullOrEmpty(opiekun.Email))
+                            {
+                                try
+                                {
+                                    var emailSent = await _emailService.SendReservationNotificationEmailAsync(
+                                        opiekun.Email,
+                                        $"{opiekun.Imie} {opiekun.Nazwisko}",
+                                        $"{uzytkownik.Imie} {uzytkownik.Nazwisko}",
+                                        uzytkownik.Email,
+                                        lokalizacja,
+                                        rezerwacja.DataStart,
+                                        rezerwacja.DataKoniec,
+                                        rezerwacja.Opis
+                                    );
+                                    
+                                    Console.WriteLine($"[DEBUG] Email wysłany: {emailSent}");
+                                }
+                                catch (Exception emailEx)
+                                {
+                                    Console.WriteLine($"[ERROR] Błąd wysyłania emaila: {emailEx.Message}");
+                                    // Kontynuuj - nie blokuj procesu z powodu błędu emaila
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine($"[DEBUG] Brak emaila opiekuna lub opiekun nie istnieje");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine($"[DEBUG] Opiekun ma wyłączone powiadomienia email");
+                        }
                         
                         var wynik = await _powiadomieniaService.WyslijPowiadomienieAsync(
                             opiekunId,

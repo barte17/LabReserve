@@ -109,6 +109,11 @@ builder.Services.AddScoped<Backend.Services.IRealTimePowiadomieniaService, Backe
 // Register User Preferences Service
 builder.Services.AddScoped<Backend.Services.IUserPreferencesService, Backend.Services.UserPreferencesService>();
 
+// Register Email Service
+builder.Services.Configure<Backend.Services.AzureEmailServiceOptions>(
+    builder.Configuration.GetSection(Backend.Services.AzureEmailServiceOptions.SectionName));
+builder.Services.AddScoped<Backend.Services.IEmailService, Backend.Services.AzureEmailService>();
+
 // Register Audit Service
 builder.Services.AddScoped<Backend.Services.IAuditService, Backend.Services.AuditService>();
 

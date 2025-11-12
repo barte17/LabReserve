@@ -81,7 +81,7 @@ namespace Backend.Services
                 return notificationType.ToLower() switch
                 {
                     "statuschange" => preferences.EmailNotifications.StatusChange,
-                    "newreservation" => preferences.EmailNotifications.NewReservations,
+                    "newreservations" => preferences.EmailNotifications.NewReservations,
                     _ => false
                 };
             }

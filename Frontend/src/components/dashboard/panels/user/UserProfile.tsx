@@ -421,7 +421,7 @@ export default function UserProfile() {
                   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="flex-1">
                       <p className="text-base font-medium text-gray-900 mb-1">Nowe rezerwacje sal</p>
-                      <p className="text-sm text-gray-600">Otrzymuj email o nowych rezerwacjach Twoich sal i stanowisk</p>
+                      <p className="text-sm text-gray-600">Otrzymuj email o nowych rezerwacjach Twoich sal</p>
                     </div>
                     <input
                       type="checkbox"
