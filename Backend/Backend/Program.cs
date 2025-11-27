@@ -199,7 +199,6 @@ using (var scope = app.Services.CreateScope())
     var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
     await IdentitySeedData.SeedRolesAndUsers(roleManager, userManager);
 
-    SeedData.Seed(db);
 }
 
 app.Run();

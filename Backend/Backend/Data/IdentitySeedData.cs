@@ -7,7 +7,7 @@ namespace Backend.Data
     {
         public static async Task SeedRolesAndUsers(RoleManager<IdentityRole> roleManager, UserManager<ApplicationUser> userManager)
         {
-            // === ROLE ===
+            // === ROLE W SYSTEMIE ===
             string[] roleNames = { "Student", "Nauczyciel", "Admin", "Opiekun", "Uzytkownik" };
 
             foreach (var role in roleNames)
@@ -16,7 +16,7 @@ namespace Backend.Data
                     await roleManager.CreateAsync(new IdentityRole(role));
             }
 
-            // === UŻYTKOWNIK ADMIN ===
+            // === UŻYTKOWNIK ADMIN DO TESTOWANIA APLIKACJI ===
             var adminEmail = "admin@uczelnia.pl";
             var admin = await userManager.FindByEmailAsync(adminEmail);
             if (admin == null)
@@ -31,8 +31,8 @@ namespace Backend.Data
                     Nazwisko = "Admin"
                 };
 
-                await userManager.CreateAsync(admin, "Haslo!23"); // hasło tymczasowe
-                await userManager.AddToRoleAsync(admin, "Uzytkownik"); // Podstawowa rola techniczna
+                await userManager.CreateAsync(admin, "Haslo!23"); 
+                await userManager.AddToRoleAsync(admin, "Uzytkownik"); 
                 await userManager.AddToRoleAsync(admin, "Admin");
             }
 
@@ -52,7 +52,7 @@ namespace Backend.Data
                 };
 
                 await userManager.CreateAsync(student, "Haslo!23");
-                await userManager.AddToRoleAsync(student, "Uzytkownik"); // Podstawowa rola techniczna
+                await userManager.AddToRoleAsync(student, "Uzytkownik"); 
                 await userManager.AddToRoleAsync(student, "Student");
             }
 
@@ -72,7 +72,7 @@ namespace Backend.Data
                 };
 
                 await userManager.CreateAsync(teacher, "Haslo!23");
-                await userManager.AddToRoleAsync(teacher, "Uzytkownik"); // Podstawowa rola techniczna
+                await userManager.AddToRoleAsync(teacher, "Uzytkownik"); 
                 await userManager.AddToRoleAsync(teacher, "Nauczyciel");
             }
 
@@ -92,7 +92,7 @@ namespace Backend.Data
                 };
 
                 await userManager.CreateAsync(opiekun, "Haslo!23");
-                await userManager.AddToRoleAsync(opiekun, "Uzytkownik"); // Podstawowa rola techniczna
+                await userManager.AddToRoleAsync(opiekun, "Uzytkownik"); 
                 await userManager.AddToRoleAsync(opiekun, "Opiekun");
                 await userManager.AddToRoleAsync(opiekun, "Nauczyciel");
             }
