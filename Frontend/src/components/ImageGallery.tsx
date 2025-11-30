@@ -21,6 +21,11 @@ export default function ImageGallery({ zdjecia, altText = "Zdjęcie" }: ImageGal
             src="/placeholder-image.png" 
             alt="Brak zdjęć" 
             className="mx-auto h-16 w-16 opacity-40 mb-4"
+            style={{ 
+              imageRendering: '-webkit-optimize-contrast',
+              WebkitImageRendering: '-webkit-optimize-contrast',
+              msInterpolationMode: 'bicubic'
+            } as React.CSSProperties}
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.style.display = 'none';
@@ -78,6 +83,13 @@ export default function ImageGallery({ zdjecia, altText = "Zdjęcie" }: ImageGal
           src={currentImage.url}
           alt={`${altText} ${currentImageIndex + 1}`}
           className="max-w-full max-h-full object-contain transition-all duration-500 ease-out"
+          style={{ 
+            imageRendering: '-webkit-optimize-contrast',
+            transform: 'translateZ(0)',
+            backfaceVisibility: 'hidden',
+            WebkitImageRendering: '-webkit-optimize-contrast',
+            msInterpolationMode: 'bicubic'
+          } as React.CSSProperties}
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTQgMTZsNC41ODYtNC41ODZhMiAyIDAgMDEyLjgyOCAwTDE2IDE2bS0yLTJsMS41ODYtMS41ODZhMiAyIDAgMDEyLjgyOCAwTDIwIDE0bS02LTZoLjAxTTYgMjBoMTJhMiAyIDAgMDAyLTJWNmEyIDIgMCAwMC0yLTJINmEyIDIgMCAwMC0yIDJ2MTJhMiAyIDAgMDAyIDJ6IiBzdHJva2U9IiM5Q0E3QjciIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPgo=';

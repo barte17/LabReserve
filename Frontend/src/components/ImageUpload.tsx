@@ -249,6 +249,13 @@ export default function ImageUpload({
                     src={imageUrl}
                     alt="Preview"
                     className="w-full h-full object-cover"
+                    style={{ 
+                      imageRendering: '-webkit-optimize-contrast',
+                      transform: 'translateZ(0)',
+                      backfaceVisibility: 'hidden',
+                      WebkitImageRendering: '-webkit-optimize-contrast',
+                      msInterpolationMode: 'bicubic'
+                    } as React.CSSProperties}
                   />
                   
                   {/* Overlay for marked for deletion */}

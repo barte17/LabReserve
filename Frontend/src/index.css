@@ -35,6 +35,7 @@
   h2 { @apply text-2xl lg:text-3xl; }
   h3 { @apply text-xl lg:text-2xl; }
   h4 { @apply text-lg lg:text-xl; }
+
 }
 
 /* ===== KOMPONENTY WIELOKROTNEGO UŻYTKU ===== */

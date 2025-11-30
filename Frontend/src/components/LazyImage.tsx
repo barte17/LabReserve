@@ -71,6 +71,13 @@ export const LazyImage: React.FC<LazyImageProps> = ({
           className={`w-full h-full object-cover transition-opacity duration-300 ${
             isLoaded ? 'opacity-100' : 'opacity-0'
           }`}
+          style={{ 
+            imageRendering: '-webkit-optimize-contrast',
+            transform: 'translateZ(0)',
+            backfaceVisibility: 'hidden',
+            WebkitImageRendering: '-webkit-optimize-contrast',
+            msInterpolationMode: 'bicubic'
+          } as React.CSSProperties}
           onLoad={handleImageLoad}
           onError={handleImageError}
           loading="lazy"

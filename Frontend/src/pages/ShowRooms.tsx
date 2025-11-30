@@ -128,12 +128,12 @@ export default function Sale() {
             <p className="text-gray-500">Spróbuj zmienić kryteria wyszukiwania lub filtry.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredSale.map((sala) => (
-              <div key={sala.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex flex-col">
+              <div key={sala.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex flex-col h-[440px]">
                 
                 {/* Zdjęcie sali */}
-                <div className="h-56 overflow-hidden relative">
+                <div className="h-[244px] overflow-hidden relative">
                   <LazyImage
                     src={sala.pierwszeZdjecie}
                     alt={`Sala ${sala.numer}`}
@@ -163,7 +163,7 @@ export default function Sale() {
 
                 {/* Treść karty */}
                 <div className="p-4 flex flex-col h-full">
-                  <div className="flex justify-between items-start mb-4">
+                  <div className="flex justify-between items-start mb-3">
                     <div>
                       <h3 className="text-xl font-bold text-gray-900 mb-1">
                         Sala {sala.numer}
@@ -215,33 +215,35 @@ export default function Sale() {
                       </div>
                     </div>
 
-                    {/* Opis */}
-                    {sala.opis && (
-                      <div className="mb-2">
+                    {/* Opis - zawsze ta sama przestrzeń */}
+                    <div className="h-16 mb-4">
+                      {sala.opis ? (
                         <p 
                           className="text-gray-700 bg-gray-50 rounded-lg p-2"
                           style={{
                             display: '-webkit-box',
-                            WebkitLineClamp: 4,
+                            WebkitLineClamp: 2,
                             WebkitBoxOrient: 'vertical',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             lineHeight: '1.4',
-                            maxHeight: '6.5em',
+                            maxHeight: '3.2em',
                             fontSize: '14px'
                           }}
                         >
                           {sala.opis}
                         </p>
-                      </div>
-                    )}
+                      ) : (
+                        <div></div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Przyciski - zawsze na dole */}
                   <div className="flex space-x-3 mt-auto">
                     <button 
                       onClick={() => navigate(`/reservation?salaId=${sala.id}&name=Sala ${sala.numer} (${sala.budynek})`)}
-                      className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center"
+                      className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center"
                     >
                       <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -250,7 +252,7 @@ export default function Sale() {
                     </button>
                     <button 
                       onClick={() => navigate(`/sala/${sala.id}`)}
-                      className="px-4 py-3 border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center"
+                      className="px-3 py-2 border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center"
                     >
                       <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
