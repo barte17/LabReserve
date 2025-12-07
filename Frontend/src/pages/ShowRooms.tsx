@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { getRooms } from "../services/api";
 import { LazyImage } from "../components/LazyImage";
 import { SkeletonGrid } from "../components/SkeletonLoading";
+import { useMinimumLoadingDelay } from "../hooks/useMinimumLoadingDelay";
 
 type Sala = {
   id: number;
@@ -10,7 +11,7 @@ type Sala = {
   budynek: string;
   maxOsob: number | null;
   maStanowiska: boolean | null;
-  czynnaOd: string | null; 
+  czynnaOd: string | null;
   czynnaDo: string | null;
   opis: string | null;
   idOpiekuna: string | null;
@@ -26,6 +27,12 @@ export default function Sale() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterBudynek, setFilterBudynek] = useState("");
 
+  // Hook zapobiegający miganiu skeleton loading przy szybkim ładowaniu
+  const shouldShowLoading = useMinimumLoadingDelay(loading, {
+    minimumDelay: 200,      // Pokaż skeleton dopiero po 200ms
+    minimumDuration: 500    // Jeśli już się pojawił, trzymaj minimum 500ms
+  });
+
   useEffect(() => {
     document.title = "Sale - System Rezerwacji";
     getRooms()
@@ -36,17 +43,17 @@ export default function Sale() {
 
   // Filtrowanie sal
   const filteredSale = sale.filter(sala => {
-    const matchesSearch = sala.numer.toString().includes(searchTerm) || 
-                         sala.budynek.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = sala.numer.toString().includes(searchTerm) ||
+      sala.budynek.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesBudynek = filterBudynek === "" || sala.budynek === filterBudynek;
-    
+
     return matchesSearch && matchesBudynek;
   });
 
   // Unikalne budynki do filtra
   const uniqueBudynki = [...new Set(sale.map(sala => sala.budynek))];
 
-  if (loading) {
+  if (shouldShowLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -63,7 +70,7 @@ export default function Sale() {
               </div>
             </div>
           </div>
-          
+
           {/* Skeleton dla kart sal */}
           <SkeletonGrid count={6} type="room" />
         </div>
@@ -74,7 +81,7 @@ export default function Sale() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
+
 
         {/* Filtry */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-8">
@@ -117,7 +124,7 @@ export default function Sale() {
 
 
         {/* Lista sal */}
-        {filteredSale.length === 0 ? (
+        {filteredSale.length === 0 && !loading && !shouldShowLoading ? (
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-12 text-center">
             <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -131,7 +138,7 @@ export default function Sale() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredSale.map((sala) => (
               <div key={sala.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex flex-col h-[440px]">
-                
+
                 {/* Zdjęcie sali */}
                 <div className="h-[244px] overflow-hidden relative">
                   <LazyImage
@@ -150,7 +157,7 @@ export default function Sale() {
                       </div>
                     }
                   />
-                  
+
                   {/* Badge z laboratoriami */}
                   {sala.maStanowiska && (
                     <div className="absolute top-4 right-4">
@@ -187,14 +194,14 @@ export default function Sale() {
                         <span className="font-medium">Pojemność:</span>
                         <span className="ml-2">{sala.maxOsob ? `${sala.maxOsob} osób` : "Nie określono"}</span>
                       </div>
-                      
+
                       <div className="flex items-center text-sm text-gray-600">
                         <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <span className="font-medium">Godziny:</span>
                         <span className="ml-2">
-                          {sala.czynnaOd && sala.czynnaDo 
+                          {sala.czynnaOd && sala.czynnaDo
                             ? `${sala.czynnaOd} - ${sala.czynnaDo}`
                             : "Brak danych"
                           }
@@ -207,7 +214,7 @@ export default function Sale() {
                         </svg>
                         <span className="font-medium">Opiekun:</span>
                         <span className="ml-2">
-                          {sala.imieOpiekuna && sala.nazwiskoOpiekuna 
+                          {sala.imieOpiekuna && sala.nazwiskoOpiekuna
                             ? `${sala.imieOpiekuna} ${sala.nazwiskoOpiekuna}`
                             : "brak"
                           }
@@ -218,7 +225,7 @@ export default function Sale() {
                     {/* Opis - zawsze ta sama przestrzeń */}
                     <div className="h-16 mb-4">
                       {sala.opis ? (
-                        <p 
+                        <p
                           className="text-gray-700 bg-gray-50 rounded-lg p-2"
                           style={{
                             display: '-webkit-box',
@@ -241,7 +248,7 @@ export default function Sale() {
 
                   {/* Przyciski - zawsze na dole */}
                   <div className="flex space-x-3 mt-auto">
-                    <button 
+                    <button
                       onClick={() => navigate(`/reservation?salaId=${sala.id}&name=Sala ${sala.numer} (${sala.budynek})`)}
                       className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center"
                     >
@@ -250,7 +257,7 @@ export default function Sale() {
                       </svg>
                       Zarezerwuj
                     </button>
-                    <button 
+                    <button
                       onClick={() => navigate(`/sala/${sala.id}`)}
                       className="px-3 py-2 border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center"
                     >

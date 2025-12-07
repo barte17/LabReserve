@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { fetchStanowiskoById } from "../services/stanowiskoService";
 import ImageGallery from "../components/ImageGallery";
-import { LoadingCard } from "../components/LoadingStates";
+import { StanowiskoDetailsSkeleton } from "../components/LoadingStates/DetailsSkeleton";
 import { useMinimumLoadingDelay } from "../hooks/useMinimumLoadingDelay";
 import { useAuth } from "../contexts/AuthContext";
 import UnauthorizedMessage from "../components/UnauthorizedMessage";
@@ -40,7 +40,7 @@ export default function StanowiskoDetails() {
     }
 
     document.title = "Szczegóły stanowiska - System Rezerwacji";
-    
+
     fetchStanowiskoById(parseInt(id))
       .then((data) => {
         setStanowisko(data);
@@ -59,11 +59,7 @@ export default function StanowiskoDetails() {
   });
 
   if (shouldShowLoading) {
-    return (
-      <div className="min-h-screen bg-neutral-50 py-8">
-        <LoadingCard count={1} className="max-w-4xl mx-auto" />
-      </div>
-    );
+    return <StanowiskoDetailsSkeleton />;
   }
 
   // Nie pokazuj błędu jeśli nadal trwa ładowanie lub skeleton jest widoczny
@@ -114,8 +110,8 @@ export default function StanowiskoDetails() {
                 </div>
               </div>
               <div className="card-body flex-1">
-                <ImageGallery 
-                  zdjecia={stanowisko.zdjecia || []} 
+                <ImageGallery
+                  zdjecia={stanowisko.zdjecia || []}
                   altText={`Stanowisko ${stanowisko.nazwa}`}
                 />
               </div>
@@ -137,7 +133,7 @@ export default function StanowiskoDetails() {
                   </div>
                   <p className="text-neutral-900 font-semibold text-sm">{stanowisko.nazwa}</p>
                 </div>
-                
+
                 <div className="flex items-center space-x-4">
                   <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
                     <svg className="h-5 w-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -148,7 +144,7 @@ export default function StanowiskoDetails() {
                     Typ: {stanowisko.typ || "Nie określono"}
                   </p>
                 </div>
-                
+
                 <div className="flex items-center space-x-4">
                   <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
                     <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -156,13 +152,13 @@ export default function StanowiskoDetails() {
                     </svg>
                   </div>
                   <p className="text-neutral-900 font-semibold text-sm">
-                    W sali: {stanowisko.sala 
+                    W sali: {stanowisko.sala
                       ? `${stanowisko.sala.numer}${stanowisko.sala.budynek}`
                       : `${stanowisko.salaId}`
                     }
                   </p>
                 </div>
-                
+
                 {stanowisko.sala && stanowisko.sala.czynnaOd && stanowisko.sala.czynnaDo && (
                   <div className="flex items-center space-x-4">
                     <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -175,7 +171,7 @@ export default function StanowiskoDetails() {
                     </p>
                   </div>
                 )}
-                
+
               </div>
             </div>
 
@@ -200,7 +196,7 @@ export default function StanowiskoDetails() {
                         <p className="text-sm text-neutral-600">Budynek {stanowisko.sala.budynek}</p>
                       </div>
                     </div>
-                    <button 
+                    <button
                       onClick={() => navigate(`/sala/${stanowisko.sala!.id}`)}
                       className="w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors duration-200"
                       title="Zobacz szczegóły sali"
@@ -218,7 +214,7 @@ export default function StanowiskoDetails() {
             <div className="card border-primary-200 bg-gradient-to-br from-primary-50 to-white mt-auto">
               <div className="card-body p-0">
                 {canReserveStanowiska() ? (
-                  <button 
+                  <button
                     onClick={() => navigate(`/reservation?stanowiskoId=${stanowisko.id}&name=${stanowisko.nazwa}`)}
                     className="btn btn-primary w-full py-6 px-6 text-base font-semibold transform hover:scale-105 transition-all duration-200 focus:outline-none border border-red-600/20 hover:border-red-500/30"
                   >

@@ -33,6 +33,9 @@ namespace Backend.Migrations
                     Id = table.Column<string>(type: "text", nullable: false),
                     Imie = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     Nazwisko = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    RefreshToken = table.Column<string>(type: "text", nullable: true),
+                    RefreshTokenExpiryTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Preferences = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -51,6 +54,25 @@ namespace Backend.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AuditLogs",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Timestamp = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UserId = table.Column<string>(type: "character varying(450)", maxLength: 450, nullable: false),
+                    UserEmail = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
+                    Action = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    EntityType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    EntityId = table.Column<int>(type: "integer", nullable: true),
+                    Details = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AuditLogs", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -169,8 +191,8 @@ namespace Backend.Migrations
                     Budynek = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
                     MaxOsob = table.Column<int>(type: "integer", nullable: true),
                     MaStanowiska = table.Column<bool>(type: "boolean", nullable: true),
-                    CzynnaOd = table.Column<TimeOnly>(type: "time without time zone", nullable: true),
-                    CzynnaDo = table.Column<TimeOnly>(type: "time without time zone", nullable: true),
+                    CzynnaOd = table.Column<TimeSpan>(type: "interval", nullable: true),
+                    CzynnaDo = table.Column<TimeSpan>(type: "interval", nullable: true),
                     Opis = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     IdOpiekuna = table.Column<string>(type: "text", nullable: true)
                 },
@@ -215,11 +237,11 @@ namespace Backend.Migrations
                     SalaId = table.Column<int>(type: "integer", nullable: true),
                     StanowiskoId = table.Column<int>(type: "integer", nullable: true),
                     UzytkownikId = table.Column<string>(type: "text", nullable: false),
-                    DataStart = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    DataKoniec = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    Opis = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    DataStart = table.Column<DateTime>(type: "timestamp", nullable: false),
+                    DataKoniec = table.Column<DateTime>(type: "timestamp", nullable: false),
+                    Opis = table.Column<string>(type: "character varying(60)", maxLength: 60, nullable: true),
                     Status = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
-                    DataUtworzenia = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    DataUtworzenia = table.Column<DateTime>(type: "timestamp", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -267,6 +289,40 @@ namespace Backend.Migrations
                         principalColumn: "Id");
                 });
 
+            migrationBuilder.CreateTable(
+                name: "Powiadomienia",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UzytkownikId = table.Column<string>(type: "text", nullable: false),
+                    Tytul = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Tresc = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    Typ = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    Priorytet = table.Column<string>(type: "character varying(15)", maxLength: 15, nullable: false),
+                    CzyPrzeczytane = table.Column<bool>(type: "boolean", nullable: false),
+                    DataUtworzenia = table.Column<DateTime>(type: "timestamp", nullable: false),
+                    RezerwacjaId = table.Column<int>(type: "integer", nullable: true),
+                    ActionUrl = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    DataWygasniecia = table.Column<DateTime>(type: "timestamp", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Powiadomienia", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Powiadomienia_AspNetUsers_UzytkownikId",
+                        column: x => x.UzytkownikId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Powiadomienia_Rezerwacje_RezerwacjaId",
+                        column: x => x.RezerwacjaId,
+                        principalTable: "Rezerwacje",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
                 table: "AspNetRoleClaims",
@@ -303,6 +359,21 @@ namespace Backend.Migrations
                 table: "AspNetUsers",
                 column: "NormalizedUserName",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Powiadomienia_DataUtworzenia",
+                table: "Powiadomienia",
+                column: "DataUtworzenia");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Powiadomienia_RezerwacjaId",
+                table: "Powiadomienia",
+                column: "RezerwacjaId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Powiadomienia_UzytkownikId_CzyPrzeczytane",
+                table: "Powiadomienia",
+                columns: new[] { "UzytkownikId", "CzyPrzeczytane" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Rezerwacje_SalaId",
@@ -359,13 +430,19 @@ namespace Backend.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
-                name: "Rezerwacje");
+                name: "AuditLogs");
+
+            migrationBuilder.DropTable(
+                name: "Powiadomienia");
 
             migrationBuilder.DropTable(
                 name: "Zdjecia");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
+
+            migrationBuilder.DropTable(
+                name: "Rezerwacje");
 
             migrationBuilder.DropTable(
                 name: "Stanowiska");

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { fetchSalaById } from "../services/salaService";
 import ImageGallery from "../components/ImageGallery";
-import { LoadingCard } from "../components/LoadingStates";
+import { SalaDetailsSkeleton } from "../components/LoadingStates/DetailsSkeleton";
 import { useMinimumLoadingDelay } from "../hooks/useMinimumLoadingDelay";
 import { useAuth } from "../contexts/AuthContext";
 import UnauthorizedMessage from "../components/UnauthorizedMessage";
@@ -44,7 +44,7 @@ export default function SalaDetails() {
     }
 
     document.title = "Szczegóły sali - System Rezerwacji";
-    
+
     fetchSalaById(parseInt(id))
       .then((data) => {
         setSala(data);
@@ -63,11 +63,7 @@ export default function SalaDetails() {
   });
 
   if (shouldShowLoading) {
-    return (
-      <div className="min-h-screen bg-neutral-50 py-8">
-        <LoadingCard count={1} className="max-w-4xl mx-auto" />
-      </div>
-    );
+    return <SalaDetailsSkeleton />;
   }
 
   // Nie pokazuj błędu jeśli nadal trwa ładowanie lub skeleton jest widoczny
@@ -118,8 +114,8 @@ export default function SalaDetails() {
                 </div>
               </div>
               <div className="card-body flex-1">
-                <ImageGallery 
-                  zdjecia={sala.zdjecia || []} 
+                <ImageGallery
+                  zdjecia={sala.zdjecia || []}
                   altText={`Sala ${sala.numer} w budynku ${sala.budynek}`}
                 />
               </div>
@@ -141,7 +137,7 @@ export default function SalaDetails() {
                   </div>
                   <p className="text-neutral-900 font-semibold text-sm">Numer sali: {sala.numer}</p>
                 </div>
-                
+
                 <div className="flex items-center space-x-4">
                   <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
                     <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -150,7 +146,7 @@ export default function SalaDetails() {
                   </div>
                   <p className="text-neutral-900 font-semibold text-sm">Budynek: {sala.budynek}</p>
                 </div>
-                
+
                 <div className="flex items-center space-x-4">
                   <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
                     <svg className="h-5 w-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -165,7 +161,7 @@ export default function SalaDetails() {
                     Maks. osób: {sala.maxOsob ? sala.maxOsob : "Nie podano"}
                   </p>
                 </div>
-                
+
                 <div className="flex items-center space-x-4">
                   <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
                     <svg className="h-5 w-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -176,7 +172,7 @@ export default function SalaDetails() {
                     Stanowiska: {sala.maStanowiska ? "Tak" : "Nie"}
                   </p>
                 </div>
-                
+
                 {sala.czynnaOd && sala.czynnaDo && (
                   <div className="flex items-center space-x-4">
                     <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -226,7 +222,7 @@ export default function SalaDetails() {
             <div className="card border-primary-200 bg-gradient-to-br from-primary-50 to-white mt-auto">
               <div className="card-body p-0">
                 {canReserveSale() ? (
-                  <button 
+                  <button
                     onClick={() => navigate(`/reservation?salaId=${sala.id}&name=Sala ${sala.numer} (${sala.budynek})`)}
                     className="btn btn-primary w-full py-6 px-6 text-base font-semibold transform hover:scale-105 transition-all duration-200 focus:outline-none border border-red-600/20 hover:border-red-500/30"
                   >

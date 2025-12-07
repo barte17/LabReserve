@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { getStations } from "../services/api";
 import { LazyImage } from "../components/LazyImage";
 import { SkeletonGrid } from "../components/SkeletonLoading";
+import { useMinimumLoadingDelay } from "../hooks/useMinimumLoadingDelay";
 
 type Stanowisko = {
   id: number;
@@ -22,6 +23,12 @@ export default function Stanowiska() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterTyp, setFilterTyp] = useState("");
 
+  // Hook zapobiegający miganiu skeleton loading przy szybkim ładowaniu
+  const shouldShowLoading = useMinimumLoadingDelay(loading, {
+    minimumDelay: 200,      // Pokaż skeleton dopiero po 200ms
+    minimumDuration: 500    // Jeśli już się pojawił, trzymaj minimum 500ms
+  });
+
   useEffect(() => {
     document.title = "Stanowiska - System Rezerwacji";
     getStations()
@@ -33,16 +40,16 @@ export default function Stanowiska() {
   // Filtrowanie stanowisk
   const filteredStanowiska = stanowiska.filter(stanowisko => {
     const matchesSearch = stanowisko.nazwa.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         stanowisko.id.toString().includes(searchTerm);
+      stanowisko.id.toString().includes(searchTerm);
     const matchesTyp = filterTyp === "" || stanowisko.typ === filterTyp;
-    
+
     return matchesSearch && matchesTyp;
   });
 
   // Unikalne typy do filtra
   const uniqueTypy = [...new Set(stanowiska.map(s => s.typ).filter(Boolean))];
 
-  if (loading) {
+  if (shouldShowLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -59,7 +66,7 @@ export default function Stanowiska() {
               </div>
             </div>
           </div>
-          
+
           {/* Skeleton dla kart stanowisk */}
           <SkeletonGrid count={6} type="station" />
         </div>
@@ -70,7 +77,7 @@ export default function Stanowiska() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
+
 
         {/* Filtry */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-8">
@@ -104,7 +111,7 @@ export default function Stanowiska() {
               >
                 <option value="">Wszystkie typy</option>
                 {uniqueTypy.map(typ => (
-                  <option key={typ} value={typ}>{typ}</option>
+                  <option key={typ} value={typ || ""}>{typ}</option>
                 ))}
               </select>
             </div>
@@ -113,7 +120,7 @@ export default function Stanowiska() {
 
 
         {/* Lista stanowisk */}
-        {filteredStanowiska.length === 0 ? (
+        {filteredStanowiska.length === 0 && !loading && !shouldShowLoading ? (
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-12 text-center">
             <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -127,7 +134,7 @@ export default function Stanowiska() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredStanowiska.map((stanowisko) => (
               <div key={stanowisko.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex flex-col h-[440px]">
-                
+
                 {/* Zdjęcie stanowiska */}
                 <div className="h-[244px] overflow-hidden relative">
                   <LazyImage
@@ -146,7 +153,7 @@ export default function Stanowiska() {
                       </div>
                     }
                   />
-                  
+
                   {/* Badge z typem */}
                   {stanowisko.typ && (
                     <div className="absolute top-4 right-4">
@@ -183,7 +190,7 @@ export default function Stanowiska() {
                         <span className="font-medium">Typ:</span>
                         <span className="ml-2">{stanowisko.typ || "Ogólne"}</span>
                       </div>
-                      
+
                       <div className="flex items-center text-sm text-gray-600">
                         <svg className="w-4 h-4 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
@@ -205,7 +212,7 @@ export default function Stanowiska() {
                     {/* Opis - zawsze ta sama przestrzeń */}
                     <div className="h-16 mb-4">
                       {stanowisko.opis ? (
-                        <p 
+                        <p
                           className="text-gray-700 bg-gray-50 rounded-lg p-2"
                           style={{
                             display: '-webkit-box',
@@ -228,7 +235,7 @@ export default function Stanowiska() {
 
                   {/* Przyciski - zawsze na dole */}
                   <div className="flex space-x-3 mt-auto">
-                    <button 
+                    <button
                       onClick={() => navigate(`/reservation?stanowiskoId=${stanowisko.id}&name=${stanowisko.nazwa}`)}
                       className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center"
                     >
@@ -237,7 +244,7 @@ export default function Stanowiska() {
                       </svg>
                       Zarezerwuj
                     </button>
-                    <button 
+                    <button
                       onClick={() => navigate(`/stanowisko/${stanowisko.id}`)}
                       className="px-3 py-2 border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center"
                     >

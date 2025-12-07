@@ -27,7 +27,7 @@ export interface ApiError {
 export class ApiErrorHandler {
   private static logError(error: ApiError) {
     console.error('API Error:', error);
-    
+
     // Logowanie do localStorage dla debugowania
     try {
       const existingLogs = JSON.parse(localStorage.getItem('apiErrorLogs') || '[]');
@@ -98,7 +98,7 @@ export class ApiErrorHandler {
       const apiError = new Error(error.message) as Error & { status?: number; shouldRetry?: boolean };
       apiError.status = response.status;
       apiError.shouldRetry = this.shouldRetry(response.status);
-      
+
       throw apiError;
     }
 
@@ -118,7 +118,7 @@ export class ApiErrorHandler {
 
     const networkError = new Error(apiError.message) as Error & { shouldRetry?: boolean };
     networkError.shouldRetry = true;
-    
+
     throw networkError;
   }
 
@@ -143,7 +143,7 @@ export class ApiErrorHandler {
         // Exponential backoff
         const waitTime = delay * Math.pow(2, attempt - 1);
         console.log(`API request failed, retrying in ${waitTime}ms (attempt ${attempt}/${maxRetries})`);
-        
+
         await new Promise(resolve => setTimeout(resolve, waitTime));
       }
     }
@@ -153,14 +153,14 @@ export class ApiErrorHandler {
 }
 
 export async function apiRequest(
-  url: string, 
+  url: string,
   options: RequestInit = {},
   customErrorMessage?: string
 ): Promise<Response> {
   try {
     // Użyj authenticatedFetch z authService (używa in-memory tokens + refresh)
     const { authenticatedFetch } = await import('./authService');
-    
+
     const response = await authenticatedFetch(url, {
       ...options,
       headers: {
@@ -187,4 +187,29 @@ export async function apiRequestWithRetry<T>(
     const response = await requestFn();
     return response.json();
   }, maxRetries);
+}
+
+// Public API request - for endpoints that don't require authentication
+export async function publicApiRequest(
+  url: string,
+  options: RequestInit = {},
+  customErrorMessage?: string
+): Promise<Response> {
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+
+    return await ApiErrorHandler.handleResponse(response, customErrorMessage);
+  } catch (error) {
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      // Network error
+      await ApiErrorHandler.handleNetworkError(error, url);
+    }
+    throw error;
+  }
 }
