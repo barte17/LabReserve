@@ -1,4 +1,4 @@
-using Backend.Data;
+ï»¿using Backend.Data;
 using Backend.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -42,7 +42,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = false; // Dla developmentu - pozwól na HTTP
+    options.RequireHttpsMetadata = false; // Dla developmentu - pozwï¿½l na HTTP
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -134,6 +134,14 @@ builder.Services.Configure<IpRateLimitOptions>(options =>
     options.RealIpHeader = "X-Real-IP";
     options.GeneralRules = new List<RateLimitRule>
     {
+        // Globalny limit dla wszystkich endpointÃ³w
+        new RateLimitRule
+        {
+            Endpoint = "*",
+            Period = "1m",
+            Limit = 100 // 100 zapytaÅ„ na minutÄ™ per IP
+        },
+        // Specyficzne limity dla logowania (bardziej restrykcyjne)
         new RateLimitRule
         {
             Endpoint = "POST:/api/account/login",
@@ -159,6 +167,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+// Global Exception Handling Middleware - musi byï¿½ na poczï¿½tku pipeline
+app.UseMiddleware<Backend.Middleware.ExceptionMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -187,14 +198,14 @@ app.MapHub<Backend.Hubs.PowiadomieniaHub>("/notificationHub");
 
 
 
-//Utworzenie przyk³adowych danych, jeœli baza jest pusta z klasy SeedData
+//Utworzenie przykï¿½adowych danych, jeï¿½li baza jest pusta z klasy SeedData
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
 
-    // Seed ról i u¿ytkowników
+    // Seed rï¿½l i uï¿½ytkownikï¿½w
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
     await IdentitySeedData.SeedRolesAndUsers(roleManager, userManager);

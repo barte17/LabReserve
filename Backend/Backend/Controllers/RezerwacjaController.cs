@@ -250,125 +250,118 @@ namespace Backend.Controllers
         [Authorize]
         public async Task<ActionResult<IEnumerable<AvailableDayDto>>> GetAvailableDays([FromQuery] MonthAvailabilityDto dto)
         {
-            try
+            if ((dto.SalaId == null && dto.StanowiskoId == null) || 
+                (dto.SalaId != null && dto.StanowiskoId != null))
             {
-                if ((dto.SalaId == null && dto.StanowiskoId == null) || 
-                    (dto.SalaId != null && dto.StanowiskoId != null))
-                {
-                    return BadRequest("Należy podać albo SalaId albo StanowiskoId, ale nie oba.");
-                }
+                return BadRequest("Należy podać albo SalaId albo StanowiskoId, ale nie oba.");
+            }
 
-                // Walidacja parametrów
-                if (dto.Year < 2020 || dto.Year > 2030 || dto.Month < 1 || dto.Month > 12)
-                {
-                    return BadRequest("Nieprawidłowy rok lub miesiąc.");
-                }
+            // Walidacja parametrów
+            if (dto.Year < 2020 || dto.Year > 2030 || dto.Month < 1 || dto.Month > 12)
+            {
+                return BadRequest("Nieprawidłowy rok lub miesiąc.");
+            }
 
-                var startOfMonth = new DateTime(dto.Year, dto.Month, 1);
-                var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);
+            var startOfMonth = new DateTime(dto.Year, dto.Month, 1);
+            var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);
 
-                // KROK 1: Pobierz metadane o godzinach otwarcia JEDNYM zapytaniem (jak w CheckDayAvailability)
-                TimeSpan? czynnaOd = null, czynnaDo = null;
-                int? targetSalaId = null;
-                
-                if (dto.SalaId.HasValue)
-                {
-                    var sala = await _context.Sale
-                        .Where(s => s.Id == dto.SalaId.Value)
-                        .Select(s => new { s.CzynnaOd, s.CzynnaDo })
-                        .FirstOrDefaultAsync();
-                        
-                    if (sala == null) return BadRequest("Sala nie istnieje.");
-                    czynnaOd = sala.CzynnaOd;
-                    czynnaDo = sala.CzynnaDo;
-                    targetSalaId = dto.SalaId.Value;
-                }
-                else // dto.StanowiskoId.HasValue
-                {
-                    var stanowisko = await _context.Stanowiska
-                        .Where(s => s.Id == dto.StanowiskoId.Value)
-                        .Select(s => new { s.Sala.CzynnaOd, s.Sala.CzynnaDo, s.SalaId })
-                        .FirstOrDefaultAsync();
-                        
-                    if (stanowisko == null) return BadRequest("Stanowisko nie istnieje.");
-                    czynnaOd = stanowisko.CzynnaOd;
-                    czynnaDo = stanowisko.CzynnaDo;
-                    targetSalaId = stanowisko.SalaId;
-                }
-
-                // KROK 2: Pobierz WSZYSTKIE konflikty dla CAŁEGO MIESIĄCA JEDNYM zapytaniem
-                var monthStart = DateTime.SpecifyKind(startOfMonth, DateTimeKind.Unspecified);
-                var monthEnd = DateTime.SpecifyKind(endOfMonth.AddDays(1), DateTimeKind.Unspecified);
-                
-                var allConflicts = await _context.Rezerwacje
-                    .Where(r => (r.Status == "oczekujące" || r.Status == "zaakceptowano") && 
-                               r.DataStart < monthEnd && 
-                               r.DataKoniec > monthStart)
-                    .Where(r => 
-                        // Konflikty dla sali
-                        (dto.SalaId.HasValue && r.SalaId == dto.SalaId.Value) ||
-                        // Konflikty stanowisk w tej sali
-                        (dto.SalaId.HasValue && r.StanowiskoId.HasValue && r.Stanowisko.SalaId == dto.SalaId.Value) ||
-                        // Konflikty konkretnego stanowiska
-                        (dto.StanowiskoId.HasValue && r.StanowiskoId == dto.StanowiskoId.Value) ||
-                        // Konflikty całej sali dla stanowiska
-                        (dto.StanowiskoId.HasValue && r.SalaId == targetSalaId))
-                    .Select(r => new { r.DataStart, r.DataKoniec })
-                    .ToListAsync();
-
-                // KROK 3: Sprawdź dostępność dni w pamięci (0 zapytań do bazy)
-                var availableDays = new List<AvailableDayDto>();
-                var startHour = czynnaOd?.Hours ?? 8;
-                var endHour = czynnaDo?.Hours ?? 20;
-                
-                for (var date = startOfMonth; date <= endOfMonth; date = date.AddDays(1))
-                {
-                    var isPast = date.Date < DateTime.Now.Date;
-                    var hasAvailableHours = false;
+            // KROK 1: Pobierz metadane o godzinach otwarcia JEDNYM zapytaniem (jak w CheckDayAvailability)
+            TimeSpan? czynnaOd = null, czynnaDo = null;
+            int? targetSalaId = null;
+            
+            if (dto.SalaId.HasValue)
+            {
+                var sala = await _context.Sale
+                    .Where(s => s.Id == dto.SalaId.Value)
+                    .Select(s => new { s.CzynnaOd, s.CzynnaDo })
+                    .FirstOrDefaultAsync();
                     
-                    if (!isPast)
+                if (sala == null) return BadRequest("Sala nie istnieje.");
+                czynnaOd = sala.CzynnaOd;
+                czynnaDo = sala.CzynnaDo;
+                targetSalaId = dto.SalaId.Value;
+            }
+            else // dto.StanowiskoId.HasValue
+            {
+                var stanowisko = await _context.Stanowiska
+                    .Where(s => s.Id == dto.StanowiskoId.Value)
+                    .Select(s => new { s.Sala.CzynnaOd, s.Sala.CzynnaDo, s.SalaId })
+                    .FirstOrDefaultAsync();
+                    
+                if (stanowisko == null) return BadRequest("Stanowisko nie istnieje.");
+                czynnaOd = stanowisko.CzynnaOd;
+                czynnaDo = stanowisko.CzynnaDo;
+                targetSalaId = stanowisko.SalaId;
+            }
+
+            // KROK 2: Pobierz WSZYSTKIE konflikty dla CAŁEGO MIESIĄCA JEDNYM zapytaniem
+            var monthStart = DateTime.SpecifyKind(startOfMonth, DateTimeKind.Unspecified);
+            var monthEnd = DateTime.SpecifyKind(endOfMonth.AddDays(1), DateTimeKind.Unspecified);
+            
+            var allConflicts = await _context.Rezerwacje
+                .Where(r => (r.Status == "oczekujące" || r.Status == "zaakceptowano") && 
+                           r.DataStart < monthEnd && 
+                           r.DataKoniec > monthStart)
+                .Where(r => 
+                    // Konflikty dla sali
+                    (dto.SalaId.HasValue && r.SalaId == dto.SalaId.Value) ||
+                    // Konflikty stanowisk w tej sali
+                    (dto.SalaId.HasValue && r.StanowiskoId.HasValue && r.Stanowisko.SalaId == dto.SalaId.Value) ||
+                    // Konflikty konkretnego stanowiska
+                    (dto.StanowiskoId.HasValue && r.StanowiskoId == dto.StanowiskoId.Value) ||
+                    // Konflikty całej sali dla stanowiska
+                    (dto.StanowiskoId.HasValue && r.SalaId == targetSalaId))
+                .Select(r => new { r.DataStart, r.DataKoniec })
+                .ToListAsync();
+
+            // KROK 3: Sprawdź dostępność dni w pamięci (0 zapytań do bazy)
+            var availableDays = new List<AvailableDayDto>();
+            var startHour = czynnaOd?.Hours ?? 8;
+            var endHour = czynnaDo?.Hours ?? 20;
+            
+            for (var date = startOfMonth; date <= endOfMonth; date = date.AddDays(1))
+            {
+                var isPast = date.Date < DateTime.Now.Date;
+                var hasAvailableHours = false;
+                
+                if (!isPast)
+                {
+                    // Sprawdź czy jakąkolwiek godzinę w tym dniu jest dostępna (w pamięci)
+                    for (int hour = startHour; hour < endHour; hour++)
                     {
-                        // Sprawdź czy jakąkolwiek godzinę w tym dniu jest dostępna (w pamięci)
-                        for (int hour = startHour; hour < endHour; hour++)
+                        var startTime = date.Date.AddHours(hour);
+                        var endTime = startTime.AddHours(1);
+
+                        // Pomiń godziny z przeszłości
+                        if (startTime <= DateTime.Now)
                         {
-                            var startTime = date.Date.AddHours(hour);
-                            var endTime = startTime.AddHours(1);
+                            continue;
+                        }
 
-                            // Pomiń godziny z przeszłości
-                            if (startTime <= DateTime.Now)
-                            {
-                                continue;
-                            }
+                        var startTimeUnspecified = DateTime.SpecifyKind(startTime, DateTimeKind.Unspecified);
+                        var endTimeUnspecified = DateTime.SpecifyKind(endTime, DateTimeKind.Unspecified);
 
-                            var startTimeUnspecified = DateTime.SpecifyKind(startTime, DateTimeKind.Unspecified);
-                            var endTimeUnspecified = DateTime.SpecifyKind(endTime, DateTimeKind.Unspecified);
-
-                            // Sprawdź w pamięci - bez zapytań do bazy!
-                            var hasConflict = allConflicts.Any(c => 
-                                c.DataStart < endTimeUnspecified && 
-                                c.DataKoniec > startTimeUnspecified);
-                            
-                            if (!hasConflict) 
-                            {
-                                hasAvailableHours = true;
-                                break; // Znaleziono przynajmniej jedną dostępną godzinę, koniec sprawdzania
-                            }
+                        // Sprawdź w pamięci - bez zapytań do bazy!
+                        var hasConflict = allConflicts.Any(c => 
+                            c.DataStart < endTimeUnspecified && 
+                            c.DataKoniec > startTimeUnspecified);
+                        
+                        if (!hasConflict) 
+                        {
+                            hasAvailableHours = true;
+                            break; // Znaleziono przynajmniej jedną dostępną godzinę, koniec sprawdzania
                         }
                     }
-                    
-                    availableDays.Add(new AvailableDayDto
-                    {
-                        Data = date,
-                        MaDostepneGodziny = hasAvailableHours
-                    });
                 }
+                
+                availableDays.Add(new AvailableDayDto
+                {
+                    Data = date,
+                    MaDostepneGodziny = hasAvailableHours
+                });
+            }
 
-                return Ok(availableDays);
-            }
-            catch
-            {
-                return StatusCode(500, "Błąd serwera podczas pobierania dostępnych dni.");
-            }
+            return Ok(availableDays);
         }
 
         [HttpGet("available-hours")]
@@ -506,134 +499,108 @@ namespace Backend.Controllers
         [Authorize]
         public async Task<IActionResult> CancelReservation(int id)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var isAdmin = User.IsInRole("Admin");
+
+            var rezerwacja = await _context.Rezerwacje
+                .Include(r => r.Sala)
+                .Include(r => r.Stanowisko)
+                .FirstOrDefaultAsync(r => r.Id == id && (isAdmin || r.UzytkownikId == userId));
+
+            if (rezerwacja == null)
+                return NotFound("Rezerwacja nie istnieje lub nie masz do niej uprawnień");
+
+            // Sprawdź czy rezerwacja nie jest już anulowana
+            if (rezerwacja.Status == "anulowane")
+                return BadRequest("Rezerwacja jest już anulowana");
+
+            // Sprawdź czy można anulować (nie można anulować rezerwacji która już się rozpoczęła, chyba że admin)
+            var nowUnspecified = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);
+            if (rezerwacja.DataStart <= nowUnspecified && !isAdmin)
+            {
+                return BadRequest("Nie można anulować rezerwacji która już się rozpoczęła");
+            }
+
+            var oldStatus = rezerwacja.Status;
+            
+            // Zmień status na anulowane zamiast usuwać
+            rezerwacja.Status = "anulowane";
+            await _context.SaveChangesAsync();
+
+            // Log anulowania rezerwacji
             try
             {
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                var isAdmin = User.IsInRole("Admin");
-
-                var rezerwacja = await _context.Rezerwacje
-                    .Include(r => r.Sala)
-                    .Include(r => r.Stanowisko)
-                    .FirstOrDefaultAsync(r => r.Id == id && (isAdmin || r.UzytkownikId == userId));
-
-                if (rezerwacja == null)
-                    return NotFound("Rezerwacja nie istnieje lub nie masz do niej uprawnień");
-
-                // Sprawdź czy rezerwacja nie jest już anulowana
-                if (rezerwacja.Status == "anulowane")
-                    return BadRequest("Rezerwacja jest już anulowana");
-
-                // Sprawdź czy można anulować (nie można anulować rezerwacji która już się rozpoczęła, chyba że admin)
-                var nowUnspecified = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);
-                if (rezerwacja.DataStart <= nowUnspecified && !isAdmin)
-                {
-                    return BadRequest("Nie można anulować rezerwacji która już się rozpoczęła");
-                }
-
-                var oldStatus = rezerwacja.Status;
-                
-                // Zmień status na anulowane zamiast usuwać
-                rezerwacja.Status = "anulowane";
-                await _context.SaveChangesAsync();
-
-                // Log anulowania rezerwacji
-                try
-                {
-                    var lokalizacjaOpis = await GetLokalizacjaStringAsync(rezerwacja);
-                    await _auditService.LogAsync("ANULOWANIE_REZERWACJI", "Rezerwacja", id,
-                        $"Status: {oldStatus} → anulowane, Termin: {rezerwacja.DataStart:dd.MM.yyyy HH:mm}, " +
-                        $"Lokalizacja: {lokalizacjaOpis}");
-                }
-                catch (Exception auditEx)
-                {
-                    // Nie blokuj operacji z powodu błędu audytu
-                    Console.WriteLine($"[WARNING] Błąd audytu przy anulowaniu rezerwacji {id}: {auditEx.Message}");
-                }
-
-                // Powiadom o zmianie dostępności kalendarza (real-time)
-                await _realtimeAvailabilityService.NotifyAvailabilityChangedAsync(
-                    rezerwacja.SalaId, 
-                    rezerwacja.StanowiskoId, 
-                    rezerwacja.DataStart.Date, 
-                    "anulowane");
-
-                return Ok(new { message = "Rezerwacja została anulowana", status = "anulowane" });
+                var lokalizacjaOpis = await GetLokalizacjaStringAsync(rezerwacja);
+                await _auditService.LogAsync("ANULOWANIE_REZERWACJI", "Rezerwacja", id,
+                    $"Status: {oldStatus} → anulowane, Termin: {rezerwacja.DataStart:dd.MM.yyyy HH:mm}, " +
+                    $"Lokalizacja: {lokalizacjaOpis}");
             }
-            catch (Exception ex)
+            catch (Exception auditEx)
             {
-                Console.WriteLine($"[ERROR] Błąd podczas anulowania rezerwacji {id}: {ex.Message}");
-                Console.WriteLine($"[ERROR] StackTrace: {ex.StackTrace}");
-                
-                return StatusCode(500, new { 
-                    message = "Wystąpił błąd podczas anulowania rezerwacji.", 
-                    error = ex.Message 
-                });
+                // Nie blokuj operacji z powodu błędu audytu
+                Console.WriteLine($"[WARNING] Błąd audytu przy anulowaniu rezerwacji {id}: {auditEx.Message}");
             }
+
+            // Powiadom o zmianie dostępności kalendarza (real-time)
+            await _realtimeAvailabilityService.NotifyAvailabilityChangedAsync(
+                rezerwacja.SalaId, 
+                rezerwacja.StanowiskoId, 
+                rezerwacja.DataStart.Date, 
+                "anulowane");
+
+            return Ok(new { message = "Rezerwacja została anulowana", status = "anulowane" });
         }
 
         [HttpDelete("{id}")]
         [Authorize]
         public async Task<IActionResult> Delete(int id)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var isAdmin = User.IsInRole("Admin");
+
+            var rezerwacja = await _context.Rezerwacje
+                .Include(r => r.Sala)
+                .Include(r => r.Stanowisko)
+                .FirstOrDefaultAsync(r => r.Id == id && (isAdmin || r.UzytkownikId == userId));
+
+            if (rezerwacja == null)
+                return NotFound("Rezerwacja nie istnieje lub nie masz do niej uprawnień");
+
+            // TYLKO anulowane rezerwacje mogą być usuwane (trwale) - lepsza praktyka biznesowa
+            if (rezerwacja.Status != "anulowane")
+            {
+                return BadRequest("Można usuwać tylko anulowane rezerwacje. Użyj funkcji 'Anuluj' zamiast 'Usuń'.");
+            }
+
+            // Sprawdź czy można usunąć (nie można usunąć rezerwacji która już się rozpoczęła, chyba że admin)
+            var nowUnspecified = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);
+            if (rezerwacja.DataStart <= nowUnspecified && !isAdmin)
+            {
+                return BadRequest("Nie można usunąć rezerwacji która już się rozpoczęła.");
+            }
+
+            // Przygotuj dane do audytu przed usunięciem (bezpieczne pobieranie lokalizacji)
+            var lokalizacjaOpis = await GetLokalizacjaStringAsync(rezerwacja);
+            var auditDetails = $"Status: {rezerwacja.Status ?? "brak"}, " +
+                             $"Termin: {rezerwacja.DataStart:dd.MM.yyyy HH:mm}, " +
+                             $"Lokalizacja: {lokalizacjaOpis}";
+
+            // Usuń rezerwację (cascade delete automatycznie usunie powiązane powiadomienia)
+            _context.Rezerwacje.Remove(rezerwacja);
+            await _context.SaveChangesAsync();
+
+            // Log usunięcia rezerwacji - TYLKO po udanym usunięciu
             try
             {
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                var isAdmin = User.IsInRole("Admin");
-
-                var rezerwacja = await _context.Rezerwacje
-                    .Include(r => r.Sala)
-                    .Include(r => r.Stanowisko)
-                    .FirstOrDefaultAsync(r => r.Id == id && (isAdmin || r.UzytkownikId == userId));
-
-                if (rezerwacja == null)
-                    return NotFound("Rezerwacja nie istnieje lub nie masz do niej uprawnień");
-
-                // TYLKO anulowane rezerwacje mogą być usuwane (trwale) - lepsza praktyka biznesowa
-                if (rezerwacja.Status != "anulowane")
-                {
-                    return BadRequest("Można usuwać tylko anulowane rezerwacje. Użyj funkcji 'Anuluj' zamiast 'Usuń'.");
-                }
-
-                // Sprawdź czy można usunąć (nie można usunąć rezerwacji która już się rozpoczęła, chyba że admin)
-                var nowUnspecified = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);
-                if (rezerwacja.DataStart <= nowUnspecified && !isAdmin)
-                {
-                    return BadRequest("Nie można usunąć rezerwacji która już się rozpoczęła.");
-                }
-
-                // Przygotuj dane do audytu przed usunięciem (bezpieczne pobieranie lokalizacji)
-                var lokalizacjaOpis = await GetLokalizacjaStringAsync(rezerwacja);
-                var auditDetails = $"Status: {rezerwacja.Status ?? "brak"}, " +
-                                 $"Termin: {rezerwacja.DataStart:dd.MM.yyyy HH:mm}, " +
-                                 $"Lokalizacja: {lokalizacjaOpis}";
-
-                // Usuń rezerwację (cascade delete automatycznie usunie powiązane powiadomienia)
-                _context.Rezerwacje.Remove(rezerwacja);
-                await _context.SaveChangesAsync();
-
-                // Log usunięcia rezerwacji - TYLKO po udanym usunięciu
-                try
-                {
-                    await _auditService.LogAsync("USUNIECIE_REZERWACJI", "Rezerwacja", id, auditDetails);
-                }
-                catch (Exception auditEx)
-                {
-                    // Nie blokuj operacji z powodu błędu audytu - tylko loguj
-                    Console.WriteLine($"[WARNING] Błąd audytu przy usuwaniu rezerwacji {id}: {auditEx.Message}");
-                }
-
-                return NoContent();
+                await _auditService.LogAsync("USUNIECIE_REZERWACJI", "Rezerwacja", id, auditDetails);
             }
-            catch (Exception ex)
+            catch (Exception auditEx)
             {
-                Console.WriteLine($"[ERROR] Błąd podczas usuwania rezerwacji {id}: {ex.Message}");
-                Console.WriteLine($"[ERROR] StackTrace: {ex.StackTrace}");
-                
-                return StatusCode(500, new { 
-                    message = "Wystąpił błąd podczas usuwania rezerwacji.", 
-                    error = ex.Message 
-                });
+                // Nie blokuj operacji z powodu błędu audytu - tylko loguj
+                Console.WriteLine($"[WARNING] Błąd audytu przy usuwaniu rezerwacji {id}: {auditEx.Message}");
             }
+
+            return NoContent();
         }
 
         // Metoda pomocnicza do bezpiecznego generowania opisu lokalizacji

@@ -19,37 +19,37 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
-      
+
       <Route path="/stanowiska" element={
         <PageErrorBoundary fallbackPath="/" fallbackText="Strona główna">
           <Stanowiska />
         </PageErrorBoundary>
       } />
-      
+
       <Route path="/stanowisko/:id" element={
         <PageErrorBoundary fallbackPath="/stanowiska" fallbackText="Lista stanowisk">
           <StanowiskoDetails />
         </PageErrorBoundary>
       } />
-      
+
       <Route path="/sale" element={
         <PageErrorBoundary fallbackPath="/" fallbackText="Strona główna">
           <Sale />
         </PageErrorBoundary>
       } />
-      
+
       <Route path="/sala/:id" element={
         <PageErrorBoundary fallbackPath="/sale" fallbackText="Lista sal">
           <SalaDetails />
         </PageErrorBoundary>
       } />
-      
+
       <Route path="/account" element={
         <PageErrorBoundary fallbackPath="/" fallbackText="Strona główna">
           <UserDashboard />
         </PageErrorBoundary>
       } />
-      
+
       <Route path="/reservation" element={
         <BusinessRoleRoute type="business_roles">
           <PageErrorBoundary fallbackPath="/" fallbackText="Strona główna">
@@ -57,7 +57,7 @@ export function AppRoutes() {
           </PageErrorBoundary>
         </BusinessRoleRoute>
       } />
-      
+
 
       {/* Nowy unified dashboard */}
       <Route path="/panel" element={
@@ -77,19 +77,19 @@ export function AppRoutes() {
         </AdminRoute>
       } />
 
-      { /* Public routes */ }
+      { /* Public routes */}
       <Route path="/login" element={
         <PublicRoute>
           <Login />
         </PublicRoute>
-        } />
+      } />
 
       <Route path="/register" element={
         <PublicRoute>
           <Register />
         </PublicRoute>
-        } />
-      
+      } />
+
     </Routes>
   );
 }
