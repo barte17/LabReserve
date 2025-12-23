@@ -24,7 +24,7 @@ export const getErrorLogs = (type?: 'global' | 'page' | 'api' | 'form' | 'auth')
     const apiLogs = JSON.parse(localStorage.getItem('apiErrorLogs') || '[]');
     const formLogs = JSON.parse(localStorage.getItem('formErrorLogs') || '[]');
     const authLogs = JSON.parse(localStorage.getItem('authErrorLogs') || '[]');
-    
+
     const allLogs = [
       ...globalLogs.map((log: any) => ({ ...log, type: 'global' })),
       ...pageLogs.map((log: any) => ({ ...log, type: 'page' })),
@@ -49,7 +49,7 @@ export const clearErrorLogs = (type?: 'global' | 'page' | 'api' | 'form' | 'auth
     if (type) {
       const keyMap = {
         'global': 'errorLogs',
-        'page': 'pageErrorLogs', 
+        'page': 'pageErrorLogs',
         'api': 'apiErrorLogs',
         'form': 'formErrorLogs',
         'auth': 'authErrorLogs'
@@ -72,36 +72,4 @@ export const exportErrorLogs = (): string => {
   return JSON.stringify(logs, null, 2);
 };
 
-// Development helper - wywołaj w konsoli przeglądarki
-if (typeof window !== 'undefined') {
-  (window as any).errorUtils = {
-    getLogs: getErrorLogs,
-    clearLogs: clearErrorLogs,
-    exportLogs: exportErrorLogs,
-    // Dodatkowe funkcje pomocnicze
-    showAllLogs: () => {
-      const logs = getErrorLogs();
-      console.table(logs);
-      return logs;
-    },
-    testApiError: async () => {
-      try {
-        const response = await fetch('/api/test-nonexistent-endpoint');
-        console.log('Response:', response);
-      } catch (error) {
-        console.log('Caught error:', error);
-      }
-    }
-  };
-  
-  // Automatyczne dodanie do window przy załadowaniu
-  console.log('🛠️ Error Utils dostępne w konsoli:');
-  console.log('- errorUtils.getLogs() - pokaż wszystkie błędy');
-  console.log('- errorUtils.getLogs("api") - pokaż błędy API');
-  console.log('- errorUtils.getLogs("form") - pokaż błędy formularzy');
-  console.log('- errorUtils.getLogs("auth") - pokaż błędy uwierzytelniania');
-  console.log('- errorUtils.showAllLogs() - pokaż w tabeli');
-  console.log('- errorUtils.clearLogs() - wyczyść wszystkie błędy');
-  console.log('- errorUtils.clearLogs("auth") - wyczyść błędy auth');
-  console.log('- errorUtils.testApiError() - test API error');
-}
+// Development helper removed for security - no console access to error logs

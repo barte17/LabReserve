@@ -37,7 +37,7 @@ export default function Sale() {
     document.title = "Sale - System Rezerwacji";
     getRooms()
       .then(setSale)
-      .catch(console.error)
+      .catch(() => { }) // Ignore errors silently
       .finally(() => setLoading(false));
   }, []);
 

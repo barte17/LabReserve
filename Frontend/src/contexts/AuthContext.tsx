@@ -29,22 +29,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const refreshAuth = async () => {
-    console.log("=== AuthContext refreshAuth called ===");
-    
     // Zabezpieczenie przed podwójnym wywołaniem
     if (isRefreshing) {
-      console.log("Already refreshing, skipping...");
       return;
     }
-    
+
     try {
       setIsLoading(true);
-      
+
       // Bezpieczne pobieranie użytkownika z tokenu
       let currentUser = null;
       try {
         currentUser = getUserFromToken();
-        console.log("Current user from token:", currentUser);
       } catch (error) {
         console.error("Error getting user from token:", error);
         // Wyczyść potencjalnie uszkodzone dane
@@ -53,21 +49,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setIsLoading(false);
         return;
       }
-      
+
       // Jeśli nie ma tokenu w pamięci, spróbuj odświeżyć (httpOnly cookie nie jest widoczne w JS)
       if (!currentUser) {
-        console.log("No user in memory, trying to refresh token...");
         setIsRefreshing(true);
         try {
-          console.log("Attempting refresh token request...");
           const { refreshToken } = await import('../services/authService');
           await refreshToken();
-          console.log("refreshToken() completed successfully");
-          
+
           // Bezpieczne pobieranie nowego użytkownika
           try {
             const newUser = getUserFromToken();
-            console.log("User after refresh:", newUser);
             setUser(newUser);
             setIsLogged(!!newUser);
           } catch (error) {
@@ -75,13 +67,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setUser(null);
             setIsLogged(false);
           }
-          
+
           setIsRefreshing(false);
-          console.log("AuthContext state updated after refresh");
           setIsLoading(false);
           return;
         } catch (error) {
-          console.log("Failed to refresh token:", error);
           // To jest OK - oznacza że nie ma ważnego refresh token
           setUser(null);
           setIsLogged(false);
@@ -94,7 +84,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUser(currentUser);
         setIsLogged(!!currentUser);
         setIsLoading(false);
-        console.log("Auth state updated, isLogged:", !!currentUser);
       }
     } catch (error) {
       console.error("Unexpected error in refreshAuth:", error);
@@ -134,7 +123,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.error("Błąd podczas wylogowywania:", error);
       // Nie blokuj wylogowania z powodu błędu API
     }
-    
+
     // Zawsze wyczyść stan lokalny, niezależnie od błędów API
     try {
       setUser(null);
@@ -148,9 +137,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   useEffect(() => {
-    console.log("=== AuthContext useEffect mounting ===");
-    console.log("Document cookies at mount:", document.cookie);
-    
     // Bezpieczne wywołanie refreshAuth z error handling
     const initializeAuth = async () => {
       try {
@@ -164,7 +150,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setIsRefreshing(false);
       }
     };
-    
+
     initializeAuth();
   }, []);
 

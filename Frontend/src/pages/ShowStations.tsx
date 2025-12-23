@@ -33,7 +33,7 @@ export default function Stanowiska() {
     document.title = "Stanowiska - System Rezerwacji";
     getStations()
       .then(setStanowiska)
-      .catch(console.error)
+      .catch(() => { }) // Ignore errors silently
       .finally(() => setLoading(false));
   }, []);
 

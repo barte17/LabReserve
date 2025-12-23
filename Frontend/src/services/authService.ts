@@ -3,7 +3,7 @@ import { ApiErrorHandler } from './apiErrorHandler';
 import { jwtDecode } from 'jwt-decode';
 
 interface DecodedToken {
-  id: string; 
+  id: string;
   email?: string;
   exp: number;
   [key: string]: unknown; // Dodatkowe pola mogą być obecne w tokenie
@@ -32,8 +32,8 @@ export const getUserFromToken = (): User | null => {
     const roleArray = Array.isArray(roleClaim)
       ? roleClaim
       : typeof roleClaim === "string"
-      ? [roleClaim]
-      : [];
+        ? [roleClaim]
+        : [];
 
     const user: User = {
       id: decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] || decoded.id,
@@ -65,22 +65,19 @@ export const login = async (email: string, password: string) => {
 
   if (!response.ok) {
     let errorData = null;
-    
+
     try {
       const responseText = await response.text();
-      console.log('Error response text:', responseText); // Debug log
-      
+
       if (responseText) {
         errorData = JSON.parse(responseText);
-        console.log('Parsed error data:', errorData); // Debug log
       }
     } catch (parseError) {
-      console.log('Failed to parse error response:', parseError);
+      // Failed to parse error response
     }
-    
+
     // Handle different error types from backend
     if (errorData && errorData.message) {
-      console.log('Creating error with data:', errorData); // Debug log
       const error = new Error(errorData.message) as any;
       error.type = errorData.type;
       error.remainingAttempts = errorData.remainingAttempts;
@@ -89,28 +86,28 @@ export const login = async (email: string, password: string) => {
       error.lockoutEnd = errorData.lockoutEnd;
       throw error;
     }
-    
+
     // (HTTP 429)
     if (response.status === 429) {
       const error = new Error('Zbyt wiele prób logowania. Spróbuj ponownie za chwilę.') as any;
       error.type = 'rate_limited';
       throw error;
     }
-    
-    
+
+
     if (errorData && typeof errorData === 'string') {
       throw new Error(errorData);
     }
-    
+
     throw new Error('Logowanie nie powiodło się');
   }
 
   const data = await response.json();
-  
+
   // Zapisz access token w pamięci
   accessToken = data.accessToken;
   cachedUser = null; // wyczyść cache po nowym loginie
-  
+
   return {
     token: data.accessToken,
     expiration: data.expiration
@@ -138,15 +135,11 @@ export const register = async (
 };
 
 export const refreshToken = async () => {
-  console.log("=== refreshToken called ===");
-  console.log("Current accessToken:", accessToken);
-  
   // Jeśli już trwa refresh, czekaj na jego zakończenie
   if (refreshPromise) {
-    console.log("Refresh already in progress, waiting...");
     return await refreshPromise;
   }
-  
+
   // Utwórz nowy refresh promise
   refreshPromise = (async () => {
     const response = await fetch(`/api/account/refresh-token`, {
@@ -162,10 +155,10 @@ export const refreshToken = async () => {
     }
 
     const data = await response.json();
-    
+
     // Zapisz nowy access token w pamięci
     accessToken = data.accessToken;
-    
+
     cachedUser = null; // wyczyść cache przy odświeżeniu
     return data;
   })();
@@ -191,27 +184,21 @@ export const logout = async () => {
 export const isTokenExpired = (): boolean => {
   const user = getUserFromToken();
   if (!user) return true;
-  
+
   const currentTime = Date.now() / 1000;
   return user.exp < currentTime;
 };
 
 // Automatyczne odświeżanie tokenu - LAZY LOADING
 export const ensureValidToken = async (): Promise<string | null> => {
-  console.log("=== ensureValidToken called ===");
-  console.log("Current accessToken:", !!accessToken);
-  
   // Jeśli mamy ważny token, zwróć go
   if (accessToken && !isTokenExpired()) {
-    console.log("Token is valid, returning");
     return accessToken;
   }
-  
+
   // Jeśli nie ma tokenu lub wygasł, spróbuj odświeżyć
-  console.log("Token missing or expired, trying to refresh...");
   try {
     await refreshToken();
-    console.log("Token refreshed successfully");
     return accessToken;
   } catch (error) {
     console.error("Nie udało się odświeżyć tokenu:", error);
@@ -222,39 +209,39 @@ export const ensureValidToken = async (): Promise<string | null> => {
 // Wrapper dla fetch z automatycznym odświeżaniem tokenu
 export const authenticatedFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
   const token = await ensureValidToken();
-  
+
   if (!token) {
     throw new Error("Brak ważnego tokenu autoryzacji");
   }
-  
+
   const headers = {
     ...options.headers,
     "Authorization": `Bearer ${token}`
   };
-  
+
   try {
-    const response = await fetch(url, { 
-      ...options, 
+    const response = await fetch(url, {
+      ...options,
       headers,
       credentials: 'include' // Ważne: wysyła cookies z refresh tokenem
     });
-    
+
     // Jeśli dostajemy 401, spróbuj odświeżyć token i powtórz request
     if (response.status === 401) {
       try {
         await refreshToken();
-        
+
         if (accessToken) {
           const newHeaders = {
             ...options.headers,
             "Authorization": `Bearer ${accessToken}`
           };
-          const retryResponse = await fetch(url, { 
-            ...options, 
+          const retryResponse = await fetch(url, {
+            ...options,
             headers: newHeaders,
             credentials: 'include'
           });
-          
+
           // Użyj error handlera dla retry response (ale nie dla 401 - to obsługuje auth)
           if (!retryResponse.ok && retryResponse.status !== 401) {
             return await ApiErrorHandler.handleResponse(retryResponse);
@@ -265,12 +252,12 @@ export const authenticatedFetch = async (url: string, options: RequestInit = {})
         console.error("Nie udało się odświeżyć tokenu po 401:", error);
       }
     }
-    
+
     // Użyj error handlera dla wszystkich odpowiedzi oprócz 401 
     if (!response.ok && response.status !== 401) {
       return await ApiErrorHandler.handleResponse(response);
     }
-    
+
     return response;
   } catch (error) {
     if (error instanceof TypeError && error.message.includes('fetch')) {

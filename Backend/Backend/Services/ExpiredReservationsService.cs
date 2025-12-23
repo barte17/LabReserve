@@ -29,7 +29,6 @@ public class ExpiredReservationsService : BackgroundService
             {
                 await CheckAndUpdateExpiredReservations();
                 await CheckAndSendReminderNotifications();
-                await CheckAndCancelUnconfirmedReservations();
                 
                 // Sprawdzaj co 30 minut
                 await Task.Delay(TimeSpan.FromMinutes(30), stoppingToken);
@@ -143,66 +142,6 @@ public class ExpiredReservationsService : BackgroundService
         if (sentCount > 0)
         {
             _logger.LogInformation("Sent {Count} reminder notifications at {Time}", sentCount, now);
-        }
-    }
-
-    private async Task CheckAndCancelUnconfirmedReservations()
-    {
-        using var scope = _scopeFactory.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var powiadomieniaService = scope.ServiceProvider.GetRequiredService<IPowiadomieniaService>();
-        
-        var now = DateTime.SpecifyKind(
-            TimeZoneInfo.ConvertTime(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Central European Standard Time")), 
-            DateTimeKind.Unspecified);
-        
-        // Znajdź rezerwacje które:
-        // 1. Są w statusie "oczekujące" 
-        // 2. Zostały utworzone więcej niż 24h temu
-        // 3. Start rezerwacji jest w przyszłości (żeby nie anulować przeszłych)
-        var cutoffTime = now.AddHours(-24);
-        
-        var unconfirmedReservations = await context.Rezerwacje
-            .Include(r => r.Sala)
-            .Include(r => r.Stanowisko)
-            .ThenInclude(s => s.Sala)
-            .Where(r => r.Status == "oczekujące" && 
-                       r.DataUtworzenia < cutoffTime &&
-                       r.DataStart > now) // Tylko przyszłe rezerwacje
-            .ToListAsync();
-
-        var cancelledCount = 0;
-        foreach (var rezerwacja in unconfirmedReservations)
-        {
-            // Anuluj rezerwację
-            rezerwacja.Status = "anulowane";
-            
-            // Wyślij powiadomienie do użytkownika
-            var lokalizacja = GetLokalizacjaString(rezerwacja);
-            var dataStart = rezerwacja.DataStart.ToString("dd.MM.yyyy HH:mm");
-            
-            var tytul = "Rezerwacja anulowana automatycznie";
-            var tresc = $"Twoja rezerwacja na {lokalizacja} zostala automatycznie anulowana z powodu braku potwierdzenia przez opiekuna w ciagu 24 godzin. " +
-                       $"Termin: {dataStart}. " +
-                       $"Mozesz zlozyc nowa rezerwacje.";
-
-            await powiadomieniaService.WyslijPowiadomienieAsync(
-                rezerwacja.UzytkownikId,
-                tytul,
-                tresc,
-                "rezerwacja",
-                "high",
-                rezerwacja.Id,
-                "/panel?view=user&section=rezerwacje"
-            );
-            
-            cancelledCount++;
-        }
-        
-        if (cancelledCount > 0)
-        {
-            await context.SaveChangesAsync();
-            _logger.LogInformation("Cancelled {Count} unconfirmed reservations at {Time}", cancelledCount, now);
         }
     }
 
