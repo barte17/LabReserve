@@ -21,11 +21,12 @@ export const useSignalR = () => {
 
     // Utwórz nowe połączenie
     const newConnection = new HubConnectionBuilder()
-      .withUrl(`${import.meta.env.VITE_API_URL || 'http://localhost:5165'}/notificationHub`, {
+      .withUrl(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/notificationHub`, {
         accessTokenFactory: async () => {
           try {
             const { ensureValidToken } = await import('../services/authService');
-            return await ensureValidToken();
+            const token = await ensureValidToken();
+            return token || ''; // Zawsze zwracaj string, nie null
           } catch (error) {
             console.error('Błąd pobierania tokena dla SignalR:', error);
             return '';

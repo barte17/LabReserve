@@ -23,14 +23,16 @@ namespace Backend.Controllers
         private readonly IConfiguration _config;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IAuditService _auditService;
+        private readonly ITokenHashingService _tokenHashingService;
         private static readonly SemaphoreSlim _refreshSemaphore = new(1, 1); // Mutex dla refresh
 
-        public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IConfiguration config, IAuditService auditService)
+        public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IConfiguration config, IAuditService auditService, ITokenHashingService tokenHashingService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _config = config;
             _auditService = auditService;
+            _tokenHashingService = tokenHashingService;
         }
 
         private string GenerateRefreshToken()
@@ -170,8 +172,9 @@ namespace Backend.Controllers
                 
                 var accessToken = await GenerateJwtToken(user);
                 var refreshToken = GenerateRefreshToken();
+                var refreshTokenHash = _tokenHashingService.HashToken(refreshToken);
 
-                user.RefreshToken = refreshToken;
+                user.RefreshTokenHash = refreshTokenHash;
                 user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
                 await _userManager.UpdateAsync(user);
 
@@ -179,8 +182,8 @@ namespace Backend.Controllers
                 var cookieOptions = new CookieOptions
                 {
                     HttpOnly = true,
-                    Secure = Request.IsHttps,
-                    SameSite = SameSiteMode.Strict,
+                    Secure = false, // false dla HTTP w developmencie
+                    SameSite = SameSiteMode.Lax, // Lax działa dla localhost cross-origin
                     Path = "/",
                     Domain = null,
                     Expires = DateTime.UtcNow.AddDays(7)
@@ -281,18 +284,18 @@ namespace Backend.Controllers
                     return BadRequest("Refresh token not found");
                 }
                 
-                // Użyj tokenu bezpośrednio - nie dekoduj URL
-                var refreshTokenToUse = refreshTokenFromCookie;
-                Console.WriteLine($"Refresh token to use: {refreshTokenToUse}");
+                // Hashuj token z cookie
+                var refreshTokenHash = _tokenHashingService.HashToken(refreshTokenFromCookie);
+                Console.WriteLine($"Refresh token hash: {refreshTokenHash}");
 
-                // Znajdź użytkownika po refresh token zamiast access token
+                // Znajdź użytkownika po refresh token hash
                 var user = await _userManager.Users
-                    .FirstOrDefaultAsync(u => u.RefreshToken == refreshTokenToUse && u.RefreshTokenExpiryTime > DateTime.UtcNow);
+                    .FirstOrDefaultAsync(u => u.RefreshTokenHash == refreshTokenHash && u.RefreshTokenExpiryTime > DateTime.UtcNow);
 
                 if (user == null)
                 {
                     Console.WriteLine("ERROR: User not found or refresh token expired");
-                    Console.WriteLine($"Searched for token: {refreshTokenToUse}");
+                    Console.WriteLine($"Searched for token hash: {refreshTokenHash}");
                     Console.WriteLine($"Current UTC time: {DateTime.UtcNow}");
                     
                     // Sprawdź czy użytkownik w ogóle istnieje
@@ -301,7 +304,7 @@ namespace Backend.Controllers
                     
                     // Sprawdź czy istnieje użytkownik z tym tokenem (bez sprawdzania daty)
                     var userWithToken = await _userManager.Users
-                        .FirstOrDefaultAsync(u => u.RefreshToken == refreshTokenToUse);
+                        .FirstOrDefaultAsync(u => u.RefreshTokenHash == refreshTokenHash);
                     if (userWithToken != null)
                     {
                         Console.WriteLine($"Found user with token but expired. Expiry: {userWithToken.RefreshTokenExpiryTime}");
@@ -312,8 +315,9 @@ namespace Backend.Controllers
 
                 var newAccessToken = await GenerateJwtToken(user);
                 var newRefreshToken = GenerateRefreshToken();
+                var newRefreshTokenHash = _tokenHashingService.HashToken(newRefreshToken);
 
-                user.RefreshToken = newRefreshToken;
+                user.RefreshTokenHash = newRefreshTokenHash;
                 user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
 
                 await _userManager.UpdateAsync(user);
@@ -322,8 +326,8 @@ namespace Backend.Controllers
                 var cookieOptions = new CookieOptions
                 {
                     HttpOnly = true,
-                    Secure = Request.IsHttps,
-                    SameSite = SameSiteMode.Strict,
+                    Secure = false, // false dla HTTP w developmencie
+                    SameSite = SameSiteMode.Lax, // Lax działa dla localhost cross-origin
                     Path = "/",
                     Domain = null,
                     Expires = DateTime.UtcNow.AddDays(7)
@@ -373,7 +377,7 @@ namespace Backend.Controllers
                 var user = await _userManager.FindByNameAsync(username);
                 if (user != null)
                 {
-                    user.RefreshToken = null;
+                    user.RefreshTokenHash = null;
                     user.RefreshTokenExpiryTime = DateTime.UtcNow;
                     await _userManager.UpdateAsync(user);
                 }

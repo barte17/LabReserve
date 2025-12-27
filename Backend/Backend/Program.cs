@@ -117,6 +117,9 @@ builder.Services.AddScoped<Backend.Services.IEmailService, Backend.Services.Azur
 // Register Audit Service
 builder.Services.AddScoped<Backend.Services.IAuditService, Backend.Services.AuditService>();
 
+// Register Token Hashing Service
+builder.Services.AddScoped<Backend.Services.ITokenHashingService, Backend.Services.TokenHashingService>();
+
 // Register Realtime Availability Service
 builder.Services.AddScoped<Backend.Services.IRealtimeAvailabilityService, Backend.Services.RealtimeAvailabilityService>();
 builder.Services.AddHttpContextAccessor();

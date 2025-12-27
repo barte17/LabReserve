@@ -11,7 +11,7 @@ namespace Backend.Models
         [Required, MaxLength(50)]
         public string Nazwisko { get; set; }
 
-        public string? RefreshToken { get; set; }
+        public string? RefreshTokenHash { get; set; }
         public DateTime RefreshTokenExpiryTime { get; set; }
         
         [MaxLength(2000)]
