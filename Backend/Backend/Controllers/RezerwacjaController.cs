@@ -152,61 +152,87 @@ namespace Backend.Controllers
                 return BadRequest("Data końca musi być późniejsza niż data początku.");
             }
 
-            // Sprawdzenie dostępności - konwertuj daty na Unspecified
+            // Konwertuj daty na Unspecified
             var startUnspecified = DateTime.SpecifyKind(dto.DataStart, DateTimeKind.Unspecified);
             var endUnspecified = DateTime.SpecifyKind(dto.DataKoniec, DateTimeKind.Unspecified);
+
+            // Rozpocznij transakcję z Serializable isolation level aby zapobiec race conditions
+            using var transaction = await _context.Database.BeginTransactionAsync(
+                System.Data.IsolationLevel.Serializable);
             
-            var isAvailable = await CheckAvailability(dto.SalaId, dto.StanowiskoId, startUnspecified, endUnspecified);
-            if (!isAvailable)
+            try
             {
-                return BadRequest("Termin jest już zajęty.");
+                // Sprawdzenie dostępności w ramach transakcji
+                var isAvailable = await CheckAvailability(dto.SalaId, dto.StanowiskoId, startUnspecified, endUnspecified);
+                if (!isAvailable)
+                {
+                    return BadRequest("Termin jest już zajęty.");
+                }
+
+                var rezerwacja = new Rezerwacja
+                {
+                    SalaId = dto.SalaId,
+                    StanowiskoId = dto.StanowiskoId,
+                    UzytkownikId = userId,
+                    DataStart = startUnspecified,
+                    DataKoniec = endUnspecified,
+                    Opis = dto.Opis,
+                    Status = "oczekujące",
+                    DataUtworzenia = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified)
+                };
+
+                _context.Rezerwacje.Add(rezerwacja);
+                await _context.SaveChangesAsync();
+
+                // Commit transakcji - od tego momentu rezerwacja jest widoczna dla innych
+                await transaction.CommitAsync();
+
+                // Log tworzenia rezerwacji (po commit)
+                await _auditService.LogAsync("UTWORZENIE_REZERWACJI", "Rezerwacja", rezerwacja.Id,
+                    $"Sala {dto.SalaId}, {dto.DataStart:dd.MM.yyyy HH:mm} - {dto.DataKoniec:dd.MM.yyyy HH:mm}");
+
+                // Wyślij powiadomienie do opiekuna sali
+                await WyslijPowiadomienieDlaOpiekuna(rezerwacja);
+
+                // Powiadom o zmianie dostępności kalendarza (real-time)
+                await _realtimeAvailabilityService.NotifyAvailabilityChangedAsync(
+                    rezerwacja.SalaId, 
+                    rezerwacja.StanowiskoId, 
+                    rezerwacja.DataStart.Date, 
+                    rezerwacja.Status);
+
+                // Zwróć tylko podstawowe
+                var result = new RezerwacjaDetailsDto
+                {
+                    Id = rezerwacja.Id,
+                    SalaId = rezerwacja.SalaId,
+                    StanowiskoId = rezerwacja.StanowiskoId,
+                    UzytkownikId = rezerwacja.UzytkownikId,
+                    DataUtworzenia = rezerwacja.DataUtworzenia,
+                    DataStart = rezerwacja.DataStart,
+                    DataKoniec = rezerwacja.DataKoniec,
+                    Status = rezerwacja.Status,
+                    Opis = rezerwacja.Opis
+                };
+
+                return CreatedAtAction(nameof(GetById), new { id = rezerwacja.Id }, result);
             }
-
-
-            var rezerwacja = new Rezerwacja
+            catch (Exception ex)
             {
-                SalaId = dto.SalaId,
-                StanowiskoId = dto.StanowiskoId,
-                UzytkownikId = userId,
-                DataStart = DateTime.SpecifyKind(dto.DataStart, DateTimeKind.Unspecified), // Unspecified dla PostgreSQL
-                DataKoniec = DateTime.SpecifyKind(dto.DataKoniec, DateTimeKind.Unspecified), // Unspecified dla PostgreSQL
-                Opis = dto.Opis,
-                Status = "oczekujące",
-                DataUtworzenia = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified) // Unspecified dla PostgreSQL
-            };
-
-            _context.Rezerwacje.Add(rezerwacja);
-            await _context.SaveChangesAsync();
-
-            // Log tworzenia rezerwacji
-            await _auditService.LogAsync("UTWORZENIE_REZERWACJI", "Rezerwacja", rezerwacja.Id,
-                $"Sala {dto.SalaId}, {dto.DataStart:dd.MM.yyyy HH:mm} - {dto.DataKoniec:dd.MM.yyyy HH:mm}");
-
-            // Wyślij powiadomienie do opiekuna sali
-            await WyslijPowiadomienieDlaOpiekuna(rezerwacja);
-
-            // Powiadom o zmianie dostępności kalendarza (real-time)
-            await _realtimeAvailabilityService.NotifyAvailabilityChangedAsync(
-                rezerwacja.SalaId, 
-                rezerwacja.StanowiskoId, 
-                rezerwacja.DataStart.Date, 
-                rezerwacja.Status);
-
-            // Zwróć tylko podstawowe
-            var result = new RezerwacjaDetailsDto
-            {
-                Id = rezerwacja.Id,
-                SalaId = rezerwacja.SalaId,
-                StanowiskoId = rezerwacja.StanowiskoId,
-                UzytkownikId = rezerwacja.UzytkownikId,
-                DataUtworzenia = rezerwacja.DataUtworzenia,
-                DataStart = rezerwacja.DataStart,
-                DataKoniec = rezerwacja.DataKoniec,
-                Status = rezerwacja.Status,
-                Opis = rezerwacja.Opis
-            };
-
-            return CreatedAtAction(nameof(GetById), new { id = rezerwacja.Id }, result);
+                // Rollback w przypadku błędu
+                await transaction.RollbackAsync();
+                
+                // Loguj błąd dla diagnostyki
+                Console.WriteLine($"[ERROR] Błąd podczas tworzenia rezerwacji: {ex.Message}");
+                
+                // Zwróć odpowiedni komunikat
+                if (ex.InnerException?.Message.Contains("serialization") == true)
+                {
+                    return BadRequest("Konflikt rezerwacji - ktoś inny właśnie zarezerwował ten termin. Spróbuj ponownie.");
+                }
+                
+                return StatusCode(500, "Błąd podczas tworzenia rezerwacji. Spróbuj ponownie.");
+            }
         }
 
         [HttpGet("{id}")]
