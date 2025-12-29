@@ -687,8 +687,7 @@ namespace Backend.Controllers
 
         private async Task<bool> CheckAvailability(int? salaId, int? stanowiskoId, DateTime start, DateTime end)
         {
-            var startUnspecified = DateTime.SpecifyKind(start, DateTimeKind.Unspecified);
-            var endUnspecified = DateTime.SpecifyKind(end, DateTimeKind.Unspecified);
+            // Parametry start i end są już przekonwertowane na Unspecified przez wywołujący kod
             
             if (stanowiskoId.HasValue)
             {
@@ -701,8 +700,8 @@ namespace Backend.Controllers
                 // Potem sprawdź konflikty w jednym zapytaniu
                 var hasConflicts = await _context.Rezerwacje
                     .Where(r => (r.Status == "oczekujące" || r.Status == "zaakceptowano") && 
-                               r.DataStart < endUnspecified && 
-                               r.DataKoniec > startUnspecified)
+                               r.DataStart < end && 
+                               r.DataKoniec > start)
                     .Where(r => r.StanowiskoId == stanowiskoId.Value || r.SalaId == targetSalaId)
                     .AnyAsync();
                     
@@ -713,8 +712,8 @@ namespace Backend.Controllers
                 // Dla sali - jedno zapytanie sprawdzające konflikty sali i wszystkich stanowisk w tej sali
                 var hasConflicts = await _context.Rezerwacje
                     .Where(r => (r.Status == "oczekujące" || r.Status == "zaakceptowano") && 
-                               r.DataStart < endUnspecified && 
-                               r.DataKoniec > startUnspecified)
+                               r.DataStart < end && 
+                               r.DataKoniec > start)
                     .Where(r => r.SalaId == salaId.Value || r.Stanowisko.SalaId == salaId.Value)
                     .AnyAsync();
                     

@@ -20,8 +20,8 @@ public class ExpiredReservationsService : BackgroundService
     {
         _logger.LogInformation("ExpiredReservationsService started");
         
-        // Poczekaj 1 minutę po starcie aplikacji
-        await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+        // Poczekaj do najbliższego planowanego uruchomienia (:01 lub :31)
+        await WaitUntilNextScheduledRun(stoppingToken);
         
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -30,7 +30,8 @@ public class ExpiredReservationsService : BackgroundService
                 await CheckAndUpdateExpiredReservations();
                 await CheckAndSendReminderNotifications();
                 
-                // Sprawdzaj co 30 minut
+                // Czekaj 30 minut do następnego planowanego uruchomienia
+                // Zawsze będzie to :01 lub :31, niezależnie od czasu startu
                 await Task.Delay(TimeSpan.FromMinutes(30), stoppingToken);
             }
             catch (OperationCanceledException)
@@ -43,12 +44,47 @@ public class ExpiredReservationsService : BackgroundService
             {
                 _logger.LogError(ex, "Error checking expired reservations");
                 
-                // W razie błędu - czekaj krócej i spróbuj ponownie
-                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+                // W razie błędu - synchronizuj ponownie do najbliższego zaplanowanego czasu
+                await WaitUntilNextScheduledRun(stoppingToken);
             }
         }
         
         _logger.LogInformation("ExpiredReservationsService stopped");
+    }
+    
+    private async Task WaitUntilNextScheduledRun(CancellationToken stoppingToken)
+    {
+        var now = DateTime.Now;
+        var scheduledMinutes = new[] { 1, 31 }; // Sprawdzanie o :01 i :31 każdej godziny
+        
+        // Znajdź najbliższy zaplanowany czas
+        var nextRun = GetNextScheduledTime(now, scheduledMinutes);
+        
+        var delay = nextRun - now;
+        if (delay.TotalMilliseconds > 0)
+        {
+            _logger.LogInformation("Next scheduled check at {NextRun:HH:mm:ss} (waiting {DelayMinutes:F1} minutes)", 
+                nextRun, delay.TotalMinutes);
+            await Task.Delay(delay, stoppingToken);
+        }
+    }
+    
+    private static DateTime GetNextScheduledTime(DateTime now, int[] scheduledMinutes)
+    {
+        var currentHour = new DateTime(now.Year, now.Month, now.Day, now.Hour, 0, 0);
+        
+        // Sprawdź czy któraś zaplanowana minuta w tej godzinie jest w przyszłości
+        foreach (var minute in scheduledMinutes.OrderBy(m => m))
+        {
+            var candidateTime = currentHour.AddMinutes(minute);
+            if (candidateTime > now)
+            {
+                return candidateTime;
+            }
+        }
+        
+        // Jeśli nie, weź pierwszy czas z następnej godziny
+        return currentHour.AddHours(1).AddMinutes(scheduledMinutes.Min());
     }
 
     private async Task CheckAndUpdateExpiredReservations()
