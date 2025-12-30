@@ -38,26 +38,6 @@ namespace Backend.Hubs
             await base.OnDisconnectedAsync(exception);
         }
 
-        public async Task JoinUserGroup()
-        {
-            var userId = Context.UserIdentifier;
-            if (!string.IsNullOrEmpty(userId))
-            {
-                await Groups.AddToGroupAsync(Context.ConnectionId, $"User_{userId}");
-                _logger.LogDebug($"Użytkownik {userId} dołączył do grupy powiadomień");
-            }
-        }
-
-        public async Task LeaveUserGroup()
-        {
-            var userId = Context.UserIdentifier;
-            if (!string.IsNullOrEmpty(userId))
-            {
-                await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"User_{userId}");
-                _logger.LogDebug($"Użytkownik {userId} opuścił grupę powiadomień");
-            }
-        }
-
         public async Task<int> GetUnreadCount()
         {
             var userId = Context.UserIdentifier;

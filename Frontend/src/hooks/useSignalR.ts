@@ -44,8 +44,6 @@ export const useSignalR = () => {
       .then(() => {
         console.log('SignalR połączony');
         setIsConnected(true);
-        // Dołącz do grupy użytkownika
-        newConnection.invoke('JoinUserGroup').catch(err => console.error('Błąd dołączania do grupy:', err));
       })
       .catch(err => {
         console.error('Błąd połączenia SignalR:', err);
@@ -56,7 +54,6 @@ export const useSignalR = () => {
     newConnection.onreconnected(() => {
       console.log('SignalR ponownie połączony');
       setIsConnected(true);
-      newConnection.invoke('JoinUserGroup').catch(err => console.error('Błąd dołączania do grupy po reconnect:', err));
     });
 
     newConnection.onreconnecting(() => {
