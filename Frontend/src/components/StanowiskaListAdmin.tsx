@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import AddStationForm from "./forms/AddStationForm";
 import { fetchStanowiska, editStanowisko, deleteStanowisko, fetchStanowiskoById, addStanowisko } from "../services/stanowiskoService";
 import { useToastContext } from "./ToastProvider";
-import { LoadingTable } from "./LoadingStates";
+import { LoadingTable, LoadingSpinner } from "./LoadingStates";
 import { useMinimumLoadingDelay } from "../hooks/useMinimumLoadingDelay";
 
 type Stanowisko = {
@@ -30,6 +30,8 @@ export default function StanowiskaListAdmin({ autoAdd = false, onAutoAddProcesse
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const { showSuccess, showError } = useToastContext();
@@ -54,11 +56,16 @@ export default function StanowiskaListAdmin({ autoAdd = false, onAutoAddProcesse
 
   const handleDelete = async (id: number) => {
     if (!window.confirm("Na pewno usunąć stanowisko?")) return;
+    setDeletingId(id);
     try {
       await deleteStanowisko(id);
       setStanowiska((prev) => prev.filter((s) => s.id !== id));
+      showSuccess("Pomyślnie usunięto stanowisko");
     } catch (e) {
       console.error(e);
+      showError("Błąd podczas usuwania stanowiska");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -79,6 +86,7 @@ export default function StanowiskaListAdmin({ autoAdd = false, onAutoAddProcesse
 
   const handleEditSubmit = async (data: any) => {
     if (!editingStanowisko) return;
+    setIsEditing(true);
     try {
       await editStanowisko(editingStanowisko.id, data);
       setStanowiska((prev) => prev.map((s) => (s.id === editingStanowisko.id ? { ...s, ...data } : s)));
@@ -88,6 +96,8 @@ export default function StanowiskaListAdmin({ autoAdd = false, onAutoAddProcesse
     } catch (e) {
       console.error(e);
       showError("Błąd podczas edycji stanowiska");
+    } finally {
+      setIsEditing(false);
     }
   };
 
@@ -204,6 +214,7 @@ export default function StanowiskaListAdmin({ autoAdd = false, onAutoAddProcesse
           initialData={initialData}
           existingImages={existingImages}
           submitLabel="Zapisz zmiany"
+          isLoading={isEditing}
           onCancel={() => {
             setEditingStanowisko(null);
             setEditingStanowiskoDetails(null);
@@ -273,7 +284,7 @@ export default function StanowiskaListAdmin({ autoAdd = false, onAutoAddProcesse
               <p><strong>Typ:</strong> {s.typ ?? "-"}</p>
               <p><strong>Opis:</strong> {s.opis ?? "-"}</p>
             </div>
-            
+
             {/* Sekcja akcji - zawsze na dole, jednakowa wysokość */}
             <div className="list-item-actions mt-auto">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2 w-full">
@@ -298,12 +309,22 @@ export default function StanowiskaListAdmin({ autoAdd = false, onAutoAddProcesse
                 </button>
                 <button
                   onClick={() => handleDelete(s.id)}
-                  className="btn btn-danger btn-sm flex-1 sm:flex-none text-center"
+                  disabled={deletingId === s.id}
+                  className="btn btn-danger btn-sm flex-1 sm:flex-none text-center disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center"
                 >
-                  <svg className="h-3 w-3 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                  Usuń
+                  {deletingId === s.id ? (
+                    <>
+                      <LoadingSpinner size="sm" color="white" className="mr-2" />
+                      Usuwanie...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-3 w-3 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Usuń
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -325,21 +346,20 @@ export default function StanowiskaListAdmin({ autoAdd = false, onAutoAddProcesse
             >
               Poprzednia
             </button>
-            
+
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
               <button
                 key={page}
                 onClick={() => setCurrentPage(page)}
-                className={`btn btn-sm ${
-                  currentPage === page 
-                    ? 'btn-primary' 
-                    : 'btn-secondary'
-                }`}
+                className={`btn btn-sm ${currentPage === page
+                  ? 'btn-primary'
+                  : 'btn-secondary'
+                  }`}
               >
                 {page}
               </button>
             ))}
-            
+
             <button
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useToastContext } from "../ToastProvider";
 import ImageUpload from "../ImageUpload";
 import { FormErrorBoundary } from "../ErrorBoundary";
+import { LoadingButton } from "../LoadingStates";
 
 type StanowiskoFormData = {
   salaId: number;
@@ -18,12 +19,13 @@ type SalaTyp = {
   budynek: string;
 };
 
-export default function AddStationForm({ onSubmit, initialData, submitLabel = "Dodaj", onCancel, existingImages = [] }: {
+export default function AddStationForm({ onSubmit, initialData, submitLabel = "Dodaj", onCancel, existingImages = [], isLoading = false }: {
   onSubmit: (data: StanowiskoFormData) => void;
   initialData?: Partial<StanowiskoFormData>;
   submitLabel?: string;
   onCancel?: () => void;
   existingImages?: { id: number; url: string }[];
+  isLoading?: boolean;
 }) {
   const [sale, setSale] = useState<SalaTyp[]>([]);
   const [salaId, setSalaId] = useState<number | "">(initialData?.salaId ?? "");
@@ -78,93 +80,98 @@ export default function AddStationForm({ onSubmit, initialData, submitLabel = "D
         </p>
       </div>
 
-      <FormErrorBoundary 
+      <FormErrorBoundary
         onError={resetForm}
         fallbackMessage="Wystąpił błąd w formularzu stanowiska. Formularz został zresetowany."
       >
         <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="form-group">
+              <label className="form-label">Nazwa laboratorium</label>
+              <input
+                value={nazwa}
+                onChange={(e) => setNazwa(e.target.value)}
+                required
+                className="form-input"
+                placeholder="Wprowadź nazwę laboratorium"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Typ laboratorium</label>
+              <input
+                value={typ}
+                onChange={(e) => setTyp(e.target.value)}
+                className="form-input"
+                placeholder="np. Informatyczne, Chemiczne, Fizyczne"
+              />
+            </div>
+          </div>
+
           <div className="form-group">
-            <label className="form-label">Nazwa laboratorium</label>
-            <input
-              value={nazwa}
-              onChange={(e) => setNazwa(e.target.value)}
+            <label className="form-label">Przypisz do sali</label>
+            <select
+              value={salaId}
+              onChange={(e) => setSalaId(e.target.value === "" ? "" : parseInt(e.target.value))}
               required
               className="form-input"
-              placeholder="Wprowadź nazwę laboratorium"
-            />
+            >
+              <option value="">-- Wybierz salę --</option>
+              {sale.map((s) => (
+                <option key={s.id} value={s.id}>
+                  Sala {s.numer} - Budynek {s.budynek}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Typ laboratorium</label>
-            <input
-              value={typ}
-              onChange={(e) => setTyp(e.target.value)}
+            <label className="form-label">Opis laboratorium</label>
+            <textarea
+              value={opis}
+              onChange={(e) => setOpis(e.target.value)}
               className="form-input"
-              placeholder="np. Informatyczne, Chemiczne, Fizyczne"
+              placeholder="Dodatkowe informacje o laboratorium, wyposażenie, specyfikacja..."
+              rows={4}
             />
           </div>
-        </div>
 
-        <div className="form-group">
-          <label className="form-label">Przypisz do sali</label>
-          <select
-            value={salaId}
-            onChange={(e) => setSalaId(e.target.value === "" ? "" : parseInt(e.target.value))}
-            required
-            className="form-input"
-          >
-            <option value="">-- Wybierz salę --</option>
-            {sale.map((s) => (
-              <option key={s.id} value={s.id}>
-                Sala {s.numer} - Budynek {s.budynek}
-              </option>
-            ))}
-          </select>
-        </div>
+          {/* Sekcja zdjęć */}
+          <div className="form-group">
+            <label className="form-label">Zdjęcia laboratorium</label>
+            <p className="text-sm text-gray-600 mb-3">
+              Dodaj zdjęcia laboratorium, aby pokazać jego wyposażenie i możliwości
+            </p>
+            <ImageUpload
+              onFilesChange={setSelectedImages}
+              onExistingImagesChange={setImagesToDelete}
+              existingImages={existingImages}
+              maxFiles={8}
+              maxSizeInMB={5}
+            />
+          </div>
 
-        <div className="form-group">
-          <label className="form-label">Opis laboratorium</label>
-          <textarea
-            value={opis}
-            onChange={(e) => setOpis(e.target.value)}
-            className="form-input"
-            placeholder="Dodatkowe informacje o laboratorium, wyposażenie, specyfikacja..."
-            rows={4}
-          />
-        </div>
-
-        {/* Sekcja zdjęć */}
-        <div className="form-group">
-          <label className="form-label">Zdjęcia laboratorium</label>
-          <p className="text-sm text-gray-600 mb-3">
-            Dodaj zdjęcia laboratorium, aby pokazać jego wyposażenie i możliwości
-          </p>
-          <ImageUpload 
-            onFilesChange={setSelectedImages}
-            onExistingImagesChange={setImagesToDelete}
-            existingImages={existingImages}
-            maxFiles={8}
-            maxSizeInMB={5}
-          />
-        </div>
-
-        <div className="flex items-center space-x-4 pt-6 border-t border-neutral-200">
-          <button type="submit" className="btn btn-primary">
-            <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-            {submitLabel}
-          </button>
-          {onCancel && (
-            <button type="button" className="btn btn-secondary" onClick={onCancel}>
+          <div className="flex items-center space-x-4 pt-6 border-t border-neutral-200">
+            <LoadingButton
+              type="submit"
+              loading={isLoading}
+              loadingText={initialData ? "Zapisywanie..." : "Dodawanie..."}
+              className="btn btn-primary"
+            >
               <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              Anuluj
-            </button>
-          )}
-        </div>
+              {submitLabel}
+            </LoadingButton>
+            {onCancel && (
+              <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={isLoading}>
+                <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Anuluj
+              </button>
+            )}
+          </div>
         </form>
       </FormErrorBoundary>
     </div>

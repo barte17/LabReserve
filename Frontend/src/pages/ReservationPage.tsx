@@ -7,6 +7,7 @@ import { FormErrorBoundary } from '../components/ErrorBoundary';
 import { useRealtimeCalendar } from '../hooks/useRealtimeCalendar';
 import { useAuth } from '../contexts/AuthContext';
 import UnauthorizedMessage from '../components/UnauthorizedMessage';
+import { LoadingButton } from '../components/LoadingStates';
 
 interface AvailableHour {
   godzina: string;
@@ -378,7 +379,7 @@ export default function ReservationPage() {
     setSelectedEndHour('');
     setDescription('');
     setAvailableHours([]);
-    setIsLoading(false);
+    setLoading(false);
     setError('');
   };
 
@@ -678,10 +679,10 @@ export default function ReservationPage() {
                           onClick={() => hour.dostepna ? handleStartHourChange(formatHour(hour.godzina)) : null}
                           disabled={!hour.dostepna}
                           className={`p-2 text-sm rounded border transition-all duration-300 ${!hour.dostepna
-                              ? 'bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed'
-                              : selectedStartHour === formatHour(hour.godzina)
-                                ? 'bg-blue-600 text-white border-blue-600 shadow-md'
-                                : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50 hover:border-blue-200'
+                            ? 'bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed'
+                            : selectedStartHour === formatHour(hour.godzina)
+                              ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50 hover:border-blue-200'
                             } ${lastUpdate && 'animate-pulse-once'}`}
                           style={{
                             animation: lastUpdate ? 'pulse-subtle 0.6s ease-in-out' : undefined
@@ -713,8 +714,8 @@ export default function ReservationPage() {
                         type="button"
                         onClick={() => setSelectedEndHour(hour)}
                         className={`p-2 text-sm rounded border ${selectedEndHour === hour
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'
                           }`}
                       >
                         {hour}
@@ -771,17 +772,20 @@ export default function ReservationPage() {
                 <button
                   type="button"
                   onClick={() => navigate(-1)}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                  disabled={loading}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Anuluj
                 </button>
-                <button
+                <LoadingButton
                   type="submit"
-                  disabled={loading || !selectedDate || !selectedStartHour || !selectedEndHour}
+                  loading={loading}
+                  loadingText="Tworzenie rezerwacji..."
+                  disabled={!selectedDate || !selectedStartHour || !selectedEndHour}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Tworzenie...' : 'Utwórz rezerwację'}
-                </button>
+                  Utwórz rezerwację
+                </LoadingButton>
               </div>
 
               {/* Błędy i komunikaty pod przyciskami */}

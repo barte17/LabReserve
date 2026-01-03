@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { fetchSale, editSala, deleteSala, fetchSalaById, addSala } from "../services/salaService";
 import AddSalaForm from "./forms/AddRoomForm";
 import { useToastContext } from "./ToastProvider";
-import { LoadingTable } from "./LoadingStates";
+import { LoadingTable, LoadingSpinner } from "./LoadingStates";
 import { useMinimumLoadingDelay } from "../hooks/useMinimumLoadingDelay";
 
 type Sala = {
@@ -38,6 +38,8 @@ export default function SaleListAdmin({ onEdit, autoAdd = false, onAutoAddProces
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const { showSuccess, showError } = useToastContext();
@@ -66,11 +68,16 @@ export default function SaleListAdmin({ onEdit, autoAdd = false, onAutoAddProces
 
   const handleDelete = async (id: number) => {
     if (!window.confirm("Na pewno usunąć salę?")) return;
+    setDeletingId(id);
     try {
       await deleteSala(id);
       setSale((prev) => prev.filter((s) => s.id !== id));
+      showSuccess("Pomyślnie usunięto salę");
     } catch (e) {
       console.error(e);
+      showError("Błąd podczas usuwania sali");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -91,6 +98,7 @@ export default function SaleListAdmin({ onEdit, autoAdd = false, onAutoAddProces
 
   const handleEditSubmit = async (data: any) => {
     if (!editingSala) return;
+    setIsEditing(true);
     try {
       await editSala(editingSala.id, data);
       const updatedSale = await fetchSale();
@@ -101,6 +109,8 @@ export default function SaleListAdmin({ onEdit, autoAdd = false, onAutoAddProces
     } catch (e) {
       console.error(e);
       showError("Błąd podczas edycji sali");
+    } finally {
+      setIsEditing(false);
     }
   };
 
@@ -201,6 +211,7 @@ export default function SaleListAdmin({ onEdit, autoAdd = false, onAutoAddProces
           initialData={editingSala}
           existingImages={existingImages}
           submitLabel="Zapisz zmiany"
+          isLoading={isEditing}
           onCancel={() => {
             setEditingSala(null);
             setEditingSalaDetails(null);
@@ -226,58 +237,58 @@ export default function SaleListAdmin({ onEdit, autoAdd = false, onAutoAddProces
   return (
     <div>
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-  <div className="flex flex-col lg:flex-row lg:items-end lg:space-x-4 gap-4">
-    {/* pola wyszukiwarki i selecty */}
-    <div className="flex-1 flex flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0">
-      <div className="flex-1">
-        <label className="block text-sm font-semibold mb-1 text-gray-700">Wyszukaj salę</label>
-        <input
-          type="text"
-          className="form-input h-10 w-full"
-          placeholder="Numer, budynek, opiekun, opis..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
-      <div className="flex-1">
-        <label className="block text-sm font-semibold mb-1 text-gray-700">Sortuj według</label>
-        <select
-          className="select h-10 w-full"
-          value={sortKey}
-          onChange={e => setSortKey(e.target.value as any)}
-        >
-          <option value="budynekA">Budynek A</option>
-          <option value="budynekB">Budynek B</option>
-          <option value="maxOsobAsc">Maks osób rosnąco</option>
-          <option value="maxOsobDesc">Maks osób malejąco</option>
-        </select>
-      </div>
-      <div className="flex-1">
-        <label className="block text-sm font-semibold mb-1 text-gray-700">Stanowiska</label>
-        <select
-          className="select h-10 w-full"
-          value={stanowiskaFilter}
-          onChange={e => setStanowiskaFilter(e.target.value as "" | "tak" | "nie")}
-        >
-          <option value="">Wszystkie</option>
-          <option value="tak">Z stanowiskami</option>
-          <option value="nie">Bez stanowisk</option>
-        </select>
-      </div>
-    </div>
+        <div className="flex flex-col lg:flex-row lg:items-end lg:space-x-4 gap-4">
+          {/* pola wyszukiwarki i selecty */}
+          <div className="flex-1 flex flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0">
+            <div className="flex-1">
+              <label className="block text-sm font-semibold mb-1 text-gray-700">Wyszukaj salę</label>
+              <input
+                type="text"
+                className="form-input h-10 w-full"
+                placeholder="Numer, budynek, opiekun, opis..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-semibold mb-1 text-gray-700">Sortuj według</label>
+              <select
+                className="select h-10 w-full"
+                value={sortKey}
+                onChange={e => setSortKey(e.target.value as any)}
+              >
+                <option value="budynekA">Budynek A</option>
+                <option value="budynekB">Budynek B</option>
+                <option value="maxOsobAsc">Maks osób rosnąco</option>
+                <option value="maxOsobDesc">Maks osób malejąco</option>
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-semibold mb-1 text-gray-700">Stanowiska</label>
+              <select
+                className="select h-10 w-full"
+                value={stanowiskaFilter}
+                onChange={e => setStanowiskaFilter(e.target.value as "" | "tak" | "nie")}
+              >
+                <option value="">Wszystkie</option>
+                <option value="tak">Z stanowiskami</option>
+                <option value="nie">Bez stanowisk</option>
+              </select>
+            </div>
+          </div>
 
-    {/* przycisk */}
-    <div className="flex-shrink-0 self-end">
-      <button
-        onClick={() => setShowAddForm(true)}
-        className="bg-red-600 text-white px-6 py-2.5 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2 whitespace-nowrap h-10"
-      >
-        <span>➕</span>
-        <span>Dodaj salę</span>
-      </button>
-    </div>
-  </div>
-</div>
+          {/* przycisk */}
+          <div className="flex-shrink-0 self-end">
+            <button
+              onClick={() => setShowAddForm(true)}
+              className="bg-red-600 text-white px-6 py-2.5 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2 whitespace-nowrap h-10"
+            >
+              <span>➕</span>
+              <span>Dodaj salę</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* lista sal */}
       <div className="space-y-4">
@@ -367,12 +378,22 @@ export default function SaleListAdmin({ onEdit, autoAdd = false, onAutoAddProces
                 </button>
                 <button
                   onClick={() => handleDelete(s.id)}
-                  className="btn btn-danger btn-sm flex-1 sm:flex-none text-center"
+                  disabled={deletingId === s.id}
+                  className="btn btn-danger btn-sm flex-1 sm:flex-none text-center disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center"
                 >
-                  <svg className="h-3 w-3 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                  Usuń
+                  {deletingId === s.id ? (
+                    <>
+                      <LoadingSpinner size="sm" color="white" className="mr-2" />
+                      Usuwanie...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-3 w-3 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Usuń
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -394,21 +415,20 @@ export default function SaleListAdmin({ onEdit, autoAdd = false, onAutoAddProces
             >
               Poprzednia
             </button>
-            
+
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
               <button
                 key={page}
                 onClick={() => setCurrentPage(page)}
-                className={`btn btn-sm ${
-                  currentPage === page 
-                    ? 'btn-primary' 
-                    : 'btn-secondary'
-                }`}
+                className={`btn btn-sm ${currentPage === page
+                  ? 'btn-primary'
+                  : 'btn-secondary'
+                  }`}
               >
                 {page}
               </button>
             ))}
-            
+
             <button
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchRezerwacje, updateStatus, deleteRezerwacja, cancelReservation, type RezerwacjaDetailsDto } from "../services/rezerwacjaService";
-import { LoadingTable } from "./LoadingStates";
+import { LoadingTable, LoadingSpinner } from "./LoadingStates";
 import { useMinimumLoadingDelay } from "../hooks/useMinimumLoadingDelay";
 
 interface RezerwacjeListProps {
@@ -35,38 +35,48 @@ export default function RezerwacjeList({ autoFilter, onAutoFilterProcessed }: Re
   }, [autoFilter]);
 
   const [error, setError] = useState<string>("");
+  const [changingStatusId, setChangingStatusId] = useState<number | null>(null);
+  const [cancelingId, setCancelingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const handleStatusChange = async (id: number, newStatus: string) => {
+    setChangingStatusId(id);
     try {
       await updateStatus(id, newStatus);
-      setRezerwacje(prev => 
+      setRezerwacje(prev =>
         prev.map(rez => rez.id === id ? { ...rez, status: newStatus } : rez)
       );
       setError("");
     } catch (error) {
       console.error("Błąd podczas zmiany statusu:", error);
       setError("Nie udało się zmienić statusu rezerwacji");
+    } finally {
+      setChangingStatusId(null);
     }
   };
 
   const handleCancel = async (id: number) => {
     if (!window.confirm("Czy na pewno chcesz anulować tę rezerwację?")) return;
-    
+
+    setCancelingId(id);
     try {
       await cancelReservation(id);
-      setRezerwacje(prev => 
+      setRezerwacje(prev =>
         prev.map(rez => rez.id === id ? { ...rez, status: "anulowane" } : rez)
       );
       setError("");
     } catch (error) {
       console.error("Błąd podczas anulowania:", error);
       setError("Nie udało się anulować rezerwacji");
+    } finally {
+      setCancelingId(null);
     }
   };
 
   const handleDelete = async (id: number) => {
     if (!window.confirm("Czy na pewno chcesz PERMANENTNIE usunąć tę rezerwację? Ta operacja jest nieodwracalna!")) return;
-    
+
+    setDeletingId(id);
     try {
       await deleteRezerwacja(id);
       setRezerwacje(prev => prev.filter(rez => rez.id !== id));
@@ -74,6 +84,8 @@ export default function RezerwacjeList({ autoFilter, onAutoFilterProcessed }: Re
     } catch (error) {
       console.error("Błąd podczas usuwania:", error);
       setError("Nie udało się usunąć rezerwacji");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -81,11 +93,11 @@ export default function RezerwacjeList({ autoFilter, onAutoFilterProcessed }: Re
   const filteredAndSortedRezerwacje = (() => {
     const today = new Date();
     today.setHours(23, 59, 59, 999); // koniec dnia
-    
+
     // 1. Filtrowanie
     let filtered = rezerwacje.filter(rez => {
       const searchLower = searchTerm.toLowerCase();
-      const matchesSearch = 
+      const matchesSearch =
         rez.id.toString().includes(searchTerm) ||
         rez.uzytkownikId.toLowerCase().includes(searchLower) ||
         rez.status.toLowerCase().includes(searchLower) ||
@@ -93,13 +105,13 @@ export default function RezerwacjeList({ autoFilter, onAutoFilterProcessed }: Re
         new Date(rez.dataStart).toLocaleDateString('pl-PL').includes(searchTerm) ||
         new Date(rez.dataKoniec).toLocaleDateString('pl-PL').includes(searchTerm) ||
         new Date(rez.dataUtworzenia).toLocaleDateString('pl-PL').includes(searchTerm);
-      
+
       const matchesStatus = statusFilter === "" || rez.status === statusFilter;
-      
+
       // Filtr zakończonych rezerwacji
       const isCompleted = new Date(rez.dataKoniec) < today;
       const matchesCompleted = showCompleted || !isCompleted;
-      
+
       return matchesSearch && matchesStatus && matchesCompleted;
     });
 
@@ -196,9 +208,8 @@ export default function RezerwacjeList({ autoFilter, onAutoFilterProcessed }: Re
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
         <button
           onClick={() => setStatusFilter("")}
-          className={`card transition-all duration-200 hover:shadow-lg ${
-            statusFilter === "" ? "ring-2 ring-primary-500 bg-primary-50" : "hover:bg-neutral-50"
-          }`}
+          className={`card transition-all duration-200 hover:shadow-lg ${statusFilter === "" ? "ring-2 ring-primary-500 bg-primary-50" : "hover:bg-neutral-50"
+            }`}
         >
           <div className="card-body text-center">
             <div className="text-2xl font-bold text-primary-600 mb-1">
@@ -209,12 +220,11 @@ export default function RezerwacjeList({ autoFilter, onAutoFilterProcessed }: Re
             </div>
           </div>
         </button>
-        
+
         <button
           onClick={() => setStatusFilter("oczekujące")}
-          className={`card transition-all duration-200 hover:shadow-lg ${
-            statusFilter === "oczekujące" ? "ring-2 ring-yellow-500 bg-yellow-50" : "hover:bg-neutral-50"
-          }`}
+          className={`card transition-all duration-200 hover:shadow-lg ${statusFilter === "oczekujące" ? "ring-2 ring-yellow-500 bg-yellow-50" : "hover:bg-neutral-50"
+            }`}
         >
           <div className="card-body text-center">
             <div className="text-2xl font-bold text-yellow-600 mb-1">
@@ -225,12 +235,11 @@ export default function RezerwacjeList({ autoFilter, onAutoFilterProcessed }: Re
             </div>
           </div>
         </button>
-        
+
         <button
           onClick={() => setStatusFilter("zaakceptowano")}
-          className={`card transition-all duration-200 hover:shadow-lg ${
-            statusFilter === "zaakceptowano" ? "ring-2 ring-green-500 bg-green-50" : "hover:bg-neutral-50"
-          }`}
+          className={`card transition-all duration-200 hover:shadow-lg ${statusFilter === "zaakceptowano" ? "ring-2 ring-green-500 bg-green-50" : "hover:bg-neutral-50"
+            }`}
         >
           <div className="card-body text-center">
             <div className="text-2xl font-bold text-green-600 mb-1">
@@ -241,12 +250,11 @@ export default function RezerwacjeList({ autoFilter, onAutoFilterProcessed }: Re
             </div>
           </div>
         </button>
-        
+
         <button
           onClick={() => setStatusFilter("odrzucono")}
-          className={`card transition-all duration-200 hover:shadow-lg ${
-            statusFilter === "odrzucono" ? "ring-2 ring-red-500 bg-red-50" : "hover:bg-neutral-50"
-          }`}
+          className={`card transition-all duration-200 hover:shadow-lg ${statusFilter === "odrzucono" ? "ring-2 ring-red-500 bg-red-50" : "hover:bg-neutral-50"
+            }`}
         >
           <div className="card-body text-center">
             <div className="text-2xl font-bold text-red-600 mb-1">
@@ -260,9 +268,8 @@ export default function RezerwacjeList({ autoFilter, onAutoFilterProcessed }: Re
 
         <button
           onClick={() => setStatusFilter("anulowane")}
-          className={`card transition-all duration-200 hover:shadow-lg ${
-            statusFilter === "anulowane" ? "ring-2 ring-gray-500 bg-gray-50" : "hover:bg-neutral-50"
-          }`}
+          className={`card transition-all duration-200 hover:shadow-lg ${statusFilter === "anulowane" ? "ring-2 ring-gray-500 bg-gray-50" : "hover:bg-neutral-50"
+            }`}
         >
           <div className="card-body text-center">
             <div className="text-2xl font-bold text-gray-600 mb-1">
@@ -279,9 +286,8 @@ export default function RezerwacjeList({ autoFilter, onAutoFilterProcessed }: Re
             setStatusFilter("po terminie");
             setShowCompleted(true);
           }}
-          className={`card transition-all duration-200 hover:shadow-lg ${
-            statusFilter === "po terminie" ? "ring-2 ring-orange-500 bg-orange-50" : "hover:bg-neutral-50"
-          }`}
+          className={`card transition-all duration-200 hover:shadow-lg ${statusFilter === "po terminie" ? "ring-2 ring-orange-500 bg-orange-50" : "hover:bg-neutral-50"
+            }`}
         >
           <div className="card-body text-center">
             <div className="text-2xl font-bold text-orange-600 mb-1">
@@ -360,7 +366,7 @@ export default function RezerwacjeList({ autoFilter, onAutoFilterProcessed }: Re
                     </span>
                   </div>
                 </div>
-                
+
                 {rez.opis && (
                   <div className="mt-3">
                     <span className="font-medium text-neutral-700">Opis:</span>
@@ -373,59 +379,98 @@ export default function RezerwacjeList({ autoFilter, onAutoFilterProcessed }: Re
                 <div className="flex items-center gap-2 flex-wrap">
                   <div className="flex items-center space-x-3">
                     <span className="text-sm font-medium text-gray-700">Status:</span>
-                    
+
                     {/* Anuluj - po lewej stronie, dostępne dla wszystkich */}
                     {rez.status !== 'anulowane' && (
                       <button
                         onClick={() => handleCancel(rez.id)}
-                        className="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105 bg-gray-100 text-gray-600 hover:bg-orange-50 hover:text-orange-700 hover:shadow-md border border-gray-200"
+                        disabled={cancelingId === rez.id || changingStatusId === rez.id}
+                        className="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105 bg-gray-100 text-gray-600 hover:bg-orange-50 hover:text-orange-700 hover:shadow-md border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center"
                       >
-                        🚫 Anuluj
+                        {cancelingId === rez.id ? (
+                          <>
+                            <LoadingSpinner size="sm" className="mr-2" />
+                            Anulowanie...
+                          </>
+                        ) : (
+                          <>
+                            🚫 Anuluj
+                          </>
+                        )}
                       </button>
                     )}
-                    
+
                     <button
                       onClick={() => handleStatusChange(rez.id, 'oczekujące')}
-                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105 ${
-                        rez.status === 'oczekujące' 
-                          ? 'bg-yellow-100 text-yellow-800 ring-2 ring-yellow-300 shadow-sm' 
+                      disabled={changingStatusId === rez.id || cancelingId === rez.id}
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center ${rez.status === 'oczekujące'
+                          ? 'bg-yellow-100 text-yellow-800 ring-2 ring-yellow-300 shadow-sm'
                           : 'bg-gray-100 text-gray-600 hover:bg-yellow-50 hover:text-yellow-700 hover:shadow-md border border-gray-200'
-                      }`}
+                        }`}
                     >
-                      ⏳ Oczekujące
+                      {changingStatusId === rez.id ? (
+                        <>
+                          <LoadingSpinner size="sm" className="mr-2" />
+                          Zmiana...
+                        </>
+                      ) : (
+                        '⏳ Oczekujące'
+                      )}
                     </button>
-                    
+
                     <button
                       onClick={() => handleStatusChange(rez.id, 'zaakceptowano')}
-                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105 ${
-                        rez.status === 'zaakceptowano' 
-                          ? 'bg-green-100 text-green-800 ring-2 ring-green-300 shadow-sm' 
+                      disabled={changingStatusId === rez.id || cancelingId === rez.id}
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center ${rez.status === 'zaakceptowano'
+                          ? 'bg-green-100 text-green-800 ring-2 ring-green-300 shadow-sm'
                           : 'bg-gray-100 text-gray-600 hover:bg-green-50 hover:text-green-700 hover:shadow-md border border-gray-200'
-                      }`}
+                        }`}
                     >
-                      ✅ Zaakceptuj
+                      {changingStatusId === rez.id ? (
+                        <>
+                          <LoadingSpinner size="sm" className="mr-2" />
+                          Zmiana...
+                        </>
+                      ) : (
+                        '✅ Zaakceptuj'
+                      )}
                     </button>
-                    
+
                     <button
                       onClick={() => handleStatusChange(rez.id, 'odrzucono')}
-                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105 ${
-                        rez.status === 'odrzucono' 
-                          ? 'bg-red-100 text-red-800 ring-2 ring-red-300 shadow-sm' 
+                      disabled={changingStatusId === rez.id || cancelingId === rez.id}
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center ${rez.status === 'odrzucono'
+                          ? 'bg-red-100 text-red-800 ring-2 ring-red-300 shadow-sm'
                           : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-700 hover:shadow-md border border-gray-200'
-                      }`}
+                        }`}
                     >
-                      ❌ Odrzuć
+                      {changingStatusId === rez.id ? (
+                        <>
+                          <LoadingSpinner size="sm" className="mr-2" />
+                          Zmiana...
+                        </>
+                      ) : (
+                        '❌ Odrzuć'
+                      )}
                     </button>
                   </div>
-                  
+
                   {/* Usuń TYLKO anulowane rezerwacje - w sekcji statusów */}
                   {rez.status === 'anulowane' && (
                     <button
                       onClick={() => handleDelete(rez.id)}
-                      className="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105 bg-red-100 text-red-700 hover:bg-red-200 hover:text-red-800 hover:shadow-md border border-red-200 ml-3"
+                      disabled={deletingId === rez.id}
+                      className="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105 bg-red-100 text-red-700 hover:bg-red-200 hover:text-red-800 hover:shadow-md border border-red-200 ml-3 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center"
                       title="Usuń permanentnie (tylko anulowane rezerwacje)"
                     >
-                      🗑️ Usuń
+                      {deletingId === rez.id ? (
+                        <>
+                          <LoadingSpinner size="sm" className="mr-2" />
+                          Usuwanie...
+                        </>
+                      ) : (
+                        '🗑️ Usuń'
+                      )}
                     </button>
                   )}
                 </div>
@@ -449,21 +494,20 @@ export default function RezerwacjeList({ autoFilter, onAutoFilterProcessed }: Re
             >
               Poprzednia
             </button>
-            
+
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
               <button
                 key={page}
                 onClick={() => setCurrentPage(page)}
-                className={`btn btn-sm ${
-                  currentPage === page 
-                    ? 'btn-primary' 
+                className={`btn btn-sm ${currentPage === page
+                    ? 'btn-primary'
                     : 'btn-secondary'
-                }`}
+                  }`}
               >
                 {page}
               </button>
             ))}
-            
+
             <button
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
