@@ -19,38 +19,38 @@ export default function OpiekunDashboard({ onStatsUpdate, onNavigate }: OpiekunD
   });
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
         // Pobierz sale opiekuna
         const saleData = await fetchMojeSale();
-        
+
         // Pobierz rezerwacje opiekuna
         const rezerwacjeData = await fetchMojeRezerwacje();
-        
+
         // Pobierz stanowiska opiekuna (prawdziwe dane)
         const stanowiskaData = await fetchMojeStanowiska();
-        
+
         // Oblicz oczekujące rezerwacje
         const oczekujaceRezerwacje = rezerwacjeData.filter((r: any) => r.status === 'oczekujące').length;
-        
+
         // Oblicz dzisiejsze rezerwacje
         const today = new Date().toDateString();
         const dzisiejszeRezerwacje = rezerwacjeData.filter((r: any) => {
           const rezerwacjaDate = new Date(r.dataStart).toDateString();
           return rezerwacjaDate === today && r.status === 'zaakceptowano';
         }).length;
-        
+
         const newStats = {
           mojeSale: saleData.length,
           mojeStanowiska: stanowiskaData.length, // Prawdziwa liczba stanowisk
           oczekujaceRezerwacje,
           dzisiejszeRezerwacje
         };
-        
+
         setStats(newStats);
-        
+
         // Przekaż stats do parent component dla sidebar
         if (onStatsUpdate) {
           onStatsUpdate({
@@ -59,11 +59,11 @@ export default function OpiekunDashboard({ onStatsUpdate, onNavigate }: OpiekunD
             oczekujaceRezerwacje: newStats.oczekujaceRezerwacje
           });
         }
-        
+
         // Generuj ostatnie aktywności (Opcja A - bez nowej tabeli)
         const activities = generateRecentActivities(rezerwacjeData);
         setRecentActivities(activities);
-        
+
       } catch (error) {
         console.error('Błąd pobierania statystyk:', error);
         // Fallback do mock data w przypadku błędu
@@ -112,7 +112,7 @@ export default function OpiekunDashboard({ onStatsUpdate, onNavigate }: OpiekunD
     },
     {
       key: 'moje-stanowiska',
-      title: 'Stanowiska', 
+      title: 'Stanowiska',
       value: stats.mojeStanowiska,
       change: 'W Twoich salach',
       icon: '💻',
@@ -140,11 +140,11 @@ export default function OpiekunDashboard({ onStatsUpdate, onNavigate }: OpiekunD
   // Generuj nadchodzące rezerwacje z prawdziwych danych
   const upcomingReservations = React.useMemo(() => {
     if (!recentActivities.length) return [];
-    
+
     // Weź z recentActivities tylko oczekujące i zaakceptowane na najbliższe dni
     return recentActivities
       .filter(activity => activity.type === 'new' || activity.type === 'approved')
-      .slice(0, 3) // Max 3 nadchodzące
+      .slice(0, 5) // Max 5 nadchodzące
       .map(activity => ({
         sala: activity.details.split(' •')[0], // Wyciągnij nazwę sali z details
         uzytkownik: 'Użytkownik', // Można rozszerzyć o prawdziwe dane
@@ -196,14 +196,13 @@ export default function OpiekunDashboard({ onStatsUpdate, onNavigate }: OpiekunD
           </div>
           <div className="p-6">
             <div className="space-y-4">
-              {recentActivities.map((activity, index) => (
+              {recentActivities.slice(0, 5).map((activity, index) => (
                 <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg min-h-16 space-x-3">
-                  <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm ${
-                    activity.type === 'new' ? 'bg-blue-100' :
+                  <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm ${activity.type === 'new' ? 'bg-blue-100' :
                     activity.type === 'approved' ? 'bg-green-100' :
-                    activity.type === 'cancelled' ? 'bg-red-100' :
-                    'bg-gray-100'
-                  }`}>
+                      activity.type === 'cancelled' ? 'bg-red-100' :
+                        'bg-gray-100'
+                    }`}>
                     {activity.icon}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -242,19 +241,18 @@ export default function OpiekunDashboard({ onStatsUpdate, onNavigate }: OpiekunD
                       {reservation.uzytkownik} • {reservation.czas}
                     </p>
                   </div>
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    reservation.status === 'oczekujące' 
-                      ? 'bg-orange-100 text-orange-800'
-                      : 'bg-green-100 text-green-800'
-                  }`}>
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${reservation.status === 'oczekujące'
+                    ? 'bg-orange-100 text-orange-800'
+                    : 'bg-green-100 text-green-800'
+                    }`}>
                     {reservation.status}
                   </span>
                 </div>
               ))}
             </div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
   );
 }

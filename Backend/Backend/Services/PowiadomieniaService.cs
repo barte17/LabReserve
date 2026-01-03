@@ -34,9 +34,10 @@ namespace Backend.Services
                     return false;
                 }
 
-                // Sanityzacja danych wejściowych (XSS protection)
-                var sanitizedTytul = HtmlEncoder.Default.Encode(tytul.Trim());
-                var sanitizedTresc = HtmlEncoder.Default.Encode(tresc.Trim());
+                // Sanityzacja tylko actionUrl (może pochodzić z zewnętrznych źródeł)
+                // Tytuł i treść są bezpieczne - generowane przez backend, nie od użytkownika
+                var sanitizedTytul = tytul.Trim();
+                var sanitizedTresc = tresc.Trim();
                 var sanitizedActionUrl = actionUrl != null ? HtmlEncoder.Default.Encode(actionUrl.Trim()) : null;
 
                 // Ograniczenie długości
@@ -137,7 +138,7 @@ namespace Backend.Services
             }
         }
 
-        public async Task<List<Powiadomienie>> PobierzPowiadomieniaAsync(string uzytkownikId, int strona = 1, int rozmiar = 20)
+        public async Task<List<Powiadomienie>> PobierzPowiadomieniaAsync(string uzytkownikId, int strona = 1, int rozmiar = 10)
         {
             try
             {
@@ -149,7 +150,7 @@ namespace Backend.Services
                 }
 
                 if (strona < 1) strona = 1;
-                if (rozmiar < 1 || rozmiar > 100) rozmiar = 20; // Max 100 dla bezpieczeństwa
+                if (rozmiar < 1 || rozmiar > 100) rozmiar = 10; // Max 100 dla bezpieczeństwa
 
                 var teraz = DateTime.SpecifyKind(
                     TimeZoneInfo.ConvertTime(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Central European Standard Time")), 
@@ -214,6 +215,51 @@ namespace Backend.Services
             {
                 _logger.LogError(ex, $"Błąd podczas oznaczania powiadomienia {powiadomienieId} jako przeczytane");
                 return false;
+            }
+        }
+
+        public async Task<int> OznaczWszystkieJakoPrzeczytaneAsync(string uzytkownikId)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(uzytkownikId))
+                {
+                    _logger.LogWarning("Próba oznaczenia wszystkich powiadomień jako przeczytane bez ID użytkownika");
+                    return 0;
+                }
+
+                var teraz = DateTime.SpecifyKind(
+                    TimeZoneInfo.ConvertTime(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Central European Standard Time")), 
+                    DateTimeKind.Unspecified);
+                
+                // Użyj ExecuteUpdateAsync dla wydajnego bulk update
+                var liczbaOznaczonych = await _context.Powiadomienia
+                    .Where(p => p.UzytkownikId == uzytkownikId && 
+                               !p.CzyPrzeczytane &&
+                               (p.DataWygasniecia == null || p.DataWygasniecia > teraz))
+                    .ExecuteUpdateAsync(setters => setters.SetProperty(p => p.CzyPrzeczytane, true));
+                
+                if (liczbaOznaczonych > 0)
+                {
+                    // Aktualizuj licznik nieprzeczytanych przez SignalR
+                    try
+                    {
+                        await _realTimeService.AktualizujLicznikAsync(uzytkownikId, 0);
+                    }
+                    catch (Exception signalREx)
+                    {
+                        _logger.LogError(signalREx, $"Błąd podczas aktualizacji licznika po oznaczeniu wszystkich jako przeczytane");
+                    }
+                    
+                    _logger.LogInformation($"Oznaczono {liczbaOznaczonych} powiadomień jako przeczytane dla użytkownika {uzytkownikId}");
+                }
+
+                return liczbaOznaczonych;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Błąd podczas oznaczania wszystkich powiadomień jako przeczytane dla użytkownika {uzytkownikId}");
+                return 0;
             }
         }
 

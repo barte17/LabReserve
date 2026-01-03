@@ -61,14 +61,14 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
 
   const getTruncatedContent = () => {
     if (!truncate) return notification.tresc;
-    
+
     // W compact mode skracamy więcej
     const maxLength = compact ? 80 : 120;
     return truncateText(notification.tresc, maxLength);
   };
 
   return (
-    <div 
+    <div
       className={`
         border-l-4 p-3 mb-2 rounded-r-lg transition-all duration-200
         ${getPriorityColor(notification.priorytet)}
@@ -89,25 +89,25 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
               <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
             )}
           </div>
-          
-          <p 
+
+          <p
             className={`mb-2 ${compact ? 'text-xs' : 'text-sm'} ${!notification.czyPrzeczytane ? 'text-gray-700' : 'text-gray-500'} ${truncate ? 'line-clamp-2' : ''}`}
+            style={{ whiteSpace: 'pre-line' }}
             title={truncate ? notification.tresc : undefined}
           >
             {getTruncatedContent()}
           </p>
-          
+
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-400">
               {formatDate(notification.dataUtworzenia)}
             </span>
-            
+
             <div className="flex gap-2">
               <button
                 onClick={() => onDelete(notification.id)}
-                className={`text-red-600 hover:text-red-800 hover:underline ${
-                  compact ? 'text-xs' : 'text-xs'
-                }`}
+                className={`text-red-600 hover:text-red-800 hover:underline ${compact ? 'text-xs' : 'text-xs'
+                  }`}
               >
                 {compact ? '🗑️' : 'Usuń'}
               </button>

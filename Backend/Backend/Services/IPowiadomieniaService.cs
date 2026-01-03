@@ -7,9 +7,11 @@ namespace Backend.Services
         Task<bool> WyslijPowiadomienieAsync(string uzytkownikId, string tytul, string tresc, 
             string typ, string priorytet = "normal", int? rezerwacjaId = null, string? actionUrl = null);
         
-        Task<List<Powiadomienie>> PobierzPowiadomieniaAsync(string uzytkownikId, int strona = 1, int rozmiar = 20);
+        Task<List<Powiadomienie>> PobierzPowiadomieniaAsync(string uzytkownikId, int strona = 1, int rozmiar = 10);
         
         Task<bool> OznaczJakoPrzeczytaneAsync(int powiadomienieId, string uzytkownikId);
+        
+        Task<int> OznaczWszystkieJakoPrzeczytaneAsync(string uzytkownikId);
         
         Task<int> PobierzLiczbaNieprzeczytanychAsync(string uzytkownikId);
         

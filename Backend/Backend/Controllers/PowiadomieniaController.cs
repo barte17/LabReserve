@@ -30,7 +30,7 @@ namespace Backend.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> PobierzPowiadomienia([FromQuery] int strona = 1, [FromQuery] int rozmiar = 20)
+        public async Task<IActionResult> PobierzPowiadomienia([FromQuery] int strona = 1, [FromQuery] int rozmiar = 10)
         {
             try
             {
@@ -42,7 +42,7 @@ namespace Backend.Controllers
 
                 // Walidacja parametrów
                 if (strona < 1) strona = 1;
-                if (rozmiar < 1 || rozmiar > 100) rozmiar = 20;
+                if (rozmiar < 1 || rozmiar > 100) rozmiar = 10;
 
                 var powiadomienia = await _powiadomieniaService.PobierzPowiadomieniaAsync(userId, strona, rozmiar);
                 
@@ -90,9 +90,7 @@ namespace Backend.Controllers
                     return NotFound("Powiadomienie nie zostało znalezione");
                 }
 
-                // Aktualizuj licznik w real-time
-                var nowaLiczba = await _powiadomieniaService.PobierzLiczbaNieprzeczytanychAsync(userId);
-                await _realTimeService.AktualizujLicznikAsync(userId, nowaLiczba);
+                // SignalR już aktualizowany w Service - nie duplikuj wywołania
 
                 return Ok(new { message = "Powiadomienie zostało oznaczone jako przeczytane" });
             }
@@ -121,9 +119,7 @@ namespace Backend.Controllers
                     return NotFound("Powiadomienie nie zostało znalezione");
                 }
 
-                // Aktualizuj licznik w real-time
-                var nowaLiczba = await _powiadomieniaService.PobierzLiczbaNieprzeczytanychAsync(userId);
-                await _realTimeService.AktualizujLicznikAsync(userId, nowaLiczba);
+                // SignalR już aktualizowany w Service - nie duplikuj wywołania
 
                 return Ok(new { message = "Powiadomienie zostało usunięte" });
             }
@@ -167,21 +163,12 @@ namespace Backend.Controllers
                     return Unauthorized("Nie można zidentyfikować użytkownika");
                 }
 
-                // Pobierz wszystkie nieprzeczytane powiadomienia dla użytkownika
-                var nieprzeczytane = await _powiadomieniaService.PobierzPowiadomieniaAsync(userId, 1, 1000);
-                var nieprzeczytaneIds = nieprzeczytane.Where(p => !p.CzyPrzeczytane).Select(p => p.Id).ToList();
+                // Użyj nowej metody bulk update - wydajniejsza i bez limitu 1000
+                var liczbaOznaczonych = await _powiadomieniaService.OznaczWszystkieJakoPrzeczytaneAsync(userId);
 
-                int oznaczone = 0;
-                foreach (var id in nieprzeczytaneIds)
-                {
-                    var success = await _powiadomieniaService.OznaczJakoPrzeczytaneAsync(id, userId);
-                    if (success) oznaczone++;
-                }
+                // SignalR już aktualizowany w Service - nie duplikuj wywołania
 
-                // Aktualizuj licznik w real-time
-                await _realTimeService.AktualizujLicznikAsync(userId, 0);
-
-                return Ok(new { message = $"Oznaczono {oznaczone} powiadomień jako przeczytane" });
+                return Ok(new { message = $"Oznaczono {liczbaOznaczonych} powiadomień jako przeczytane" });
             }
             catch (Exception ex)
             {
@@ -211,8 +198,7 @@ namespace Backend.Controllers
                     });
                 }
 
-                // Aktualizuj licznik w real-time (będzie 0 po usunięciu wszystkich)
-                await _realTimeService.AktualizujLicznikAsync(userId, 0);
+                // SignalR już aktualizowany w Service - nie duplikuj wywołania
 
                 return Ok(new { 
                     message = $"Usunięto {liczbaUsunietych} powiadomień",

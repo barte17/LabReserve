@@ -1064,10 +1064,9 @@ namespace Backend.Controllers
                         var dataKonca = rezerwacja.DataKoniec.ToString("dd.MM.yyyy HH:mm");
                         
                         var tytul = $"Nowa rezerwacja - {lokalizacja}";
-                        var tresc = $"Uzytkownik {uzytkownik.Imie} {uzytkownik.Nazwisko} ({uzytkownik.Email}) " +
-                                   $"dokonal rezerwacji na {lokalizacja}. " +
-                                   $"Termin: {dataRezerwacji} - {dataKonca}. " +
-                                   $"Opis: {rezerwacja.Opis ?? "Brak opisu"}. " +
+                        var tresc = $"Użytkownik {uzytkownik.Imie} {uzytkownik.Nazwisko} ({uzytkownik.Email}) dokonał rezerwacji na {lokalizacja}.{Environment.NewLine}{Environment.NewLine}" +
+                                   $"Termin: {dataRezerwacji} - {dataKonca}{Environment.NewLine}" +
+                                   $"Opis: {rezerwacja.Opis ?? "Brak opisu"}{Environment.NewLine}" +
                                    $"Status: {NormalizujStatus(rezerwacja.Status)}";
 
                         Console.WriteLine($"[DEBUG] Wysyłam powiadomienie do opiekuna {opiekunId}");
@@ -1181,10 +1180,10 @@ namespace Backend.Controllers
                 var statusOpis = GetStatusDescription(nowyStatus);
                 
                 var tytul = $"Status rezerwacji zmieniony";
-                var tresc = $"Status Twojej rezerwacji na {lokalizacja} zostal zmieniony. " +
-                           $"Termin: {dataRezerwacji}. " +
-                           $"Stary status: {NormalizujStatus(GetStatusDescription(staryStatus))}. " +
-                           $"Nowy status: {NormalizujStatus(statusOpis)}. " +
+                var tresc = $"Status Twojej rezerwacji na {lokalizacja} został zmieniony.{Environment.NewLine}{Environment.NewLine}" +
+                           $"Termin: {dataRezerwacji}{Environment.NewLine}" +
+                           $"Stary status: {NormalizujStatus(GetStatusDescription(staryStatus))}{Environment.NewLine}" +
+                           $"Nowy status: {NormalizujStatus(statusOpis)}{Environment.NewLine}" +
                            $"Opis: {rezerwacja.Opis ?? "Brak opisu"}";
 
                 var priorytet = nowyStatus == "odrzucono" || nowyStatus == "anulowane" ? "high" : "normal";

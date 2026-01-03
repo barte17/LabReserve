@@ -17,7 +17,7 @@ export const useNotifications = () => {
     try {
       setLoading(true);
       const response = await notificationService.getNotifications(strona, rozmiar);
-      
+
       if (append && strona > 1) {
         // Dodaj nowe powiadomienia do istniejących (paginacja)
         setNotifications(prev => [...prev, ...response.powiadomienia]);
@@ -25,12 +25,12 @@ export const useNotifications = () => {
         // Zastąp wszystkie powiadomienia (refresh lub pierwsza strona)
         setNotifications(response.powiadomienia);
       }
-      
+
       // Również zaktualizuj licznik nieprzeczytanych
       const count = await notificationService.getUnreadCount();
       setUnreadCount(count);
       setInitialized(true);
-      
+
       return response;
     } catch (error) {
       console.error('Błąd podczas pobierania powiadomień:', error);
@@ -56,7 +56,7 @@ export const useNotifications = () => {
   const markAsRead = useCallback(async (id: number) => {
     try {
       await notificationService.markAsRead(id);
-      setNotifications(prev => 
+      setNotifications(prev =>
         prev.map(n => n.id === id ? { ...n, czyPrzeczytane: true } : n)
       );
       setUnreadCount(prev => Math.max(0, prev - 1));
@@ -77,7 +77,7 @@ export const useNotifications = () => {
       }
 
       await notificationService.markAsRead(id);
-      setNotifications(prev => 
+      setNotifications(prev =>
         prev.map(n => n.id === id ? { ...n, czyPrzeczytane: true } : n)
       );
       setUnreadCount(prev => Math.max(0, prev - 1));
@@ -91,29 +91,38 @@ export const useNotifications = () => {
   // Usuń powiadomienie
   const deleteNotification = useCallback(async (id: number) => {
     try {
+      // Sprawdź czy powiadomienie było nieprzeczytane przed usunięciem
+      const notification = notifications.find(n => n.id === id);
+      const wasUnread = notification && !notification.czyPrzeczytane;
+
       await notificationService.deleteNotification(id);
       setNotifications(prev => prev.filter(n => n.id !== id));
-      setUnreadCount(prev => Math.max(0, prev - 1));
+
+      // Zmniejsz licznik tylko jeśli powiadomienie było nieprzeczytane
+      if (wasUnread) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+
       return true;
     } catch (error) {
       console.error('Błąd podczas usuwania powiadomienia:', error);
       return false;
     }
-  }, []);
+  }, [notifications]);
 
   // Oznacz wszystkie jako przeczytane z lokalną aktualizacją
   const markAllAsRead = useCallback(async () => {
     try {
       await notificationService.markAllAsRead();
-      
+
       // Lokalnie zaktualizuj stan wszystkich powiadomień
-      setNotifications(prev => 
+      setNotifications(prev =>
         prev.map(n => ({ ...n, czyPrzeczytane: true }))
       );
-      
+
       // Ustaw licznik na 0
       setUnreadCount(0);
-      
+
       return true;
     } catch (error) {
       console.error('Błąd podczas oznaczania wszystkich jako przeczytane:', error);
@@ -125,12 +134,12 @@ export const useNotifications = () => {
   const deleteAllNotifications = useCallback(async () => {
     try {
       const result = await notificationService.deleteAllNotifications();
-      
+
       // Lokalnie wyczyść stan ale zachowaj initialized = true
       setNotifications([]);
       setUnreadCount(0);
       // Nie resetuj initialized - dane są nadal "załadowane", po prostu puste
-      
+
       return result;
     } catch (error) {
       console.error('Błąd podczas usuwania wszystkich powiadomień:', error);
@@ -146,7 +155,7 @@ export const useNotifications = () => {
     const handleNewNotification = (notification: NotificationData) => {
       setNotifications(prev => [notification, ...prev]);
       setUnreadCount(prev => prev + 1);
-      
+
       // Toast notifications usunięte - powiadomienia będą widoczne tylko w dzwoneczku navbara
     };
 

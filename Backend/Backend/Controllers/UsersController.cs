@@ -149,43 +149,43 @@ namespace Backend.Controllers
             var addedRoles = newRoles.Except(oldRoles).ToList();
             var removedRoles = oldRoles.Except(newRoles).ToList();
             
-            var message = $"Administrator {adminName} zmienil Twoje uprawnienia w systemie. ";
+            var message = $"Administrator {adminName} zmienił Twoje uprawnienia w systemie.{Environment.NewLine}{Environment.NewLine}";
             
             if (addedRoles.Any())
             {
-                message += $"Dodane role: {string.Join(", ", addedRoles)}. ";
+                message += $"Dodane role: {string.Join(", ", addedRoles)}{Environment.NewLine}";
             }
             
             if (removedRoles.Any())
             {
-                message += $"Usuniete role: {string.Join(", ", removedRoles)}. ";
+                message += $"Usunięte role: {string.Join(", ", removedRoles)}{Environment.NewLine}";
             }
             
-            message += $"Twoje aktualne role: {string.Join(", ", newRoles)}. ";
+            message += $"{Environment.NewLine}Twoje aktualne role: {string.Join(", ", newRoles)}{Environment.NewLine}{Environment.NewLine}";
             
             if (addedRoles.Contains("Student"))
             {
-                message += "Mozesz teraz rezerwowac stanowiska laboratoryjne. ";
+                message += $"• Możesz teraz rezerwować stanowiska laboratoryjne{Environment.NewLine}";
             }
             if (addedRoles.Contains("Nauczyciel"))
             {
-                message += "Mozesz teraz rezerwowac sale i stanowiska laboratoryjne. ";
+                message += $"• Możesz teraz rezerwować sale i stanowiska laboratoryjne{Environment.NewLine}";
             }
             if (addedRoles.Contains("Opiekun"))
             {
-                message += "Mozesz teraz zarzadzac przypisanymi salami laboratoryjnymi. ";
+                message += $"• Możesz teraz zarządzać przypisanymi salami laboratoryjnymi{Environment.NewLine}";
             }
             if (addedRoles.Contains("Admin"))
             {
-                message += "Masz teraz pelne uprawnienia administratora systemu. ";
+                message += $"• Masz teraz pełne uprawnienia administratora systemu{Environment.NewLine}";
             }
             
             if (removedRoles.Any() && !newRoles.Any(r => r != "Uzytkownik"))
             {
-                message += "Twoje konto wymaga ponownej aktywacji do korzystania z funkcji rezerwacji. ";
+                message += $"{Environment.NewLine}⚠️ Twoje konto wymaga ponownej aktywacji do korzystania z funkcji rezerwacji{Environment.NewLine}";
             }
             
-            message += "Jesli dalej masz problemy z uprawnieniami, odswiez strone. W razie dalszych problemow skontaktuj sie ze wsparciem.";
+            message += $"{Environment.NewLine}Jeśli dalej masz problemy z uprawnieniami, odśwież stronę. W razie dalszych problemów skontaktuj się ze wsparciem.";
             
             return message;
         }

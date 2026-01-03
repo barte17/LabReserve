@@ -157,9 +157,9 @@ public class ExpiredReservationsService : BackgroundService
                 var dataStart = rezerwacja.DataStart.ToString("dd.MM.yyyy HH:mm");
                 
                 var tytul = "Przypomnienie o rezerwacji";
-                var tresc = $"Za godzine rozpoczyna sie Twoja rezerwacja na {lokalizacja}. " +
-                           $"Termin: {dataStart}. " +
-                           $"Nie zapomnij sie stawic!";
+                var tresc = $"Za godzinę rozpoczyna się Twoja rezerwacja na {lokalizacja}.{Environment.NewLine}{Environment.NewLine}" +
+                           $"Termin: {dataStart}{Environment.NewLine}" +
+                           $"Nie zapomnij się stawić!";
 
                 await powiadomieniaService.WyslijPowiadomienieAsync(
                     rezerwacja.UzytkownikId,
