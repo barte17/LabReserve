@@ -53,7 +53,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
     <div ref={imgRef} className={`relative ${className}`}>
       {/* Skeleton loading */}
       {!isLoaded && !hasError && (
-        <div className="absolute inset-0 bg-gray-200 animate-pulse" />
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-100/20 to-gray-200/20 animate-pulse border border-gray-200/40" />
       )}
 
       {/* Placeholder gdy nie ma zdjęcia lub błąd */}
@@ -68,10 +68,9 @@ export const LazyImage: React.FC<LazyImageProps> = ({
         <img
           src={src}
           alt={alt}
-          className={`w-full h-full object-cover transition-opacity duration-300 ${
-            isLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
-          style={{ 
+          className={`w-full h-full object-cover transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+          style={{
             imageRendering: '-webkit-optimize-contrast',
             transform: 'translateZ(0)',
             backfaceVisibility: 'hidden',

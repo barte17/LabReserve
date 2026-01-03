@@ -72,54 +72,22 @@ namespace Backend.Services
             {
                 using var image = await Image.LoadAsync(file.OpenReadStream());
                 
+                // Zachowaj oryginalne proporcje, tylko ogranicz maksymalny wymiar
+                const int MAX_DIMENSION = 1920;
                 
-                var originalWidth = image.Width;
-                var originalHeight = image.Height;
-                var originalRatio = (double)originalWidth / originalHeight;
-                var targetRatio = (double)TARGET_WIDTH / TARGET_HEIGHT;
+                if (image.Width > MAX_DIMENSION || image.Height > MAX_DIMENSION)
+                {
+                    // Skaluj proporcjonalnie jeśli któryś wymiar przekracza MAX_DIMENSION
+                    image.Mutate(x => x.Resize(new ResizeOptions
+                    {
+                        Size = new Size(MAX_DIMENSION, MAX_DIMENSION),
+                        Mode = ResizeMode.Max, // Zachowuje proporcje, zmniejsza tylko jeśli za duże
+                        Sampler = KnownResamplers.Lanczos3
+                    }));
+                }
+                // Jeśli zdjęcie jest mniejsze niż MAX_DIMENSION, zostaw oryginalne wymiary
 
-               
-                if (Math.Abs(originalRatio - targetRatio) < 0.1)
-                {
-                    
-                    image.Mutate(x => x.Resize(TARGET_WIDTH, TARGET_HEIGHT, KnownResamplers.Lanczos3));
-                }
-                else if (originalRatio > targetRatio * 1.5)
-                {
-                    
-                    image.Mutate(x => x.Resize(new ResizeOptions
-                    {
-                        Size = new Size(TARGET_WIDTH, TARGET_HEIGHT),
-                        Mode = ResizeMode.Crop,
-                        Position = AnchorPositionMode.Center,
-                        Sampler = KnownResamplers.Lanczos3
-                    }));
-                }
-                else if (originalRatio < targetRatio * 0.7)
-                {
-                    
-                    image.Mutate(x => x.Resize(new ResizeOptions
-                    {
-                        Size = new Size(TARGET_WIDTH, TARGET_HEIGHT),
-                        Mode = ResizeMode.Pad,
-                        Position = AnchorPositionMode.Center,
-                        PadColor = Color.FromRgb(240, 240, 240),
-                        Sampler = KnownResamplers.Lanczos3
-                    }));
-                }
-                else
-                {
-                    // dopasowanie rozmiaru z zachowaniem proporcji
-                    image.Mutate(x => x.Resize(new ResizeOptions
-                    {
-                        Size = new Size(TARGET_WIDTH, TARGET_HEIGHT),
-                        Mode = ResizeMode.Max,
-                        Position = AnchorPositionMode.Center,
-                        Sampler = KnownResamplers.Lanczos3
-                    }));
-                }
-
-                // nałozenie lekkiego wyostrzenia
+                // Nałożenie lekkiego wyostrzenia
                 image.Mutate(x => x.GaussianSharpen(0.5f));
 
                 // Zapisywanie jako webP

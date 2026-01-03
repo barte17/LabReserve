@@ -24,12 +24,12 @@ interface ImageUploadProps {
   maxSizeInMB?: number;
 }
 
-export default function ImageUpload({ 
+export default function ImageUpload({
   onFilesChange,
   onExistingImagesChange,
   existingImages = [],
-  maxFiles = 10, 
-  maxSizeInMB = 5 
+  maxFiles = 10,
+  maxSizeInMB = 5
 }: ImageUploadProps) {
   const [images, setImages] = useState<ImageItem[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -68,7 +68,7 @@ export default function ImageUpload({
     let errorMessages: string[] = [];
 
     // Policz aktualne aktywne zdjęcia (nie oznaczone do usunięcia)
-    const activeImagesCount = images.filter(img => 
+    const activeImagesCount = images.filter(img =>
       img.isNew || (!img.isNew && !img.markedForDeletion)
     ).length;
 
@@ -86,7 +86,7 @@ export default function ImageUpload({
 
       const id = Math.random().toString(36).substr(2, 9);
       const preview = URL.createObjectURL(file);
-      
+
       newFiles.push(file);
       newImages.push({ file, preview, id, isNew: true });
     });
@@ -99,7 +99,7 @@ export default function ImageUpload({
     if (newImages.length > 0) {
       const updatedImages = [...images, ...newImages];
       setImages(updatedImages);
-      
+
       // Notify parent tylko o nowych plikach
       const allNewFiles = updatedImages
         .filter((img): img is ImageFile => img.isNew)
@@ -121,7 +121,7 @@ export default function ImageUpload({
   const handleDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragOver(false);
-    
+
     const files = e.dataTransfer.files;
     if (files.length > 0) {
       processFiles(files);
@@ -152,13 +152,13 @@ export default function ImageUpload({
     }).filter(Boolean) as ImageItem[];
 
     setImages(updatedImages);
-    
+
     // Notify parent o nowych plikach
     const allNewFiles = updatedImages
       .filter((img): img is ImageFile => img.isNew)
       .map(img => img.file);
     onFilesChange(allNewFiles);
-    
+
     // Notify parent o istniejących zdjęciach do usunięcia
     if (onExistingImagesChange) {
       const imagesToDelete = updatedImages
@@ -178,8 +178,8 @@ export default function ImageUpload({
       <div
         className={`
           border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
-          ${isDragOver 
-            ? 'border-blue-500 bg-blue-50' 
+          ${isDragOver
+            ? 'border-blue-500 bg-blue-50'
             : 'border-gray-300 hover:border-gray-400'
           }
         `}
@@ -189,17 +189,17 @@ export default function ImageUpload({
         onClick={openFileDialog}
       >
         <div className="space-y-2">
-          <svg 
-            className="mx-auto h-12 w-12 text-gray-400" 
-            stroke="currentColor" 
-            fill="none" 
+          <svg
+            className="mx-auto h-12 w-12 text-gray-400"
+            stroke="currentColor"
+            fill="none"
             viewBox="0 0 48 48"
           >
-            <path 
-              d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" 
-              strokeWidth={2} 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
+            <path
+              d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
             />
           </svg>
           <div>
@@ -239,17 +239,16 @@ export default function ImageUpload({
           {images.map((image) => {
             const isMarkedForDeletion = !image.isNew && image.markedForDeletion;
             const imageUrl = image.isNew ? image.preview : `http://localhost:3000${image.url}`;
-            
+
             return (
               <div key={image.id} className="relative group">
-                <div className={`aspect-square rounded-lg overflow-hidden bg-gray-100 transition-all ${
-                  isMarkedForDeletion ? 'opacity-50 grayscale' : ''
-                }`}>
+                <div className={`aspect-square rounded-lg overflow-hidden bg-gradient-to-br from-gray-100/20 to-gray-200/20 border border-gray-200/40 transition-all ${isMarkedForDeletion ? 'opacity-50 grayscale' : ''
+                  }`}>
                   <img
                     src={imageUrl}
                     alt="Preview"
                     className="w-full h-full object-cover"
-                    style={{ 
+                    style={{
                       imageRendering: '-webkit-optimize-contrast',
                       transform: 'translateZ(0)',
                       backfaceVisibility: 'hidden',
@@ -257,7 +256,7 @@ export default function ImageUpload({
                       msInterpolationMode: 'bicubic'
                     } as React.CSSProperties}
                   />
-                  
+
                   {/* Overlay for marked for deletion */}
                   {isMarkedForDeletion && (
                     <div className="absolute inset-0 bg-red-500 bg-opacity-30 flex items-center justify-center">
@@ -267,7 +266,7 @@ export default function ImageUpload({
                     </div>
                   )}
                 </div>
-                
+
                 {/* Remove/Restore Button */}
                 <button
                   type="button"
@@ -275,16 +274,15 @@ export default function ImageUpload({
                     e.stopPropagation();
                     removeImage(image.id);
                   }}
-                  className={`absolute top-2 right-2 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm transition-colors opacity-0 group-hover:opacity-100 ${
-                    isMarkedForDeletion 
-                      ? 'bg-green-500 hover:bg-green-600' 
-                      : 'bg-red-500 hover:bg-red-600'
-                  }`}
+                  className={`absolute top-2 right-2 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm transition-colors opacity-0 group-hover:opacity-100 ${isMarkedForDeletion
+                    ? 'bg-green-500 hover:bg-green-600'
+                    : 'bg-red-500 hover:bg-red-600'
+                    }`}
                   title={isMarkedForDeletion ? 'Przywróć zdjęcie' : 'Usuń zdjęcie'}
                 >
                   {isMarkedForDeletion ? '↶' : '×'}
                 </button>
-                
+
                 {/* Badge for existing vs new images */}
                 <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   {image.isNew ? (
@@ -297,7 +295,7 @@ export default function ImageUpload({
                     </span>
                   )}
                 </div>
-                
+
                 {/* File Name */}
                 <p className="mt-1 text-xs text-gray-500 truncate">
                   {image.isNew ? image.file.name : `Zdjęcie ${image.id}`}
@@ -314,7 +312,7 @@ export default function ImageUpload({
         const newImages = images.filter(img => img.isNew);
         const existingImages = images.filter(img => !img.isNew && !img.markedForDeletion);
         const markedForDeletion = images.filter(img => !img.isNew && img.markedForDeletion);
-        
+
         return (
           <div className="text-sm text-gray-600 space-y-1">
             <p>Aktywne zdjęcia: {activeImages.length} z {maxFiles}</p>
