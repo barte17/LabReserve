@@ -24,6 +24,7 @@ namespace Backend.Controllers
         public async Task<ActionResult<IEnumerable<SalaDto>>> GetAll()
         {
             var sale = await _context.Sale
+                .Where(s => s.CzyAktywna)
                 .Include(s => s.Opiekun)
                 .Include(s => s.Zdjecia)
                 .Select(s => new SalaDto
@@ -39,7 +40,8 @@ namespace Backend.Controllers
                     IdOpiekuna = s.IdOpiekuna,
                     ImieOpiekuna = s.Opiekun != null ? s.Opiekun.Imie : null,
                     NazwiskoOpiekuna = s.Opiekun != null ? s.Opiekun.Nazwisko : null,
-                    PierwszeZdjecie = s.Zdjecia.OrderBy(z => z.Id).FirstOrDefault() != null ? s.Zdjecia.OrderBy(z => z.Id).FirstOrDefault()!.Url : null
+                    PierwszeZdjecie = s.Zdjecia.OrderBy(z => z.Id).FirstOrDefault() != null ? s.Zdjecia.OrderBy(z => z.Id).FirstOrDefault()!.Url : null,
+                    CzyAktywna = s.CzyAktywna
                 })
                 .ToListAsync();
 
@@ -59,7 +61,8 @@ namespace Backend.Controllers
                 CzynnaOd = dto.CzynnaOd,
                 CzynnaDo = dto.CzynnaDo,
                 Opis = dto.Opis,
-                IdOpiekuna = dto.IdOpiekuna
+                IdOpiekuna = dto.IdOpiekuna,
+                CzyAktywna = dto.CzyAktywna
             };
 
             _context.Sale.Add(sala);
@@ -205,6 +208,7 @@ namespace Backend.Controllers
             sala.CzynnaDo = dto.CzynnaDo;
             sala.Opis = dto.Opis;
             sala.IdOpiekuna = dto.IdOpiekuna;
+            sala.CzyAktywna = dto.CzyAktywna;
 
             await _context.SaveChangesAsync();
 

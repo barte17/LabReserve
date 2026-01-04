@@ -22,6 +22,7 @@ type StanowiskoDetails = {
     id: number;
     url: string;
   }>;
+  czyAktywny: boolean;
 };
 
 export default function StanowiskoDetails() {
@@ -99,6 +100,11 @@ export default function StanowiskoDetails() {
               <div className="card-header flex items-center justify-between bg-gradient-to-br from-primary-50 to-white border-b border-primary-200">
                 <h2 className="text-xl font-semibold">{stanowisko.nazwa}</h2>
                 <div className="flex space-x-2">
+                  {!stanowisko.czyAktywny && (
+                    <span className="badge bg-red-100 text-red-800 border-red-200">
+                      Nieaktywne
+                    </span>
+                  )}
                   {stanowisko.typ && (
                     <span className="badge badge-info">
                       {stanowisko.typ}
@@ -213,7 +219,17 @@ export default function StanowiskoDetails() {
             {/* Akcje */}
             <div className="card border-primary-200 bg-gradient-to-br from-primary-50 to-white mt-auto">
               <div className="card-body p-0">
-                {canReserveStanowiska() ? (
+                {!stanowisko.czyAktywny ? (
+                  <button
+                    disabled
+                    className="btn btn-secondary w-full py-6 px-6 text-base font-semibold cursor-not-allowed opacity-60 border border-gray-300"
+                  >
+                    <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                    </svg>
+                    Rezerwacja niedostępna
+                  </button>
+                ) : canReserveStanowiska() ? (
                   <button
                     onClick={() => navigate(`/reservation?stanowiskoId=${stanowisko.id}&name=${stanowisko.nazwa}`)}
                     className="btn btn-primary w-full py-6 px-6 text-base font-semibold transform hover:scale-105 transition-all duration-200 focus:outline-none border border-red-600/20 hover:border-red-500/30"

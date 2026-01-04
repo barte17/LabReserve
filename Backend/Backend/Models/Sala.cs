@@ -24,6 +24,8 @@ namespace Backend.Models
         [MaxLength(500)]
         public string? Opis { get; set; }
 
+        public bool CzyAktywna { get; set; } = true;
+
         public string? IdOpiekuna { get; set; }
         [ForeignKey(nameof(IdOpiekuna))]
         public ApplicationUser? Opiekun { get; set; }

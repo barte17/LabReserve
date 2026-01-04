@@ -12,6 +12,7 @@ type SalaFormData = {
   czynnaDo: string | null;
   opis: string;
   idOpiekuna: string | null;
+  czyAktywna: boolean;
   zdjecia?: File[];
   zdjeciaDoUsuniecia?: number[];
 };
@@ -38,6 +39,7 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
   const [czynnaDo, setCzynnaDo] = useState(initialData?.czynnaDo ? initialData.czynnaDo.slice(0, 5) : "");
   const [opis, setOpis] = useState(initialData?.opis ?? "");
   const [idOpiekuna, setIdOpiekuna] = useState(initialData?.idOpiekuna ?? "");
+  const [czyAktywna, setCzyAktywna] = useState(initialData?.czyAktywna ?? true);
   const [nauczyciele, setNauczyciele] = useState<User[]>([]);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagesToDelete, setImagesToDelete] = useState<number[]>([]);
@@ -157,6 +159,7 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
     setCzynnaDo('');
     setOpis('');
     setMaStanowiska(false);
+    setCzyAktywna(true);
     setSelectedImages([]);
     setImagesToDelete([]);
     setValidationErrors({
@@ -202,6 +205,7 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
       czynnaDo: formatTimeToTimeSpan(czynnaDo),
       opis,
       idOpiekuna: idOpiekuna || null,
+      czyAktywna,
       zdjecia: selectedImages,
       zdjeciaDoUsuniecia: imagesToDelete
     };
@@ -301,6 +305,24 @@ export default function AddRoomForm({ onSubmit, initialData, submitLabel = "Doda
                 Sala posiada laboratoria/stanowiska badawcze
               </label>
             </div>
+          </div>
+
+          <div className="form-group">
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                checked={czyAktywna}
+                onChange={(e) => setCzyAktywna(e.target.checked)}
+                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded"
+                id="czyAktywna"
+              />
+              <label htmlFor="czyAktywna" className="ml-3 text-sm font-medium text-neutral-700">
+                Sala aktywna (dostępna do rezerwacji)
+              </label>
+            </div>
+            <p className="ml-7 text-xs text-gray-500 mt-1">
+              Nieaktywne sale nie będą widoczne w publicznych listach i nie można ich zarezerwować
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

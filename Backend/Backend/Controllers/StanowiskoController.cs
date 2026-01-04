@@ -24,6 +24,7 @@ namespace Backend.Controllers
         public async Task<ActionResult<IEnumerable<StanowiskoDto>>> GetAll()
         {
             var stanowiska = await _context.Stanowiska
+                .Where(s => s.CzyAktywny)
                 .Include(s => s.Sala)
                 .Include(s => s.Zdjecia)
                 .Select(s => new StanowiskoDto
@@ -35,7 +36,8 @@ namespace Backend.Controllers
                     Opis = s.Opis,
                     SalaNumer = s.Sala.Numer,
                     SalaBudynek = s.Sala.Budynek,
-                    PierwszeZdjecie = s.Zdjecia.OrderBy(z => z.Id).FirstOrDefault() != null ? s.Zdjecia.OrderBy(z => z.Id).FirstOrDefault()!.Url : null
+                    PierwszeZdjecie = s.Zdjecia.OrderBy(z => z.Id).FirstOrDefault() != null ? s.Zdjecia.OrderBy(z => z.Id).FirstOrDefault()!.Url : null,
+                    CzyAktywny = s.CzyAktywny
                 })
                 .ToListAsync();
 
@@ -51,7 +53,8 @@ namespace Backend.Controllers
                 SalaId = dto.SalaId,
                 Nazwa = dto.Nazwa,
                 Typ = dto.Typ,
-                Opis = dto.Opis
+                Opis = dto.Opis,
+                CzyAktywny = dto.CzyAktywny
             };
 
             _context.Stanowiska.Add(stanowisko);
@@ -124,6 +127,7 @@ namespace Backend.Controllers
             stanowisko.Nazwa = dto.Nazwa;
             stanowisko.Typ = dto.Typ;
             stanowisko.Opis = dto.Opis;
+            stanowisko.CzyAktywny = dto.CzyAktywny;
 
             await _context.SaveChangesAsync();
 

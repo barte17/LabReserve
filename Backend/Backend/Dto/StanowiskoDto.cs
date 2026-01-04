@@ -10,6 +10,7 @@
         public int SalaNumer { get; set; }
         public string SalaBudynek { get; set; } = null!;
         public string? PierwszeZdjecie { get; set; }
+        public bool CzyAktywny { get; set; }
     }
 
     public class CreateStanowiskoDto
@@ -18,5 +19,6 @@
         public string Nazwa { get; set; } = string.Empty;
         public string? Typ { get; set; }
         public string? Opis { get; set; }
+        public bool CzyAktywny { get; set; } = true;
     }
 }

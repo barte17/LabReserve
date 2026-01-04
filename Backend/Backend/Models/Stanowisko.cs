@@ -21,6 +21,8 @@ namespace Backend.Models
         [MaxLength(500)]
         public string? Opis { get; set; }
 
+        public bool CzyAktywny { get; set; } = true;
+
         public ICollection<Zdjecie> Zdjecia { get; set; } = new List<Zdjecie>();
         public ICollection<Rezerwacja> Rezerwacje { get; set; } = new List<Rezerwacja>();
     }

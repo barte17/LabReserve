@@ -9,6 +9,7 @@ type StanowiskoFormData = {
   nazwa: string;
   typ: string;
   opis: string;
+  czyAktywny: boolean;
   zdjecia?: File[];
   zdjeciaDoUsuniecia?: number[];
 };
@@ -32,6 +33,7 @@ export default function AddStationForm({ onSubmit, initialData, submitLabel = "D
   const [nazwa, setNazwa] = useState(initialData?.nazwa ?? "");
   const [typ, setTyp] = useState(initialData?.typ ?? "");
   const [opis, setOpis] = useState(initialData?.opis ?? "");
+  const [czyAktywny, setCzyAktywny] = useState(initialData?.czyAktywny ?? true);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagesToDelete, setImagesToDelete] = useState<number[]>([]);
   const { showWarning } = useToastContext();
@@ -49,6 +51,7 @@ export default function AddStationForm({ onSubmit, initialData, submitLabel = "D
     setTyp('');
     setSalaId('');
     setOpis('');
+    setCzyAktywny(true);
     setSelectedImages([]);
   };
 
@@ -64,6 +67,7 @@ export default function AddStationForm({ onSubmit, initialData, submitLabel = "D
       nazwa,
       typ,
       opis,
+      czyAktywny,
       zdjecia: selectedImages,
       zdjeciaDoUsuniecia: imagesToDelete,
     });
@@ -134,6 +138,24 @@ export default function AddStationForm({ onSubmit, initialData, submitLabel = "D
               placeholder="Dodatkowe informacje o laboratorium, wyposażenie, specyfikacja..."
               rows={4}
             />
+          </div>
+
+          <div className="form-group">
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                checked={czyAktywny}
+                onChange={(e) => setCzyAktywny(e.target.checked)}
+                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded"
+                id="czyAktywny"
+              />
+              <label htmlFor="czyAktywny" className="ml-3 text-sm font-medium text-neutral-700">
+                Stanowisko aktywne (dostępne do rezerwacji)
+              </label>
+            </div>
+            <p className="ml-7 text-xs text-gray-500 mt-1">
+              Nieaktywne stanowiska nie będą widoczne w publicznych listach i nie można ich zarezerwować
+            </p>
           </div>
 
           {/* Sekcja zdjęć */}

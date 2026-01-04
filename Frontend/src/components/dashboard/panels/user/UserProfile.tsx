@@ -46,10 +46,10 @@ export default function UserProfile() {
   const loadUserProfile = async () => {
     try {
       setLoading(true);
-      
+
       // Pobierz dane użytkownika z API
       const { authenticatedFetch } = await import('../../../../services/authService');
-      
+
       const response = await authenticatedFetch("/api/account/me", {
         headers: {
           "Content-Type": "application/json"
@@ -61,7 +61,7 @@ export default function UserProfile() {
       }
 
       const data = await response.json();
-      
+
       const profileData: UserProfileData = {
         id: data.id,
         email: data.email || 'brak@email.com',
@@ -70,7 +70,7 @@ export default function UserProfile() {
         roles: data.roles || [],
         dataUtworzenia: data.dataUtworzenia || ''
       };
-      
+
       setProfileData(profileData);
       setEditData({
         imie: profileData.imie,
@@ -110,7 +110,7 @@ export default function UserProfile() {
 
       // Symulacja zapisu - w rzeczywistości byłoby to API call
       // await updateUserProfile({ imie: editData.imie, nazwisko: editData.nazwisko });
-      
+
       setProfileData(prev => prev ? { ...prev, imie: editData.imie, nazwisko: editData.nazwisko } : null);
       setIsEditing(false);
       showSuccess('Profil został zaktualizowany');
@@ -140,7 +140,7 @@ export default function UserProfile() {
 
       // Symulacja zmiany hasła - w rzeczywistości byłoby to API call
       // await changePassword(passwordData);
-      
+
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setIsChangingPassword(false);
       showSuccess('Hasło zostało zmienione');
@@ -285,7 +285,7 @@ export default function UserProfile() {
                 </div>
               </div>
             </div>
-            
+
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Informacje o koncie</h3>
               <div className="space-y-3">
@@ -392,7 +392,7 @@ export default function UserProfile() {
       {/* Preferencje */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <h2 className="text-xl font-bold text-gray-900 mb-6">⚙️ Preferencje</h2>
-        
+
         {preferencesLoading ? (
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
@@ -415,7 +415,7 @@ export default function UserProfile() {
                     className="ml-4 w-5 h-5 text-red-600 border-gray-300 rounded focus:ring-red-500 focus:ring-2"
                   />
                 </div>
-                
+
                 {/* Opcja tylko dla opiekunów */}
                 {profileData?.roles.includes('Opiekun') && (
                   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
@@ -431,25 +431,6 @@ export default function UserProfile() {
                     />
                   </div>
                 )}
-              </div>
-            </div>
-
-            {/* Theme */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">🎨 Wygląd</h3>
-              <div className="space-y-5">
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="flex-1">
-                    <p className="text-base font-medium text-gray-900 mb-1">Tryb ciemny</p>
-                    <p className="text-sm text-gray-600">Przełącz na ciemny motyw interfejsu (funkcja w rozwoju)</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={preferences.theme === 'dark'}
-                    onChange={(e) => handlePreferenceChange('theme', undefined, e.target.checked ? 'dark' : 'normal')}
-                    className="ml-4 w-5 h-5 text-red-600 border-gray-300 rounded focus:ring-red-500 focus:ring-2"
-                  />
-                </div>
               </div>
             </div>
           </div>

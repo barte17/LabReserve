@@ -14,6 +14,7 @@ type Stanowisko = {
   salaNumer: number;
   salaBudynek: string;
   pierwszeZdjecie: string | null;
+  czyAktywny: boolean;
 };
 
 export default function Stanowiska() {
@@ -52,9 +53,9 @@ export default function Stanowiska() {
   if (shouldShowLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           {/* Skeleton dla filtrów */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-8 animate-pulse">
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-4 animate-pulse">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
@@ -76,11 +77,11 @@ export default function Stanowiska() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
 
 
         {/* Filtry */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-8">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 mb-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -210,10 +211,10 @@ export default function Stanowiska() {
                     </div>
 
                     {/* Opis - zawsze ta sama przestrzeń */}
-                    <div className="h-16 mb-4">
+                    <div className="h-14 mb-4 px-2 pt-2 pb-0.5 bg-gray-50 rounded-lg">
                       {stanowisko.opis ? (
                         <p
-                          className="text-gray-700 bg-gray-50 rounded-lg p-2"
+                          className="text-gray-700"
                           style={{
                             display: '-webkit-box',
                             WebkitLineClamp: 2,

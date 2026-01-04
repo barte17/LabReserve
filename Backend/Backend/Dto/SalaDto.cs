@@ -14,6 +14,7 @@
         public string? ImieOpiekuna { get; set; }
         public string? NazwiskoOpiekuna { get; set; }
         public string? PierwszeZdjecie { get; set; }
+        public bool CzyAktywna { get; set; }
     }
 
     public class CreateSalaDto
@@ -28,6 +29,7 @@
         public TimeSpan? CzynnaDo { get; set; }
         public string? Opis { get; set; }
         public string? IdOpiekuna { get; set; }
+        public bool CzyAktywna { get; set; } = true;
 
     }
 
