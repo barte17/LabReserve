@@ -76,6 +76,21 @@ namespace Backend.Services
             return await SendEmailAsync(toEmail, toDisplayName, subject, htmlContent);
         }
 
+        public async Task<bool> SendStatusChangeEmailAsync(
+            string toEmail,
+            string toDisplayName,
+            string locationName,
+            DateTime dataStart,
+            string oldStatus,
+            string newStatus,
+            string? opis)
+        {
+            var subject = "Status Twojej rezerwacji został zmieniony - LabReserve";
+            var htmlContent = GenerateStatusChangeEmailTemplate(locationName, dataStart, oldStatus, newStatus, opis);
+            
+            return await SendEmailAsync(toEmail, toDisplayName, subject, htmlContent);
+        }
+
         private string GenerateReservationEmailTemplate(string userName, string userEmail, string locationName, DateTime dataOd, DateTime dataDo, string? opis)
         {
             var dataOdStr = dataOd.ToString("dd.MM.yyyy HH:mm");
@@ -118,6 +133,72 @@ namespace Backend.Services
             
             <p>Aby zarządzać rezerwacjami, przejdź do panelu opiekuna:</p>
             <a href='http://localhost:3000/panel?view=opiekun&section=rezerwacje' class='button'>Przejdź do Panelu</a>
+            
+            <div class='footer'>
+                <p>To jest automatyczna wiadomość z systemu LabReserve.<br>
+                Jeśli nie chcesz otrzymywać takich powiadomień, zmień ustawienia w swoim profilu.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>";
+        }
+
+        private string GenerateStatusChangeEmailTemplate(string locationName, DateTime dataStart, string oldStatus, string newStatus, string? opis)
+        {
+            var dataStartStr = dataStart.ToString("dd.MM.yyyy HH:mm");
+            var opisSection = !string.IsNullOrWhiteSpace(opis) ? $"<p><strong>Opis:</strong> {System.Net.WebUtility.HtmlEncode(opis)}</p>" : "";
+            
+            // Określ kolor na podstawie nowego statusu
+            var statusColor = newStatus.ToLower() switch
+            {
+                "zaakceptowano" => "#28a745",
+                "odrzucono" => "#dc3545",
+                "anulowane" => "#6c757d",
+                "po terminie" => "#ffc107",
+                _ => "#007bff"
+            };
+
+            return $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='UTF-8'>
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background-color: {statusColor}; color: white; padding: 20px; text-align: center; }}
+        .content {{ padding: 20px; background-color: #f8f9fa; }}
+        .details {{ background-color: white; padding: 15px; border-left: 4px solid {statusColor}; margin: 15px 0; }}
+        .status-change {{ background-color: #fff3cd; padding: 15px; border-radius: 5px; margin: 15px 0; }}
+        .button {{ display: inline-block; padding: 12px 24px; background-color: {statusColor}; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }}
+        .footer {{ text-align: center; color: #666; font-size: 12px; margin-top: 30px; }}
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div class='header'>
+            <h1>LabReserve - Zmiana Statusu Rezerwacji</h1>
+        </div>
+        
+        <div class='content'>
+            <h2>Witaj!</h2>
+            <p>Informujemy, że status Twojej rezerwacji został zmieniony:</p>
+            
+            <div class='status-change'>
+                <p><strong>Poprzedni status:</strong> {System.Net.WebUtility.HtmlEncode(oldStatus)}</p>
+                <p><strong>Nowy status:</strong> {System.Net.WebUtility.HtmlEncode(newStatus)}</p>
+            </div>
+            
+            <div class='details'>
+                <h3>Szczegóły rezerwacji:</h3>
+                <p><strong>Lokalizacja:</strong> {System.Net.WebUtility.HtmlEncode(locationName)}</p>
+                <p><strong>Data rozpoczęcia:</strong> {dataStartStr}</p>
+                {opisSection}
+            </div>
+            
+            <p>Aby zobaczyć szczegóły rezerwacji, przejdź do swojego panelu:</p>
+            <a href='http://localhost:3000/panel?view=user&section=rezerwacje' class='button'>Przejdź do Panelu</a>
             
             <div class='footer'>
                 <p>To jest automatyczna wiadomość z systemu LabReserve.<br>

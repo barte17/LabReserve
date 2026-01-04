@@ -1203,6 +1203,51 @@ namespace Backend.Controllers
                 );
                 
                 Console.WriteLine($"[DEBUG] Wynik wysyłania powiadomienia o zmianie statusu: {wynik}");
+
+                // Sprawdź preferencje email użytkownika
+                var userPreferencesService = HttpContext.RequestServices.GetRequiredService<IUserPreferencesService>();
+                var shouldSendEmail = await userPreferencesService.ShouldSendEmailNotificationAsync(rezerwacja.UzytkownikId, "StatusChange");
+                
+                if (shouldSendEmail)
+                {
+                    Console.WriteLine($"[DEBUG] Wysyłam email o zmianie statusu do użytkownika {rezerwacja.UzytkownikId}");
+                    
+                    // Pobierz dane użytkownika do wysłania emaila
+                    var uzytkownik = await _context.Users
+                        .Where(u => u.Id == rezerwacja.UzytkownikId)
+                        .Select(u => new { u.Email, u.Imie, u.Nazwisko })
+                        .FirstOrDefaultAsync();
+                    
+                    if (uzytkownik != null && !string.IsNullOrEmpty(uzytkownik.Email))
+                    {
+                        try
+                        {
+                            var emailSent = await _emailService.SendStatusChangeEmailAsync(
+                                uzytkownik.Email,
+                                $"{uzytkownik.Imie} {uzytkownik.Nazwisko}",
+                                lokalizacja,
+                                rezerwacja.DataStart,
+                                GetStatusDescription(staryStatus),
+                                GetStatusDescription(nowyStatus),
+                                rezerwacja.Opis
+                            );
+                            
+                            Console.WriteLine($"[DEBUG] Email o zmianie statusu wysłany: {emailSent}");
+                        }
+                        catch (Exception emailEx)
+                        {
+                            Console.WriteLine($"[ERROR] Błąd wysyłania emaila o zmianie statusu: {emailEx.Message}");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[DEBUG] Brak adresu email dla użytkownika {rezerwacja.UzytkownikId}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"[DEBUG] Użytkownik {rezerwacja.UzytkownikId} wyłączył powiadomienia email o zmianie statusu");
+                }
             }
             catch (Exception ex)
             {
@@ -1228,7 +1273,7 @@ namespace Backend.Controllers
         {
             return status switch
             {
-                "oczekujące" => "Oczekujace na akceptacje",
+                "oczekujące" => "Oczekujące",
                 "zaakceptowano" => "Zaakceptowano",
                 "odrzucono" => "Odrzucono",
                 "anulowane" => "Anulowano",
