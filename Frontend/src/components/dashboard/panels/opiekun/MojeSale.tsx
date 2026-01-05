@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchMojeSale, updateMojaSala } from '../../../../services/salaService';
 import { useToastContext } from '../../../ToastProvider';
@@ -21,7 +21,7 @@ export default function MojeSale() {
   const navigate = useNavigate();
   const [sale, setSale] = useState<Sala[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingSala, setEditingSala] = useState<number | null>(null);
+  const [editingSala, setEditingSala] = useState<Sala | null>(null);
   const [editData, setEditData] = useState({ opis: '', czynnaOd: '', czynnaDo: '' });
   const { showSuccess, showError } = useToastContext();
 
@@ -48,7 +48,7 @@ export default function MojeSale() {
   };
 
   const handleEditStart = (sala: Sala) => {
-    setEditingSala(sala.id);
+    setEditingSala(sala);
     setEditData({
       opis: sala.opis || '',
       czynnaOd: sala.czynnaOd ? sala.czynnaOd.slice(0, 5) : '',
@@ -61,16 +61,18 @@ export default function MojeSale() {
     setEditData({ opis: '', czynnaOd: '', czynnaDo: '' });
   };
 
-  const handleEditSave = async (salaId: number) => {
+  const handleEditSave = async () => {
+    if (!editingSala) return;
+
     try {
       const updateData: any = {};
-      
+
       if (editData.opis.trim()) updateData.opis = editData.opis.trim();
       if (editData.czynnaOd) updateData.czynnaOd = `${editData.czynnaOd}:00`;
       if (editData.czynnaDo) updateData.czynnaDo = `${editData.czynnaDo}:00`;
 
-      await updateMojaSala(salaId, updateData);
-      
+      await updateMojaSala(editingSala.id, updateData);
+
       // Odśwież listę sal
       await loadMojeSale();
       setEditingSala(null);
@@ -109,59 +111,59 @@ export default function MojeSale() {
   return (
     <div className="space-y-3">
       {/* Header */}
-<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-  {/* Pasek filtrów i wyszukiwania */}
-  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">Numer sali</label>
-      <input
-        type="text"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        value={searchNumer}
-        onChange={(e) => setSearchNumer(e.target.value.replace(/[^0-9]/g, ''))}
-        placeholder="np. 204"
-        className="form-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-      />
-    </div>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        {/* Pasek filtrów i wyszukiwania */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Numer sali</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={searchNumer}
+              onChange={(e) => setSearchNumer(e.target.value.replace(/[^0-9]/g, ''))}
+              placeholder="np. 204"
+              className="form-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+            />
+          </div>
 
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">Budynek</label>
-      <select
-        value={filterBudynek}
-        onChange={(e) => setFilterBudynek(e.target.value as any)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-      >
-        <option value="">Wszystkie</option>
-        <option value="A">A</option>
-        <option value="B">B</option>
-      </select>
-    </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Budynek</label>
+            <select
+              value={filterBudynek}
+              onChange={(e) => setFilterBudynek(e.target.value as any)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+            >
+              <option value="">Wszystkie</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+            </select>
+          </div>
 
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">Stanowiska</label>
-      <select
-        value={filterStanowiska}
-        onChange={(e) => setFilterStanowiska(e.target.value as any)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-      >
-        <option value="">Wszystkie</option>
-        <option value="z">Ze stanowiskami</option>
-        <option value="bez">Bez stanowisk</option>
-      </select>
-    </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Stanowiska</label>
+            <select
+              value={filterStanowiska}
+              onChange={(e) => setFilterStanowiska(e.target.value as any)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+            >
+              <option value="">Wszystkie</option>
+              <option value="z">Ze stanowiskami</option>
+              <option value="bez">Bez stanowisk</option>
+            </select>
+          </div>
 
-    <div className="flex items-end">
-      <button
-        onClick={clearFilters}
-        disabled={!hasActiveFilters}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-      >
-        Wyczyść filtry
-      </button>
-    </div>
-  </div>
-</div>
+          <div className="flex items-end">
+            <button
+              onClick={clearFilters}
+              disabled={!hasActiveFilters}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              Wyczyść filtry
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Lista sal */}
       {sale.length === 0 ? (
@@ -200,7 +202,7 @@ export default function MojeSale() {
                     )}
                   </div>
                 </div>
-                
+
                 <div className="flex space-x-2">
                   <button
                     onClick={() => navigate(`/sala/${sala.id}`)}
@@ -209,100 +211,129 @@ export default function MojeSale() {
                   >
                     👁️
                   </button>
-                  {editingSala !== sala.id && (
-                    <button
-                      onClick={() => handleEditStart(sala)}
-                      className="text-red-600 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors"
-                      title="Edytuj salę"
-                    >
-                      ✏️
-                    </button>
-                  )}
+                  <button
+                    onClick={() => handleEditStart(sala)}
+                    className="text-red-600 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors"
+                    title="Edytuj salę"
+                  >
+                    ✏️
+                  </button>
                 </div>
               </div>
 
-              {editingSala === sala.id ? (
-                // Formularz edycji
-                <div className="space-y-4 border-t pt-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Opis sali
-                    </label>
-                    <textarea
-                      value={editData.opis}
-                      onChange={(e) => setEditData({ ...editData, opis: e.target.value })}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                      placeholder="Opis sali (opcjonalny)"
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Czynna od
-                      </label>
-                      <input
-                        type="time"
-                        value={editData.czynnaOd}
-                        onChange={(e) => setEditData({ ...editData, czynnaOd: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Czynna do
-                      </label>
-                      <input
-                        type="time"
-                        value={editData.czynnaDo}
-                        onChange={(e) => setEditData({ ...editData, czynnaDo: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="flex space-x-3">
-                    <button
-                      onClick={() => handleEditSave(sala.id)}
-                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-                    >
-                      💾 Zapisz
-                    </button>
-                    <button
-                      onClick={handleEditCancel}
-                      className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
-                    >
-                      ❌ Anuluj
-                    </button>
-                  </div>
+              {/* Widok informacji */}
+              <div className="space-y-3">
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Opis:</span>
+                  <p className="text-gray-900 mt-1">
+                    {sala.opis || 'Brak opisu'}
+                  </p>
                 </div>
-              ) : (
-                // Widok informacji
-                <div className="space-y-3">
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-sm font-medium text-gray-700">Opis:</span>
-                    <p className="text-gray-900 mt-1">
-                      {sala.opis || 'Brak opisu'}
+                    <span className="font-medium text-gray-700">Godziny dostępności:</span>
+                    <p className="text-gray-900">
+                      {sala.czynnaOd && sala.czynnaDo
+                        ? `${sala.czynnaOd.slice(0, 5)} - ${sala.czynnaDo.slice(0, 5)}`
+                        : 'Nie określono'
+                      }
                     </p>
                   </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium text-gray-700">Godziny dostępności:</span>
-                      <p className="text-gray-900">
-                        {sala.czynnaOd && sala.czynnaDo 
-                          ? `${sala.czynnaOd.slice(0, 5)} - ${sala.czynnaDo.slice(0, 5)}`
-                          : 'Nie określono'
-                        }
-                      </p>
-                    </div>
-                  </div>
                 </div>
-              )}
+              </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Modal edycji */}
+      {editingSala && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Edytuj salę {editingSala.numer}
+              </h2>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Opis sali
+                </label>
+                <textarea
+                  value={editData.opis}
+                  onChange={(e) => setEditData({ ...editData, opis: e.target.value })}
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  placeholder="Opis sali (opcjonalny)"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Czynna od
+                  </label>
+                  <select
+                    value={editData.czynnaOd}
+                    onChange={(e) => setEditData({ ...editData, czynnaOd: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
+                  >
+                    <option value="">Wybierz godzinę</option>
+                    {Array.from({ length: 24 }, (_, i) => {
+                      const hour = i.toString().padStart(2, '0');
+                      return (
+                        <option key={hour} value={`${hour}:00`}>
+                          {hour}:00
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Czynna do
+                  </label>
+                  <select
+                    value={editData.czynnaDo}
+                    onChange={(e) => setEditData({ ...editData, czynnaDo: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
+                  >
+                    <option value="">Wybierz godzinę</option>
+                    {Array.from({ length: 24 }, (_, i) => {
+                      const hour = i.toString().padStart(2, '0');
+                      const hourValue = `${hour}:00`;
+                      // Disable hours that are before or equal to czynnaOd
+                      const isDisabled = editData.czynnaOd ? hourValue <= editData.czynnaOd : false;
+                      return (
+                        <option key={hour} value={hourValue} disabled={isDisabled}>
+                          {hour}:00
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+              <button
+                onClick={handleEditCancel}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Anuluj
+              </button>
+              <button
+                onClick={handleEditSave}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Zapisz zmiany
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

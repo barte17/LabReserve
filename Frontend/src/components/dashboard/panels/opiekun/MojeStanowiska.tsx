@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchMojeStanowiska, updateMojeStanowisko } from '../../../../services/stanowiskoService';
 import { useToastContext } from '../../../ToastProvider';
@@ -17,7 +17,7 @@ export default function MojeStanowiska() {
   const navigate = useNavigate();
   const [stanowiska, setStanowiska] = useState<Stanowisko[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingStanowisko, setEditingStanowisko] = useState<number | null>(null);
+  const [editingStanowisko, setEditingStanowisko] = useState<Stanowisko | null>(null);
   const [editOpis, setEditOpis] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const { showSuccess, showError } = useToastContext();
@@ -40,7 +40,7 @@ export default function MojeStanowiska() {
   };
 
   const handleEditStart = (stanowisko: Stanowisko) => {
-    setEditingStanowisko(stanowisko.id);
+    setEditingStanowisko(stanowisko);
     setEditOpis(stanowisko.opis || '');
   };
 
@@ -49,15 +49,17 @@ export default function MojeStanowiska() {
     setEditOpis('');
   };
 
-  const handleEditSave = async (stanowiskoId: number) => {
+  const handleEditSave = async () => {
+    if (!editingStanowisko) return;
+
     try {
-      await updateMojeStanowisko(stanowiskoId, { opis: editOpis.trim() });
-      
+      await updateMojeStanowisko(editingStanowisko.id, { opis: editOpis.trim() });
+
       // Aktualizuj lokalnie
-      setStanowiska(prev => prev.map(s => 
-        s.id === stanowiskoId ? { ...s, opis: editOpis.trim() } : s
+      setStanowiska(prev => prev.map(s =>
+        s.id === editingStanowisko.id ? { ...s, opis: editOpis.trim() } : s
       ));
-      
+
       setEditingStanowisko(null);
       setEditOpis('');
       showSuccess('Stanowisko zostało zaktualizowane');
@@ -80,7 +82,7 @@ export default function MojeStanowiska() {
   // Filtrowanie stanowisk
   const filteredStanowiska = stanowiska.filter(stanowisko => {
     if (!searchTerm.trim()) return true;
-    
+
     const searchLower = searchTerm.toLowerCase();
     return (
       stanowisko.nazwa.toLowerCase().includes(searchLower) ||
@@ -135,7 +137,7 @@ export default function MojeStanowiska() {
             {stanowiska.length === 0 ? 'Brak stanowisk' : 'Brak wyników'}
           </h2>
           <p className="text-gray-600">
-            {stanowiska.length === 0 
+            {stanowiska.length === 0
               ? 'Nie ma stanowisk w salach pod Twoją opieką.'
               : 'Zmień kryteria wyszukiwania aby zobaczyć stanowiska.'
             }
@@ -170,7 +172,7 @@ export default function MojeStanowiska() {
                             </span>
                           </div>
                         </div>
-                        
+
                         <div className="flex space-x-2">
                           <button
                             onClick={() => navigate(`/stanowisko/${stanowisko.id}`)}
@@ -179,64 +181,75 @@ export default function MojeStanowiska() {
                           >
                             👁️
                           </button>
-                          {editingStanowisko !== stanowisko.id && (
-                            <button
-                              onClick={() => handleEditStart(stanowisko)}
-                              className="text-red-600 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors"
-                              title="Edytuj opis"
-                            >
-                              ✏️
-                            </button>
-                          )}
+                          <button
+                            onClick={() => handleEditStart(stanowisko)}
+                            className="text-red-600 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors"
+                            title="Edytuj opis"
+                          >
+                            ✏️
+                          </button>
                         </div>
                       </div>
 
-                      {editingStanowisko === stanowisko.id ? (
-                        // Formularz edycji
-                        <div className="space-y-3">
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">
-                              Opis stanowiska
-                            </label>
-                            <textarea
-                              value={editOpis}
-                              onChange={(e) => setEditOpis(e.target.value)}
-                              rows={3}
-                              className="w-full text-sm px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-500"
-                              placeholder="Opis stanowiska (opcjonalny)"
-                            />
-                          </div>
-                          
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => handleEditSave(stanowisko.id)}
-                              className="flex-1 bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition-colors"
-                            >
-                              💾 Zapisz
-                            </button>
-                            <button
-                              onClick={handleEditCancel}
-                              className="flex-1 bg-gray-500 text-white px-3 py-1 rounded text-sm hover:bg-gray-600 transition-colors"
-                            >
-                              ❌ Anuluj
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        // Widok opisu
-                        <div className="text-sm text-gray-600">
-                          <span className="font-medium">Opis:</span>
-                          <p className="mt-1 text-gray-900">
-                            {stanowisko.opis || 'Brak opisu'}
-                          </p>
-                        </div>
-                      )}
+                      {/* Widok opisu */}
+                      <div className="text-sm text-gray-600">
+                        <span className="font-medium">Opis:</span>
+                        <p className="mt-1 text-gray-900">
+                          {stanowisko.opis || 'Brak opisu'}
+                        </p>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Modal edycji */}
+      {editingStanowisko && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Edytuj stanowisko: {editingStanowisko.nazwa}
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                {editingStanowisko.typ} • Sala {editingStanowisko.salaNumer} - {editingStanowisko.salaBudynek}
+              </p>
+            </div>
+
+            <div className="p-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Opis stanowiska
+                </label>
+                <textarea
+                  value={editOpis}
+                  onChange={(e) => setEditOpis(e.target.value)}
+                  rows={5}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  placeholder="Opis stanowiska (opcjonalny)"
+                />
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+              <button
+                onClick={handleEditCancel}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Anuluj
+              </button>
+              <button
+                onClick={handleEditSave}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Zapisz zmiany
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

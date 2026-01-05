@@ -71,12 +71,12 @@ export const createReservation = async (data: CreateReservationDto): Promise<Rez
     },
     body: JSON.stringify(data)
   });
-  
+
   if (!res.ok) {
     const errorText = await res.text();
     throw new Error(errorText || "Błąd tworzenia rezerwacji");
   }
-  
+
   return await res.json();
 };
 
@@ -88,7 +88,7 @@ export const getAvailableHours = async (params: AvailabilityCheckDto): Promise<A
 
   const { authenticatedFetch } = await import('./authService');
   const res = await authenticatedFetch(`/api/rezerwacja/available-hours?${searchParams}`);
-  
+
   if (!res.ok) throw new Error("Błąd pobierania dostępnych godzin");
   return await res.json();
 };
@@ -102,11 +102,11 @@ export const getAvailableDays = async (params: MonthAvailabilityDto): Promise<Av
 
   const { authenticatedFetch } = await import('./authService');
   const res = await authenticatedFetch(`/api/rezerwacja/available-days?${searchParams}`);
-  
+
   if (!res.ok) {
     throw new Error(`Błąd pobierania dostępnych dni: ${res.status} ${res.statusText}`);
   }
-  
+
   return await res.json();
 };
 
@@ -127,10 +127,10 @@ export const deleteRezerwacja = async (id: number) => {
   const res = await authenticatedFetch(`/api/rezerwacja/${id}`, {
     method: "DELETE"
   });
-  
+
   if (!res.ok) {
     let errorMessage = "Błąd usuwania rezerwacji";
-    
+
     try {
       const errorData = await res.json();
       if (errorData.message) {
@@ -149,7 +149,7 @@ export const deleteRezerwacja = async (id: number) => {
         errorMessage = text || "Nie można usunąć tej rezerwacji";
       }
     }
-    
+
     throw new Error(errorMessage);
   }
 };
@@ -159,12 +159,12 @@ export const cancelReservation = async (id: number) => {
   const res = await authenticatedFetch(`/api/rezerwacja/${id}/cancel`, {
     method: "PATCH"
   });
-  
+
   if (!res.ok) {
     const errorText = await res.text();
     throw new Error(errorText || "Błąd anulowania rezerwacji");
   }
-  
+
   return await res.json();
 };
 
@@ -192,7 +192,7 @@ export const updateStatusRezerwacji = async (id: number, status: string) => {
 export const generateRecentActivities = (rezerwacje: any[]) => {
   // Sortuj po dacie utworzenia i weź ostatnie 7 dni
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  
+
   return rezerwacje
     .filter(r => new Date(r.dataUtworzenia) > sevenDaysAgo)
     .slice(0, 10) // Max 10 aktywności
@@ -217,16 +217,16 @@ const getActionText = (status: string) => {
 };
 
 const getDetailsText = (rezerwacja: any) => {
-  const location = rezerwacja.salaId 
+  const location = rezerwacja.salaId
     ? `Sala ${rezerwacja.salaNumer} - ${rezerwacja.salaBudynek}`
     : `${rezerwacja.stanowiskoNazwa} (${rezerwacja.stanowiskoSala})`;
-  
+
   const date = new Date(rezerwacja.dataStart).toLocaleDateString('pl-PL');
-  const time = new Date(rezerwacja.dataStart).toLocaleTimeString('pl-PL', { 
-    hour: '2-digit', 
-    minute: '2-digit' 
+  const time = new Date(rezerwacja.dataStart).toLocaleTimeString('pl-PL', {
+    hour: '2-digit',
+    minute: '2-digit'
   });
-  
+
   return `${location} • ${date} ${time}`;
 };
 
@@ -239,7 +239,7 @@ export const checkExpiredReservations = async () => {
       "Content-Type": "application/json",
     },
   });
-  
+
   if (!res.ok) throw new Error("Błąd sprawdzania wygasłych rezerwacji");
   return res.json();
 };
@@ -248,11 +248,11 @@ const getTimeAgo = (dateString: string) => {
   const now = new Date();
   const date = new Date(dateString);
   const diffMs = now.getTime() - date.getTime();
-  
+
   const diffMinutes = Math.floor(diffMs / (1000 * 60));
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  
+
   if (diffMinutes < 60) {
     return `${diffMinutes} min temu`;
   } else if (diffHours < 24) {
