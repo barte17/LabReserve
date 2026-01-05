@@ -690,9 +690,6 @@ export default function ReservationPage() {
                         >
                           <div className="text-center">
                             {formatHour(hour.godzina)}
-                            {!hour.dostepna && (
-                              <div className="text-xs text-gray-400 mt-1">zajęte</div>
-                            )}
                           </div>
                         </button>
                       ))}
