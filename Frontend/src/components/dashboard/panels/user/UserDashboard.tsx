@@ -62,15 +62,15 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
       end.setHours(23, 59, 59, 999);
       return start <= today && end >= today && r.status === 'zaakceptowano';
     }).length,
-    
+
     oczekujace: rezerwacje.filter(r => r.status === 'oczekujące').length,
-    
+
     nadchodzaceTydzien: rezerwacje.filter(r => {
       const start = new Date(r.dataStart);
       start.setHours(0, 0, 0, 0);
       return start > today && start <= endOfWeek && r.status === 'zaakceptowano';
     }).length,
-    
+
     dzisiaj: rezerwacje.filter(r => {
       const start = new Date(r.dataStart);
       start.setHours(0, 0, 0, 0);
@@ -93,14 +93,14 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
   // Paginacja dla karuzel
   const aktywosciTotalPages = Math.ceil(ostatnieAktywnosci.length / itemsPerPage);
   const nadchodzaceTotalPages = Math.ceil(nadchodzaceRezerwacje.length / itemsPerPage);
-  
+
   const currentAktywnosci = ostatnieAktywnosci.slice(
-    aktywosciPage * itemsPerPage, 
+    aktywosciPage * itemsPerPage,
     (aktywosciPage + 1) * itemsPerPage
   );
-  
+
   const currentNadchodzace = nadchodzaceRezerwacje.slice(
-    nadchodzacePage * itemsPerPage, 
+    nadchodzacePage * itemsPerPage,
     (nadchodzacePage + 1) * itemsPerPage
   );
 
@@ -108,7 +108,7 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
   const currentMonth = new Date();
   const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
   const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-  
+
   const kalendarzRezerwacje = rezerwacje.filter(r => {
     const start = new Date(r.dataStart);
     return start >= firstDay && start <= lastDay && r.status === 'zaakceptowano';
@@ -117,7 +117,7 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
   const getDaysInMonth = () => {
     const days = [];
     const startDate = new Date(firstDay);
-    
+
     // Dopełnij dni z poprzedniego miesiąca
     const startDay = startDate.getDay() === 0 ? 6 : startDate.getDay() - 1;
     for (let i = startDay - 1; i >= 0; i--) {
@@ -125,13 +125,13 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
       day.setDate(day.getDate() - i - 1);
       days.push({ date: day, isCurrentMonth: false });
     }
-    
+
     // Dni bieżącego miesiąca
     for (let day = 1; day <= lastDay.getDate(); day++) {
       const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
       days.push({ date, isCurrentMonth: true });
     }
-    
+
     // Dopełnij do 42 dni (6 tygodni)
     const remaining = 42 - days.length;
     for (let i = 1; i <= remaining; i++) {
@@ -139,7 +139,7 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
       day.setDate(day.getDate() + i);
       days.push({ date: day, isCurrentMonth: false });
     }
-    
+
     return days;
   };
 
@@ -188,9 +188,9 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
               <h3 className="text-lg text-gray-900">
                 <span className="font-semibold">{stats.aktywne}</span>{' '}
                 <span className="font-normal">
-                  {stats.aktywne === 1 ? 'rezerwacja' : 
-                   stats.aktywne >= 2 && stats.aktywne <= 4 ? 'rezerwacje' : 
-                   'rezerwacji'}
+                  {stats.aktywne === 1 ? 'rezerwacja' :
+                    stats.aktywne >= 2 && stats.aktywne <= 4 ? 'rezerwacje' :
+                      'rezerwacji'}
                 </span>
               </h3>
               <p className="text-sm text-gray-500">Aktywne dzisiaj</p>
@@ -210,9 +210,9 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
               <h3 className="text-lg text-gray-900">
                 <span className="font-semibold">{stats.oczekujace}</span>{' '}
                 <span className="font-normal">
-                  {stats.oczekujace === 1 ? 'rezerwacja' : 
-                   stats.oczekujace >= 2 && stats.oczekujace <= 4 ? 'rezerwacje' : 
-                   'rezerwacji'}
+                  {stats.oczekujace === 1 ? 'rezerwacja' :
+                    stats.oczekujace >= 2 && stats.oczekujace <= 4 ? 'rezerwacje' :
+                      'rezerwacji'}
                 </span>
               </h3>
               <p className="text-sm text-gray-500">Oczekujące</p>
@@ -232,9 +232,9 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
               <h3 className="text-lg text-gray-900">
                 <span className="font-semibold">{stats.nadchodzaceTydzien}</span>{' '}
                 <span className="font-normal">
-                  {stats.nadchodzaceTydzien === 1 ? 'rezerwacja' : 
-                   stats.nadchodzaceTydzien >= 2 && stats.nadchodzaceTydzien <= 4 ? 'rezerwacje' : 
-                   'rezerwacji'}
+                  {stats.nadchodzaceTydzien === 1 ? 'rezerwacja' :
+                    stats.nadchodzaceTydzien >= 2 && stats.nadchodzaceTydzien <= 4 ? 'rezerwacje' :
+                      'rezerwacji'}
                 </span>
               </h3>
               <p className="text-sm text-gray-500">W tym tygodniu</p>
@@ -254,9 +254,9 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
               <h3 className="text-lg text-gray-900">
                 <span className="font-semibold">{rezerwacje.length}</span>{' '}
                 <span className="font-normal">
-                  {rezerwacje.length === 1 ? 'rezerwacja' : 
-                   rezerwacje.length >= 2 && rezerwacje.length <= 4 ? 'rezerwacje' : 
-                   'rezerwacji'}
+                  {rezerwacje.length === 1 ? 'rezerwacja' :
+                    rezerwacje.length >= 2 && rezerwacje.length <= 4 ? 'rezerwacje' :
+                      'rezerwacji'}
                 </span>
               </h3>
               <p className="text-sm text-gray-500">Wszystkich</p>
@@ -267,7 +267,7 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Ostatnie aktywności */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 h-[400px] flex flex-col">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 h-[440px] flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Ostatnie aktywności</h2>
             <button
@@ -277,31 +277,49 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
               Zobacz wszystkie →
             </button>
           </div>
-          
+
           <div className="flex-1 space-y-3 overflow-hidden">
             {ostatnieAktywnosci.length === 0 ? (
               <p className="text-gray-500 text-center py-4">Brak aktywności</p>
             ) : (
-              currentAktywnosci.map((rezerwacja) => (
-                <div key={rezerwacja.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2">
-                      <span className={`inline-block w-2 h-2 rounded-full ${
-                        rezerwacja.status === 'zaakceptowano' ? 'bg-green-500' :
-                        rezerwacja.status === 'oczekujące' ? 'bg-yellow-500' :
-                        rezerwacja.status === 'odrzucono' ? 'bg-red-500' : 'bg-gray-500'
-                      }`}></span>
-                      <span className="font-medium text-gray-900">
-                        Sala {rezerwacja.salaNumer}{rezerwacja.salaBudynek}
-                        {rezerwacja.stanowiskoNazwa && ` - ${rezerwacja.stanowiskoNazwa}`}
-                      </span>
+              currentAktywnosci.map((rezerwacja) => {
+                // Determine activity type based on creation date and status
+                const createdRecently = (new Date().getTime() - new Date(rezerwacja.dataUtworzenia).getTime()) < 24 * 60 * 60 * 1000; // Last 24h
+                const activityLabel = createdRecently && rezerwacja.status === 'oczekujące' ? 'Nowa rezerwacja' :
+                  rezerwacja.status === 'zaakceptowano' ? 'Zaakceptowano' :
+                    rezerwacja.status === 'odrzucono' ? 'Odrzucono' :
+                      rezerwacja.status === 'anulowano' ? 'Anulowano' : 'Zmieniono status';
+
+                return (
+                  <div key={rezerwacja.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2">
+                        <span className={`inline-block w-2 h-2 rounded-full ${rezerwacja.status === 'zaakceptowano' ? 'bg-green-500' :
+                          rezerwacja.status === 'oczekujące' ? 'bg-yellow-500' :
+                            rezerwacja.status === 'odrzucono' ? 'bg-red-500' : 'bg-gray-500'
+                          }`}></span>
+                        <span className="font-medium text-gray-900">
+                          Sala {rezerwacja.salaNumer}{rezerwacja.salaBudynek}
+                          {rezerwacja.stanowiskoNazwa && ` - ${rezerwacja.stanowiskoNazwa}`}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-sm text-gray-500">
+                          {new Date(rezerwacja.dataStart).toLocaleDateString('pl-PL')} {new Date(rezerwacja.dataStart).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
+                          {' - '}
+                          {new Date(rezerwacja.dataKoniec).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${rezerwacja.status === 'zaakceptowano' ? 'bg-green-100 text-green-700' :
+                          rezerwacja.status === 'oczekujące' ? 'bg-yellow-100 text-yellow-700' :
+                            rezerwacja.status === 'odrzucono' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
+                          }`}>
+                          {activityLabel}
+                        </span>
+                      </div>
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {new Date(rezerwacja.dataStart).toLocaleDateString('pl-PL')} - {rezerwacja.status}
-                    </p>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 
@@ -332,7 +350,7 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
         </div>
 
         {/* Nadchodzące rezerwacje */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 h-[400px] flex flex-col">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 h-[440px] flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Nadchodzące rezerwacje</h2>
             <button
@@ -342,7 +360,7 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
               Zobacz wszystkie →
             </button>
           </div>
-          
+
           <div className="flex-1 space-y-3 overflow-hidden">
             {nadchodzaceRezerwacje.length === 0 ? (
               <p className="text-gray-500 text-center py-4">Brak nadchodzących rezerwacji</p>
@@ -351,19 +369,24 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
                 <div key={rezerwacja.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2">
-                      <span className={`inline-block w-2 h-2 rounded-full ${
-                        rezerwacja.status === 'zaakceptowano' ? 'bg-green-500' : 'bg-yellow-500'
-                      }`}></span>
+                      <span className={`inline-block w-2 h-2 rounded-full ${rezerwacja.status === 'zaakceptowano' ? 'bg-green-500' : 'bg-yellow-500'
+                        }`}></span>
                       <span className="font-medium text-gray-900">
                         Sala {rezerwacja.salaNumer}{rezerwacja.salaBudynek}
                         {rezerwacja.stanowiskoNazwa && ` - ${rezerwacja.stanowiskoNazwa}`}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {new Date(rezerwacja.dataStart).toLocaleDateString('pl-PL')} {new Date(rezerwacja.dataStart).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
-                      {' - '}
-                      {new Date(rezerwacja.dataKoniec).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
-                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-sm text-gray-500">
+                        {new Date(rezerwacja.dataStart).toLocaleDateString('pl-PL')} {new Date(rezerwacja.dataStart).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
+                        {' - '}
+                        {new Date(rezerwacja.dataKoniec).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${rezerwacja.status === 'zaakceptowano' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                        }`}>
+                        {rezerwacja.status === 'zaakceptowano' ? 'Zaakceptowano' : 'Oczekujące'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))
@@ -405,11 +428,11 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
               Kalendarz - {currentMonth.toLocaleDateString('pl-PL', { month: 'long', year: 'numeric' })}
             </h2>
             <div className="text-sm text-gray-500">
-              {kalendarzRezerwacje.length} rezerwacji w tym miesiącu
+              Rezerwacji w tym miesiącu: {kalendarzRezerwacje.length}
             </div>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-7 gap-1 mb-2">
           {['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Nie'].map(day => (
             <div key={day} className="text-center text-sm font-medium text-gray-500 py-2">
@@ -417,14 +440,14 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
             </div>
           ))}
         </div>
-        
+
         <div className="grid grid-cols-7 gap-1">
           {getDaysInMonth().map((day, index) => {
             const dayReservations = getReservationsForDay(day.date);
             const isToday = day.date.toDateString() === today.toDateString();
             const isSelected = selectedDate?.toDateString() === day.date.toDateString();
             const hasReservations = dayReservations.length > 0;
-            
+
             return (
               <div
                 key={index}
@@ -445,7 +468,7 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
             );
           })}
         </div>
-        
+
         <div className="mt-4 flex items-center space-x-4 text-sm">
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 bg-red-200 rounded"></div>
@@ -465,11 +488,11 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
         {selectedDate && selectedDateReservations.length > 0 && (
           <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">
-              Rezerwacje na {selectedDate.toLocaleDateString('pl-PL', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
+              Rezerwacje na {selectedDate.toLocaleDateString('pl-PL', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
               })}
             </h3>
             <div className="space-y-3">
@@ -492,11 +515,10 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
                         </div>
                       )}
                     </div>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      rezerwacja.status === 'zaakceptowano' ? 'bg-green-100 text-green-800' :
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${rezerwacja.status === 'zaakceptowano' ? 'bg-green-100 text-green-800' :
                       rezerwacja.status === 'oczekujące' ? 'bg-yellow-100 text-yellow-800' :
-                      rezerwacja.status === 'odrzucono' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
-                    }`}>
+                        rezerwacja.status === 'odrzucono' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
+                      }`}>
                       {rezerwacja.status}
                     </span>
                   </div>
