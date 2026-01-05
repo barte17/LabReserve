@@ -2,8 +2,8 @@
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![.NET](https://img.shields.io/badge/.NET-8.0-purple.svg)
-![React](https://img.shields.io/badge/React-18.0-blue.svg)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg)
+![React](https://img.shields.io/badge/React-19.0-blue.svg)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-blue.svg)
 
 **LabReserve** to nowoczesny system zarządzania rezerwacjami sal laboratoryjnych i stanowisk pracy, stworzony z myślą o uczelniach wyższych i instytucjach badawczych.
 

@@ -90,7 +90,7 @@ export default function StanowiskoDetails() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 py-6">
+    <div className="min-h-screen bg-neutral-50 py-3">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 lg:items-stretch">
@@ -241,10 +241,7 @@ export default function StanowiskoDetails() {
                   </button>
                 ) : (
                   <div className="btn btn-secondary w-full py-6 px-6 text-base font-semibold cursor-not-allowed opacity-60 border border-gray-300">
-                    <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 0h12a2 2 0 002-2v-4a2 2 0 00-2-2H6a2 2 0 00-2 2v4a2 2 0 002 2z" />
-                    </svg>
-                    Brak uprawnień do rezerwacji
+                    Brak uprawnień
                   </div>
                 )}
               </div>

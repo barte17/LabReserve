@@ -1,11 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { fetchSalaById } from "../services/salaService";
+import { getStations } from "../services/api";
 import ImageGallery from "../components/ImageGallery";
 import { SalaDetailsSkeleton } from "../components/LoadingStates/DetailsSkeleton";
 import { useMinimumLoadingDelay } from "../hooks/useMinimumLoadingDelay";
 import { useAuth } from "../contexts/AuthContext";
-import UnauthorizedMessage from "../components/UnauthorizedMessage";
+import { LazyImage } from "../components/LazyImage";
+
+type Stanowisko = {
+  id: number;
+  salaId: number;
+  nazwa: string;
+  typ: string | null;
+  opis: string | null;
+  salaNumer: number;
+  salaBudynek: string;
+  pierwszeZdjecie: string | null;
+  czyAktywny: boolean;
+};
 
 type SalaDetails = {
   id: number;
@@ -35,7 +48,9 @@ export default function SalaDetails() {
   const [sala, setSala] = useState<SalaDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [stanowiska, setStanowiska] = useState<Stanowisko[]>([]);
   const { canReserveSale } = useAuth();
+  const stanowiskaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!id) {
@@ -46,10 +61,18 @@ export default function SalaDetails() {
 
     document.title = "Szczegóły sali - System Rezerwacji";
 
-    fetchSalaById(parseInt(id))
-      .then((data) => {
-        setSala(data);
-        document.title = `Sala ${data.numer} - Szczegóły`;
+    Promise.all([
+      fetchSalaById(parseInt(id)),
+      getStations()
+    ])
+      .then(([salaData, stanowiskaData]) => {
+        setSala(salaData);
+        // Filter stanowiska by this sala's ID
+        const filteredStanowiska = stanowiskaData.filter(
+          (s: Stanowisko) => s.salaId === salaData.id
+        );
+        setStanowiska(filteredStanowiska);
+        document.title = `Sala ${salaData.numer} - Szczegóły`;
       })
       .catch((err) => {
         console.error(err);
@@ -94,7 +117,7 @@ export default function SalaDetails() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 py-6">
+    <div className="min-h-screen bg-neutral-50 py-3">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 lg:items-stretch">
@@ -174,9 +197,19 @@ export default function SalaDetails() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                   </div>
-                  <p className="text-neutral-900 font-semibold text-sm">
-                    Stanowiska: {sala.maStanowiska ? "Tak" : "Nie"}
-                  </p>
+                  {sala.maStanowiska && stanowiska.length > 0 ? (
+                    <button
+                      onClick={() => stanowiskaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                      className="text-neutral-900 font-semibold text-sm hover:text-orange-600 transition-colors duration-200 cursor-pointer"
+                      title="Kliknij, aby zobaczyć stanowiska"
+                    >
+                      Stanowiska: Tak
+                    </button>
+                  ) : (
+                    <p className="text-neutral-900 font-semibold text-sm">
+                      Stanowiska: {sala.maStanowiska ? "Tak" : "Nie"}
+                    </p>
+                  )}
                 </div>
 
                 {sala.czynnaOd && sala.czynnaDo && (
@@ -249,10 +282,7 @@ export default function SalaDetails() {
                   </button>
                 ) : (
                   <div className="btn btn-secondary w-full py-6 px-6 text-base font-semibold cursor-not-allowed opacity-60 border border-gray-300">
-                    <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 0h12a2 2 0 002-2v-4a2 2 0 00-2-2H6a2 2 0 00-2 2v4a2 2 0 002 2z" />
-                    </svg>
-                    Brak uprawnień do rezerwacji
+                    Brak uprawnień
                   </div>
                 )}
               </div>
@@ -273,6 +303,68 @@ export default function SalaDetails() {
             </div>
             <div className="card-body p-8">
               <p className="text-neutral-700 leading-relaxed text-base">{sala.opis}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Stanowiska w tej sali */}
+        {sala.maStanowiska && stanowiska.length > 0 && (
+          <div ref={stanowiskaRef} className="card mt-4 bg-gradient-to-br from-neutral-50 to-white border-neutral-200">
+            <div className="card-header bg-gradient-to-br from-primary-50 to-white border-b border-primary-200">
+              <div className="flex items-center space-x-2">
+                <svg className="h-5 w-5 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <h2 className="text-lg font-semibold text-neutral-800">Stanowiska w tej sali</h2>
+              </div>
+            </div>
+            <div className="card-body p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {stanowiska.map((stanowisko) => (
+                  <div
+                    key={stanowisko.id}
+                    onClick={() => navigate(`/stanowisko/${stanowisko.id}`)}
+                    className="bg-white rounded-xl shadow border border-gray-100 overflow-hidden hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+                  >
+                    {/* Zdjęcie stanowiska */}
+                    <div className="h-40 overflow-hidden relative">
+                      <LazyImage
+                        src={stanowisko.pierwszeZdjecie}
+                        alt={stanowisko.nazwa}
+                        className="w-full h-full transition-transform duration-300 hover:scale-110"
+                        placeholder={
+                          <div className="w-full h-full bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+                            <div className="text-center text-blue-600">
+                              <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                              </svg>
+                              <div className="text-sm font-semibold">{stanowisko.nazwa}</div>
+                            </div>
+                          </div>
+                        }
+                      />
+                      {/* Badge z typem */}
+                      {stanowisko.typ && (
+                        <div className="absolute top-2 right-2">
+                          <span className="bg-indigo-500 text-white px-2 py-1 rounded-full text-xs font-medium shadow-lg">
+                            {stanowisko.typ}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Treść karty */}
+                    <div className="p-4">
+                      <h3 className="text-lg font-bold text-gray-900 mb-1">
+                        {stanowisko.nazwa}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        {stanowisko.typ || "Ogólne"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
