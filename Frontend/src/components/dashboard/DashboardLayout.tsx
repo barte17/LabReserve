@@ -55,8 +55,8 @@ export default function DashboardLayout({ role, availableRoles, onRoleChange, in
 
         const mojeSale = saleRes.status === 'fulfilled' ? saleRes.value.length : 0;
         const mojeStanowiska = stanowiskaRes.status === 'fulfilled' ? stanowiskaRes.value.length : 0;
-        const oczekujaceRezerwacje = rezerwacjeRes.status === 'fulfilled' 
-          ? rezerwacjeRes.value.filter((r: any) => r.status === 'oczekujące').length 
+        const oczekujaceRezerwacje = rezerwacjeRes.status === 'fulfilled'
+          ? rezerwacjeRes.value.filter((r: any) => r.status === 'oczekujące').length
           : 0;
 
         if (isMounted) {
@@ -73,14 +73,14 @@ export default function DashboardLayout({ role, availableRoles, onRoleChange, in
 
   const handleSectionChange = useCallback((section: string, shouldAutoAdd: boolean = false, options?: { autoFilter?: string }) => {
     setActiveSection(section);
-    
+
     // Zapisz aktywną sekcję w localStorage dla danego panelu
     localStorage.setItem(`lastSection_${role}`, section);
-    
+
     // Aktualizuj URL z nową sekcją
     const currentView = searchParams.get('view') || role;
     navigate(`/panel?view=${currentView}&section=${section}`, { replace: true });
-    
+
     // Set autoAdd based on section and type
     if (shouldAutoAdd) {
       if (section === 'uzytkownicy') {
@@ -110,14 +110,14 @@ export default function DashboardLayout({ role, availableRoles, onRoleChange, in
     <div className="min-h-screen bg-gray-50">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Layout container */}
-      <div className="lg:flex">
+      <div className="lg:flex overflow-x-hidden">
         {/* Sidebar */}
         <div className={`
           fixed top-16 bottom-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-in-out
@@ -136,14 +136,14 @@ export default function DashboardLayout({ role, availableRoles, onRoleChange, in
         </div>
 
         {/* Main content */}
-        <div className="flex-1 lg:ml-0 min-h-screen">
+        <div className="flex-1 lg:ml-0 min-h-screen overflow-x-hidden">
           <DashboardHeader
             role={role}
             onMenuClick={() => setSidebarOpen(true)}
           />
-          
-          <main className="pt-4 pb-8">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+          <main className="pt-4 pb-8 overflow-x-hidden">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
               <DashboardContent
                 role={role}
                 activeSection={activeSection}

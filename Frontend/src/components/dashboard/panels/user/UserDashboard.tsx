@@ -27,7 +27,6 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
   const [rezerwacje, setRezerwacje] = useState<Rezerwacja[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [aktywosciPage, setAktywosciPage] = useState(0);
   const [nadchodzacePage, setNadchodzacePage] = useState(0);
   const itemsPerPage = 4;
 
@@ -78,9 +77,10 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
     }).length
   };
 
-  // Ostatnie aktywności (wszystkie, paginowane po 4)
+  // Ostatnie aktywności (max 4, bez paginacji)
   const ostatnieAktywnosci = rezerwacje
-    .sort((a, b) => new Date(b.dataUtworzenia).getTime() - new Date(a.dataUtworzenia).getTime());
+    .sort((a, b) => new Date(b.dataUtworzenia).getTime() - new Date(a.dataUtworzenia).getTime())
+    .slice(0, 4);
 
   // Nadchodzące rezerwacje (wszystkie, paginowane po 4)
   const nadchodzaceRezerwacje = rezerwacje
@@ -90,14 +90,8 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
     })
     .sort((a, b) => new Date(a.dataStart).getTime() - new Date(b.dataStart).getTime());
 
-  // Paginacja dla karuzel
-  const aktywosciTotalPages = Math.ceil(ostatnieAktywnosci.length / itemsPerPage);
+  // Paginacja tylko dla nadchodzących rezerwacji
   const nadchodzaceTotalPages = Math.ceil(nadchodzaceRezerwacje.length / itemsPerPage);
-
-  const currentAktywnosci = ostatnieAktywnosci.slice(
-    aktywosciPage * itemsPerPage,
-    (aktywosciPage + 1) * itemsPerPage
-  );
 
   const currentNadchodzace = nadchodzaceRezerwacje.slice(
     nadchodzacePage * itemsPerPage,
@@ -282,7 +276,7 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
             {ostatnieAktywnosci.length === 0 ? (
               <p className="text-gray-500 text-center py-4">Brak aktywności</p>
             ) : (
-              currentAktywnosci.map((rezerwacja) => {
+              ostatnieAktywnosci.map((rezerwacja) => {
                 // Determine activity type based on creation date and status
                 const createdRecently = (new Date().getTime() - new Date(rezerwacja.dataUtworzenia).getTime()) < 24 * 60 * 60 * 1000; // Last 24h
                 const activityLabel = createdRecently && rezerwacja.status === 'oczekujące' ? 'Nowa rezerwacja' :
@@ -322,31 +316,6 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
               })
             )}
           </div>
-
-          {/* Kontrolki karuzeli na dole */}
-          {aktywosciTotalPages > 1 && (
-            <div className="flex justify-center items-center mt-4 pt-4 border-t border-gray-100">
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setAktywosciPage(prev => Math.max(prev - 1, 0))}
-                  disabled={aktywosciPage === 0}
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-red-600 hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  <span className="text-xl font-bold">‹</span>
-                </button>
-                <span className="text-sm text-gray-600 font-medium min-w-[3rem] text-center">
-                  {aktywosciPage + 1}/{aktywosciTotalPages}
-                </span>
-                <button
-                  onClick={() => setAktywosciPage(prev => Math.min(prev + 1, aktywosciTotalPages - 1))}
-                  disabled={aktywosciPage >= aktywosciTotalPages - 1}
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-red-600 hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  <span className="text-xl font-bold">›</span>
-                </button>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Nadchodzące rezerwacje */}

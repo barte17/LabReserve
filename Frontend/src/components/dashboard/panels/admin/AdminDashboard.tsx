@@ -28,7 +28,7 @@ export default function AdminDashboard({ onSectionChange }: AdminDashboardProps 
     try {
       const result = await checkExpiredReservations();
       toast.success(`Sprawdzono wygasłe rezerwacje. Zaktualizowano: ${result.updatedCount} rezerwacji`);
-      
+
       // Odśwież statystyki po sprawdzeniu
       loadStats();
     } catch (error) {
@@ -47,7 +47,7 @@ export default function AdminDashboard({ onSectionChange }: AdminDashboardProps 
       href: '/panel?view=admin&section=sale'
     },
     {
-      title: 'Stanowiska', 
+      title: 'Stanowiska',
       value: '0',
       change: 'Ładowanie...',
       icon: '💻',
@@ -76,88 +76,96 @@ export default function AdminDashboard({ onSectionChange }: AdminDashboardProps 
   const [activitiesLoading, setActivitiesLoading] = useState(true);
 
   const loadStats = async () => {
-      try {
-        // Pobierz wszystkie dane z API
-        const [saleData, stanowiskaData, userStatsData, rezerwacjeStatsData] = await Promise.all([
-          fetchSale(),
-          fetchStanowiska(),
-          fetchUserStats(),
-          fetchRezerwacjeStats()
-        ]);
+    try {
+      // Pobierz wszystkie dane z API
+      const [saleData, stanowiskaData, userStatsData, rezerwacjeStatsData] = await Promise.all([
+        fetchSale(),
+        fetchStanowiska(),
+        fetchUserStats(),
+        fetchRezerwacjeStats()
+      ]);
 
-        setStats([
-          {
-            title: 'Sale',
-            value: saleData.length.toString(),
-            change: `${saleData.length} sal w systemie`,
-            icon: '🏢',
-            color: 'bg-blue-500',
-            section: 'sale'
-          },
-          {
-            title: 'Stanowiska', 
-            value: stanowiskaData.length.toString(),
-            change: `${stanowiskaData.length} stanowisk`,
-            icon: '💻',
-            color: 'bg-green-500',
-            section: 'stanowiska'
-          },
-          {
-            title: 'Użytkownicy',
-            value: userStatsData.totalUsers.toString(),
-            change: `${userStatsData.unconfirmedUsers} oczekuje zatwierdzenia`,
-            icon: '👥',
-            color: 'bg-purple-500',
-            section: 'uzytkownicy'
-          },
-          {
-            title: 'Rezerwacje',
-            value: rezerwacjeStatsData.totalRezerwacje.toString(),
-            change: `${rezerwacjeStatsData.oczekujaceRezerwacje} oczekuje`,
-            icon: '📅',
-            color: 'bg-red-500',
-            section: 'rezerwacje'
-          }
-        ]);
-      } catch (error) {
-        console.error('Błąd pobierania statystyk:', error);
-        // Fallback w przypadku błędu
-        setStats([
-          {
-            title: 'Sale',
-            value: '0',
-            change: 'Błąd ładowania',
-            icon: '🏢',
-            color: 'bg-blue-500',
-            href: '/panel?view=admin&section=sale'
-          },
-          {
-            title: 'Stanowiska', 
-            value: '0',
-            change: 'Błąd ładowania',
-            icon: '💻',
-            color: 'bg-green-500',
-            href: '/panel?view=admin&section=stanowiska'
-          },
-          {
-            title: 'Użytkownicy',
-            value: '0',
-            change: 'Błąd ładowania',
-            icon: '👥',
-            color: 'bg-purple-500',
-            href: '/panel?view=admin&section=uzytkownicy'
-          },
-          {
-            title: 'Rezerwacje',
-            value: '0',
-            change: 'Błąd ładowania',
-            icon: '📅',
-            color: 'bg-red-500',
-            href: '/panel?view=admin&section=rezerwacje'
-          }
-        ]);
-      }
-    };
+      setStats([
+        {
+          title: 'Sale',
+          value: saleData.length.toString(),
+          change: '',
+          icon: '🏢',
+          color: 'bg-blue-500',
+          section: 'sale',
+          unconfirmedUsers: 0,
+          pendingReservations: 0
+        },
+        {
+          title: 'Stanowiska',
+          value: stanowiskaData.length.toString(),
+          change: '',
+          icon: '💻',
+          color: 'bg-green-500',
+          section: 'stanowiska',
+          unconfirmedUsers: 0,
+          pendingReservations: 0
+        },
+        {
+          title: 'Użytkownicy',
+          value: userStatsData.totalUsers.toString(),
+          change: '',
+          icon: '👥',
+          color: 'bg-purple-500',
+          section: 'uzytkownicy',
+          unconfirmedUsers: userStatsData.unconfirmedUsers,
+          pendingReservations: 0
+        },
+        {
+          title: 'Rezerwacje',
+          value: rezerwacjeStatsData.totalRezerwacje.toString(),
+          change: '',
+          icon: '📅',
+          color: 'bg-red-500',
+          section: 'rezerwacje',
+          unconfirmedUsers: 0,
+          pendingReservations: rezerwacjeStatsData.oczekujaceRezerwacje
+        }
+      ]);
+    } catch (error) {
+      console.error('Błąd pobierania statystyk:', error);
+      // Fallback w przypadku błędu
+      setStats([
+        {
+          title: 'Sale',
+          value: '0',
+          change: 'Błąd ładowania',
+          icon: '🏢',
+          color: 'bg-blue-500',
+          href: '/panel?view=admin&section=sale'
+        },
+        {
+          title: 'Stanowiska',
+          value: '0',
+          change: 'Błąd ładowania',
+          icon: '💻',
+          color: 'bg-green-500',
+          href: '/panel?view=admin&section=stanowiska'
+        },
+        {
+          title: 'Użytkownicy',
+          value: '0',
+          change: 'Błąd ładowania',
+          icon: '👥',
+          color: 'bg-purple-500',
+          href: '/panel?view=admin&section=uzytkownicy'
+        },
+        {
+          title: 'Rezerwacje',
+          value: '0',
+          change: 'Błąd ładowania',
+          icon: '📅',
+          color: 'bg-red-500',
+          href: '/panel?view=admin&section=rezerwacje'
+        }
+      ]);
+    }
+  };
 
   const loadRecentActivities = async () => {
     try {
@@ -226,9 +234,9 @@ export default function AdminDashboard({ onSectionChange }: AdminDashboardProps 
 
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full overflow-x-hidden">
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {stats.map((stat, index) => (
           <div
             key={index}
@@ -242,7 +250,7 @@ export default function AdminDashboard({ onSectionChange }: AdminDashboardProps 
               <div>
                 <p className="text-sm font-medium text-gray-600">{stat.title}</p>
                 <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                <p className="text-xs text-gray-500">{stat.change}</p>
+                {stat.change && <p className="text-xs text-gray-500">{stat.change}</p>}
               </div>
             </div>
           </div>
@@ -250,7 +258,7 @@ export default function AdminDashboard({ onSectionChange }: AdminDashboardProps 
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
             Szybkie akcje
@@ -301,20 +309,20 @@ export default function AdminDashboard({ onSectionChange }: AdminDashboardProps 
           </h3>
           <div className="space-y-4">
             <div className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors cursor-pointer"
-                 onClick={() => handleSectionChange('uzytkownicy', true)}>
+              onClick={() => handleSectionChange('uzytkownicy', true)}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
                     <span className="text-orange-600">👥</span>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Niezatwierdzeni użytkownicy</p>
+                    <p className="text-sm font-medium text-gray-900">Użytkownicy bez ról biznesowych</p>
                     <p className="text-xs text-gray-500">Kliknij aby zarządzać</p>
                   </div>
                 </div>
                 <div className="text-right">
                   <span className="text-lg font-bold text-orange-600">
-                    {stats.find(s => s.title === 'Użytkownicy')?.change?.match(/\d+/)?.[0] || '0'}
+                    {stats.find(s => s.title === 'Użytkownicy')?.unconfirmedUsers || '0'}
                   </span>
                   <p className="text-xs text-gray-500">oczekuje</p>
                 </div>
@@ -322,7 +330,7 @@ export default function AdminDashboard({ onSectionChange }: AdminDashboardProps 
             </div>
 
             <div className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors cursor-pointer"
-                 onClick={() => handleSectionChange('rezerwacje', false, { autoFilter: 'oczekujące' })}>
+              onClick={() => handleSectionChange('rezerwacje', false, { autoFilter: 'oczekujące' })}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
@@ -335,7 +343,7 @@ export default function AdminDashboard({ onSectionChange }: AdminDashboardProps 
                 </div>
                 <div className="text-right">
                   <span className="text-lg font-bold text-yellow-600">
-                    {stats.find(s => s.title === 'Rezerwacje')?.change?.match(/\d+/)?.[0] || '0'}
+                    {stats.find(s => s.title === 'Rezerwacje')?.pendingReservations || '0'}
                   </span>
                   <p className="text-xs text-gray-500">oczekuje</p>
                 </div>
@@ -346,17 +354,17 @@ export default function AdminDashboard({ onSectionChange }: AdminDashboardProps 
               <div className="flex items-center justify-center">
                 <div className="text-center">
                   <p className="text-sm font-medium text-gray-900">
-                    {new Date().toLocaleDateString('pl-PL', { 
-                      weekday: 'long', 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
+                    {new Date().toLocaleDateString('pl-PL', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
                     })}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {new Date().toLocaleTimeString('pl-PL', { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
+                    {new Date().toLocaleTimeString('pl-PL', {
+                      hour: '2-digit',
+                      minute: '2-digit'
                     })}
                   </p>
                 </div>
