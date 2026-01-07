@@ -6,7 +6,7 @@ import { fetchUserStats, fetchRezerwacjeStats } from '../../../../services/stats
 import { checkExpiredReservations } from '../../../../services/rezerwacjaService';
 import { auditLogService } from '../../../../services/auditLogService';
 import type { AuditLog } from '../../../../services/auditLogService';
-import toast from 'react-hot-toast';
+import { useToastContext } from '../../../ToastProvider';
 
 interface AdminDashboardProps {
   onSectionChange?: (section: string, shouldAutoAdd?: boolean, options?: { autoFilter?: string }) => void;
@@ -14,6 +14,7 @@ interface AdminDashboardProps {
 
 export default function AdminDashboard({ onSectionChange }: AdminDashboardProps = {}) {
   const navigate = useNavigate();
+  const { showInfo, showSuccess, showError } = useToastContext();
 
   const handleSectionChange = (section: string, shouldAutoAdd: boolean = false, options?: { autoFilter?: string }) => {
     if (onSectionChange) {
@@ -27,13 +28,18 @@ export default function AdminDashboard({ onSectionChange }: AdminDashboardProps 
   const handleCheckExpiredReservations = async () => {
     try {
       const result = await checkExpiredReservations();
-      toast.success(`Sprawdzono wygasłe rezerwacje. Zaktualizowano: ${result.updatedCount} rezerwacji`);
+
+      if (result.updatedCount === 0) {
+        showInfo('Brak przeterminowanych rezerwacji');
+      } else {
+        showSuccess(`Zaktualizowano ${result.updatedCount} ${result.updatedCount === 1 ? 'rezerwację' : 'rezerwacji'} na status "po terminie"`);
+      }
 
       // Odśwież statystyki po sprawdzeniu
       loadStats();
     } catch (error) {
       console.error('Błąd sprawdzania wygasłych rezerwacji:', error);
-      toast.error('Błąd podczas sprawdzania wygasłych rezerwacji');
+      showError('Błąd podczas sprawdzania wygasłych rezerwacji');
     }
   };
 

@@ -132,14 +132,14 @@ public class ExpiredReservationsService : BackgroundService
         var oneHourFromNow = now.AddHours(1);
         
         // Znajdź rezerwacje które zaczynają się za godzinę i są zaakceptowane
-        // Sprawdź czy już nie wysłano przypomnienia (można dodać flagę w bazie lub sprawdzać przez istniejące powiadomienia)
+        // Okno 20-60 minut przed startem - pozwala na backup o :31 jeśli :01 nie zadziałało
         var upcomingReservations = await context.Rezerwacje
             .Include(r => r.Sala)
             .Include(r => r.Stanowisko)
             .ThenInclude(s => s.Sala)
             .Where(r => r.Status == "zaakceptowano" && 
                        r.DataStart <= oneHourFromNow && 
-                       r.DataStart > now.AddMinutes(50)) // Okno 10 minut (50-60 min przed)
+                       r.DataStart > now.AddMinutes(20)) // Okno 20-60 min przed (backup dla :31)
             .ToListAsync();
 
         var sentCount = 0;
@@ -165,7 +165,7 @@ public class ExpiredReservationsService : BackgroundService
                     rezerwacja.UzytkownikId,
                     tytul,
                     tresc,
-                    "przypomnienie",
+                    "reminder",
                     "high",
                     rezerwacja.Id,
                     "/panel?view=user&section=rezerwacje"
