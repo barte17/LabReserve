@@ -3,6 +3,7 @@ import { useAuth } from '../../../../contexts/AuthContext';
 import { useToastContext } from '../../../ToastProvider';
 import { preferencesService } from '../../../../services/preferencesService';
 import type { UserPreferences, UpdatePreferences } from '../../../../services/preferencesService';
+import { useMinimumLoadingDelay } from '../../../../hooks/useMinimumLoadingDelay';
 
 interface UserProfileData {
   id: string;
@@ -193,7 +194,12 @@ export default function UserProfile() {
     }
   };
 
-  if (loading) {
+  const shouldShowLoading = useMinimumLoadingDelay(loading, {
+    minimumDelay: 300,
+    minimumDuration: 500
+  });
+
+  if (shouldShowLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>

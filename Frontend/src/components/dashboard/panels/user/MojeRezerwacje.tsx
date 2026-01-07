@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { fetchMyReservations, cancelReservation } from '../../../../services/rezerwacjaService';
 import { useToastContext } from '../../../ToastProvider';
+import { useMinimumLoadingDelay } from '../../../../hooks/useMinimumLoadingDelay';
 
 interface Rezerwacja {
   id: number;
@@ -64,9 +65,8 @@ export default function MojeRezerwacje() {
 
   // Filtrowanie i sortowanie
   const filteredAndSortedRezerwacje = (() => {
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-    
+    const now = new Date(); // Aktualny czas
+
     let filtered = rezerwacje.filter(r => {
       // Wyszukiwanie
       const searchLower = searchTerm.toLowerCase();
@@ -82,19 +82,19 @@ export default function MojeRezerwacje() {
         (r.salaNumer && r.salaBudynek && `${r.salaBudynek}${r.salaNumer}`.toLowerCase().includes(searchLower)) ||
         (r.salaNumer && r.salaBudynek && `${r.salaBudynek} ${r.salaNumer}`.toLowerCase().includes(searchLower))
       );
-      
+
       // Filtr statusu
       const matchesStatus = statusFilter === '' || r.status === statusFilter;
-      
+
       // Filtr typu (sala/stanowisko)
-      const matchesType = typeFilter === '' || 
+      const matchesType = typeFilter === '' ||
         (typeFilter === 'sala' && !r.stanowiskoNazwa) ||
         (typeFilter === 'stanowisko' && r.stanowiskoNazwa);
-      
-      // Filtr zakończonych
-      const isCompleted = new Date(r.dataKoniec) < today;
+
+      // Filtr zakończonych - porównaj z aktualnym czasem, nie z końcem dnia
+      const isCompleted = new Date(r.dataKoniec) < now;
       const matchesCompleted = showCompleted || !isCompleted;
-      
+
       return matchesSearch && matchesStatus && matchesType && matchesCompleted;
     });
 
@@ -154,7 +154,12 @@ export default function MojeRezerwacje() {
     poTerminie: rezerwacje.filter(r => r.status === 'po terminie').length
   };
 
-  if (loading) {
+  const shouldShowLoading = useMinimumLoadingDelay(loading, {
+    minimumDelay: 300,
+    minimumDuration: 500
+  });
+
+  if (shouldShowLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
@@ -226,47 +231,43 @@ export default function MojeRezerwacje() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <button
             onClick={() => setStatusFilter('')}
-            className={`p-4 rounded-lg text-center border-2 transition-all ${
-              statusFilter === ''
-                ? 'border-neutral-500 bg-neutral-500 text-white shadow-md'
-                : 'border-neutral-200 bg-neutral-50 text-neutral-700 hover:border-neutral-300 hover:bg-neutral-100'
-            }`}
+            className={`p-4 rounded-lg text-center border-2 transition-all ${statusFilter === ''
+              ? 'border-neutral-500 bg-neutral-500 text-white shadow-md'
+              : 'border-neutral-200 bg-neutral-50 text-neutral-700 hover:border-neutral-300 hover:bg-neutral-100'
+              }`}
           >
             <div className="text-xl font-bold">{stats.wszystkie}</div>
             <div className="text-xs mt-1">Wszystkie</div>
           </button>
-          
+
           <button
             onClick={() => setStatusFilter('oczekujące')}
-            className={`p-4 rounded-lg text-center border-2 transition-all ${
-              statusFilter === 'oczekujące'
-                ? 'border-yellow-500 bg-yellow-500 text-white shadow-md'
-                : 'border-yellow-200 bg-yellow-50 text-yellow-700 hover:border-yellow-300 hover:bg-yellow-100'
-            }`}
+            className={`p-4 rounded-lg text-center border-2 transition-all ${statusFilter === 'oczekujące'
+              ? 'border-yellow-500 bg-yellow-500 text-white shadow-md'
+              : 'border-yellow-200 bg-yellow-50 text-yellow-700 hover:border-yellow-300 hover:bg-yellow-100'
+              }`}
           >
             <div className="text-xl font-bold">{stats.oczekujace}</div>
             <div className="text-xs mt-1">Oczekujące</div>
           </button>
-          
+
           <button
             onClick={() => setStatusFilter('zaakceptowano')}
-            className={`p-4 rounded-lg text-center border-2 transition-all ${
-              statusFilter === 'zaakceptowano'
-                ? 'border-green-500 bg-green-500 text-white shadow-md'
-                : 'border-green-200 bg-green-50 text-green-700 hover:border-green-300 hover:bg-green-100'
-            }`}
+            className={`p-4 rounded-lg text-center border-2 transition-all ${statusFilter === 'zaakceptowano'
+              ? 'border-green-500 bg-green-500 text-white shadow-md'
+              : 'border-green-200 bg-green-50 text-green-700 hover:border-green-300 hover:bg-green-100'
+              }`}
           >
             <div className="text-xl font-bold">{stats.zaakceptowane}</div>
             <div className="text-xs mt-1">Zaakceptowane</div>
           </button>
-          
+
           <button
             onClick={() => setStatusFilter('odrzucono')}
-            className={`p-4 rounded-lg text-center border-2 transition-all ${
-              statusFilter === 'odrzucono'
-                ? 'border-red-500 bg-red-500 text-white shadow-md'
-                : 'border-red-200 bg-red-50 text-red-700 hover:border-red-300 hover:bg-red-100'
-            }`}
+            className={`p-4 rounded-lg text-center border-2 transition-all ${statusFilter === 'odrzucono'
+              ? 'border-red-500 bg-red-500 text-white shadow-md'
+              : 'border-red-200 bg-red-50 text-red-700 hover:border-red-300 hover:bg-red-100'
+              }`}
           >
             <div className="text-xl font-bold">{stats.odrzucone}</div>
             <div className="text-xs mt-1">Odrzucone</div>
@@ -274,11 +275,10 @@ export default function MojeRezerwacje() {
 
           <button
             onClick={() => setStatusFilter('anulowane')}
-            className={`p-4 rounded-lg text-center border-2 transition-all ${
-              statusFilter === 'anulowane'
-                ? 'border-gray-500 bg-gray-500 text-white shadow-md'
-                : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 hover:bg-gray-100'
-            }`}
+            className={`p-4 rounded-lg text-center border-2 transition-all ${statusFilter === 'anulowane'
+              ? 'border-gray-500 bg-gray-500 text-white shadow-md'
+              : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 hover:bg-gray-100'
+              }`}
           >
             <div className="text-xl font-bold">{stats.anulowane}</div>
             <div className="text-xs mt-1">Anulowane</div>
@@ -289,11 +289,10 @@ export default function MojeRezerwacje() {
               setStatusFilter('po terminie');
               setShowCompleted(true);
             }}
-            className={`p-4 rounded-lg text-center border-2 transition-all ${
-              statusFilter === 'po terminie'
-                ? 'border-orange-500 bg-orange-500 text-white shadow-md'
-                : 'border-orange-200 bg-orange-50 text-orange-700 hover:border-orange-300 hover:bg-orange-100'
-            }`}
+            className={`p-4 rounded-lg text-center border-2 transition-all ${statusFilter === 'po terminie'
+              ? 'border-orange-500 bg-orange-500 text-white shadow-md'
+              : 'border-orange-200 bg-orange-50 text-orange-700 hover:border-orange-300 hover:bg-orange-100'
+              }`}
           >
             <div className="text-xl font-bold">{stats.poTerminie}</div>
             <div className="text-xs mt-1">Po terminie</div>
@@ -309,7 +308,7 @@ export default function MojeRezerwacje() {
             {rezerwacje.length === 0 ? 'Brak rezerwacji' : 'Brak wyników'}
           </h2>
           <p className="text-gray-600">
-            {rezerwacje.length === 0 
+            {rezerwacje.length === 0
               ? 'Nie masz jeszcze żadnych rezerwacji w systemie.'
               : 'Zmień kryteria wyszukiwania lub filtry aby zobaczyć rezerwacje.'
             }
@@ -320,11 +319,10 @@ export default function MojeRezerwacje() {
           <div className="p-6">
             <div className="space-y-4">
               {paginatedRezerwacje.map((rezerwacja) => (
-                <div key={rezerwacja.id} className={`border rounded-lg p-3 sm:p-4 hover:shadow-sm transition-shadow ${
-                  rezerwacja.stanowiskoId 
-                    ? 'border-blue-200 bg-blue-50/30' // Stanowisko - niebieskie tło
-                    : 'border-green-200 bg-green-50/30' // Sala - zielone tło
-                }`}>
+                <div key={rezerwacja.id} className={`border rounded-lg p-3 sm:p-4 hover:shadow-sm transition-shadow ${rezerwacja.stanowiskoId
+                  ? 'border-blue-200 bg-blue-50/30' // Stanowisko - niebieskie tło
+                  : 'border-green-200 bg-green-50/30' // Sala - zielone tło
+                  }`}>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       {/* Header - różny layout dla mobile i desktop */}
@@ -397,7 +395,7 @@ export default function MojeRezerwacje() {
                           </span>
                         </div>
                       </div>
-                      
+
                       {/* Details - różny layout dla mobile i desktop */}
                       <div className="mb-3">
                         {/* Mobile Layout - wyśrodkowane karty */}
@@ -458,7 +456,7 @@ export default function MojeRezerwacje() {
                           </div>
                         </div>
                       </div>
-                      
+
                       {rezerwacja.opis && (
                         <div className="text-sm text-gray-700 bg-gray-50 p-3 rounded">
                           <span className="font-medium">Opis:</span> {rezerwacja.opis}
@@ -486,7 +484,7 @@ export default function MojeRezerwacje() {
                   >
                     Poprzednia
                   </button>
-                  
+
                   {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
                     let pageNumber;
                     if (totalPages <= 7) {
@@ -498,22 +496,21 @@ export default function MojeRezerwacje() {
                     } else {
                       pageNumber = currentPage - 3 + i;
                     }
-                    
+
                     return (
                       <button
                         key={pageNumber}
                         onClick={() => setCurrentPage(pageNumber)}
-                        className={`px-3 py-1 border rounded text-sm ${
-                          currentPage === pageNumber
-                            ? 'border-red-500 bg-red-500 text-white'
-                            : 'border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50'
-                        }`}
+                        className={`px-3 py-1 border rounded text-sm ${currentPage === pageNumber
+                          ? 'border-red-500 bg-red-500 text-white'
+                          : 'border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50'
+                          }`}
                       >
                         {pageNumber}
                       </button>
                     );
                   })}
-                  
+
                   <button
                     onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages}

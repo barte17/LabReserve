@@ -3,6 +3,7 @@ import { useAuth } from '../../../../contexts/AuthContext';
 import { fetchMojeSale } from '../../../../services/salaService';
 import { fetchMojeRezerwacje, generateRecentActivities } from '../../../../services/rezerwacjaService';
 import { fetchMojeStanowiska } from '../../../../services/stanowiskoService';
+import { useMinimumLoadingDelay } from '../../../../hooks/useMinimumLoadingDelay';
 
 interface OpiekunDashboardProps {
   onStatsUpdate?: (stats: { mojeSale: number; mojeStanowiska: number; oczekujaceRezerwacje: number }) => void;
@@ -153,7 +154,12 @@ export default function OpiekunDashboard({ onStatsUpdate, onNavigate }: OpiekunD
       }));
   }, [recentActivities]);
 
-  if (loading) {
+  const shouldShowLoading = useMinimumLoadingDelay(loading, {
+    minimumDelay: 300,
+    minimumDuration: 500
+  });
+
+  if (shouldShowLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>

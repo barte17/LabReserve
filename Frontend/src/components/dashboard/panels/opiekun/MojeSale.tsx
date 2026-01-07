@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchMojeSale, updateMojaSala } from '../../../../services/salaService';
 import { useToastContext } from '../../../ToastProvider';
+import { useMinimumLoadingDelay } from '../../../../hooks/useMinimumLoadingDelay';
 
 interface Sala {
   id: number;
@@ -100,7 +101,12 @@ export default function MojeSale() {
     setFilterStanowiska('');
   };
 
-  if (loading) {
+  const shouldShowLoading = useMinimumLoadingDelay(loading, {
+    minimumDelay: 300,
+    minimumDuration: 500
+  });
+
+  if (shouldShowLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>

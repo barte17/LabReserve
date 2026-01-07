@@ -548,7 +548,7 @@ export default function ReservationPage() {
               {/* Kalendarz */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-4">
-                  Wybierz datę rezerwacji *
+                  Wybierz datę rezerwacji
                 </label>
 
                 {!isLogged && (

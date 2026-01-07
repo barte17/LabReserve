@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { fetchMyReservations } from '../../../../services/rezerwacjaService';
+import { useMinimumLoadingDelay } from '../../../../hooks/useMinimumLoadingDelay';
 
 interface Rezerwacja {
   id: number;
@@ -27,8 +28,6 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
   const [rezerwacje, setRezerwacje] = useState<Rezerwacja[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [nadchodzacePage, setNadchodzacePage] = useState(0);
-  const itemsPerPage = 4;
 
   useEffect(() => {
     loadRezerwacje();
@@ -82,21 +81,15 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
     .sort((a, b) => new Date(b.dataUtworzenia).getTime() - new Date(a.dataUtworzenia).getTime())
     .slice(0, 4);
 
-  // Nadchodzące rezerwacje (wszystkie, paginowane po 4)
+  // Nadchodzące rezerwacje (max 4, bez paginacji)
   const nadchodzaceRezerwacje = rezerwacje
     .filter(r => {
       const start = new Date(r.dataStart);
       return start > today && (r.status === 'zaakceptowano' || r.status === 'oczekujące');
     })
-    .sort((a, b) => new Date(a.dataStart).getTime() - new Date(b.dataStart).getTime());
+    .sort((a, b) => new Date(a.dataStart).getTime() - new Date(b.dataStart).getTime())
+    .slice(0, 4);
 
-  // Paginacja tylko dla nadchodzących rezerwacji
-  const nadchodzaceTotalPages = Math.ceil(nadchodzaceRezerwacje.length / itemsPerPage);
-
-  const currentNadchodzace = nadchodzaceRezerwacje.slice(
-    nadchodzacePage * itemsPerPage,
-    (nadchodzacePage + 1) * itemsPerPage
-  );
 
   // Kalendarzowy widok (bieżący miesiąc)
   const currentMonth = new Date();
@@ -157,7 +150,12 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
     }
   };
 
-  if (loading) {
+  const shouldShowLoading = useMinimumLoadingDelay(loading, {
+    minimumDelay: 300,
+    minimumDuration: 500
+  });
+
+  if (shouldShowLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
@@ -334,7 +332,7 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
             {nadchodzaceRezerwacje.length === 0 ? (
               <p className="text-gray-500 text-center py-4">Brak nadchodzących rezerwacji</p>
             ) : (
-              currentNadchodzace.map((rezerwacja) => (
+              nadchodzaceRezerwacje.map((rezerwacja) => (
                 <div key={rezerwacja.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2">
@@ -362,30 +360,7 @@ export default function UserDashboard({ onNavigate }: UserDashboardProps = {}) {
             )}
           </div>
 
-          {/* Kontrolki karuzeli na dole */}
-          {nadchodzaceTotalPages > 1 && (
-            <div className="flex justify-center items-center mt-4 pt-4 border-t border-gray-100">
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setNadchodzacePage(prev => Math.max(prev - 1, 0))}
-                  disabled={nadchodzacePage === 0}
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-red-600 hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  <span className="text-xl font-bold">‹</span>
-                </button>
-                <span className="text-sm text-gray-600 font-medium min-w-[3rem] text-center">
-                  {nadchodzacePage + 1}/{nadchodzaceTotalPages}
-                </span>
-                <button
-                  onClick={() => setNadchodzacePage(prev => Math.min(prev + 1, nadchodzaceTotalPages - 1))}
-                  disabled={nadchodzacePage >= nadchodzaceTotalPages - 1}
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-red-600 hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  <span className="text-xl font-bold">›</span>
-                </button>
-              </div>
-            </div>
-          )}
+
         </div>
       </div>
 

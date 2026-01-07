@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { fetchMojeRezerwacje, updateStatusRezerwacji } from '../../../../services/rezerwacjaService';
 import { useToastContext } from '../../../ToastProvider';
+import { useMinimumLoadingDelay } from '../../../../hooks/useMinimumLoadingDelay';
 
 interface Rezerwacja {
   id: number;
@@ -65,12 +66,12 @@ export default function ZarzadzajRezerwacje({ autoFilter, onAutoFilterProcessed 
   const handleStatusChange = async (id: number, newStatus: string) => {
     try {
       await updateStatusRezerwacji(id, newStatus);
-      
+
       // Aktualizuj lokalnie
-      setRezerwacje(prev => prev.map(r => 
+      setRezerwacje(prev => prev.map(r =>
         r.id === id ? { ...r, status: newStatus } : r
       ));
-      
+
       showSuccess(`Status rezerwacji został zmieniony na: ${newStatus}`);
     } catch (error) {
       console.error('Błąd zmiany statusu:', error);
@@ -102,14 +103,13 @@ export default function ZarzadzajRezerwacje({ autoFilter, onAutoFilterProcessed 
 
   // Filtrowanie i sortowanie rezerwacji (podobne do RezerwacjeList)
   const filteredAndSortedRezerwacje = (() => {
-    const today = new Date();
-    today.setHours(23, 59, 59, 999); // koniec dnia
-    
+    const now = new Date(); // Aktualny czas
+
     // 1. Filtrowanie
     let filtered = rezerwacje.filter(r => {
       // Filtr statusu
       const matchesStatus = filter === 'wszystkie' || r.status === filter;
-      
+
       // Wyszukiwanie - dodane bezpieczne sprawdzenie
       const searchLower = searchTerm.toLowerCase();
       const matchesSearch = !searchTerm.trim() || (
@@ -129,16 +129,16 @@ export default function ZarzadzajRezerwacje({ autoFilter, onAutoFilterProcessed 
         (r.salaNumer && r.salaBudynek && `${r.salaBudynek} ${r.salaNumer}`.toLowerCase().includes(searchLower)) ||
         (r.stanowiskoNazwa && r.stanowiskoNazwa.toLowerCase().includes(searchLower)) ||
         // Dodatkowe wyszukiwanie - pełne imię i nazwisko razem
-        (r.uzytkownikImie && r.uzytkownikNazwisko && 
-         `${r.uzytkownikImie} ${r.uzytkownikNazwisko}`.toLowerCase().includes(searchLower)) ||
-        (r.uzytkownikImie && r.uzytkownikNazwisko && 
-         `${r.uzytkownikNazwisko} ${r.uzytkownikImie}`.toLowerCase().includes(searchLower))
+        (r.uzytkownikImie && r.uzytkownikNazwisko &&
+          `${r.uzytkownikImie} ${r.uzytkownikNazwisko}`.toLowerCase().includes(searchLower)) ||
+        (r.uzytkownikImie && r.uzytkownikNazwisko &&
+          `${r.uzytkownikNazwisko} ${r.uzytkownikImie}`.toLowerCase().includes(searchLower))
       );
-      
-      // Filtr zakończonych rezerwacji
-      const isCompleted = new Date(r.dataKoniec) < today;
+
+      // Filtr zakończonych rezerwacji - porównaj z aktualnym czasem, nie z końcem dnia
+      const isCompleted = new Date(r.dataKoniec) < now;
       const matchesCompleted = showCompleted || !isCompleted;
-      
+
       return matchesStatus && matchesSearch && matchesCompleted;
     });
 
@@ -152,7 +152,7 @@ export default function ZarzadzajRezerwacje({ autoFilter, onAutoFilterProcessed 
         return [...filtered].sort((a, b) => new Date(a.dataStart).getTime() - new Date(b.dataStart).getTime());
       case 'nearest':
         return [...filtered]
-          .filter(r => new Date(r.dataKoniec) >= today) // tylko aktywne
+          .filter(r => new Date(r.dataKoniec) >= now) // tylko aktywne
           .sort((a, b) => new Date(a.dataStart).getTime() - new Date(b.dataStart).getTime());
       default:
         return filtered;
@@ -177,7 +177,12 @@ export default function ZarzadzajRezerwacje({ autoFilter, onAutoFilterProcessed 
     poTerminie: rezerwacje.filter(r => r.status === 'po terminie').length
   };
 
-  if (loading) {
+  const shouldShowLoading = useMinimumLoadingDelay(loading, {
+    minimumDelay: 300,
+    minimumDuration: 500
+  });
+
+  if (shouldShowLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
@@ -232,47 +237,43 @@ export default function ZarzadzajRezerwacje({ autoFilter, onAutoFilterProcessed 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <button
             onClick={() => setFilter('wszystkie')}
-            className={`p-4 rounded-lg text-center border-2 transition-all ${
-              filter === 'wszystkie'
-                ? 'border-neutral-500 bg-neutral-500 text-white shadow-md'
-                : 'border-neutral-200 bg-neutral-50 text-neutral-700 hover:border-neutral-300 hover:bg-neutral-100'
-            }`}
+            className={`p-4 rounded-lg text-center border-2 transition-all ${filter === 'wszystkie'
+              ? 'border-neutral-500 bg-neutral-500 text-white shadow-md'
+              : 'border-neutral-200 bg-neutral-50 text-neutral-700 hover:border-neutral-300 hover:bg-neutral-100'
+              }`}
           >
             <div className="text-xl font-bold">{stats.wszystkie}</div>
             <div className="text-xs mt-1">Wszystkie</div>
           </button>
-          
+
           <button
             onClick={() => setFilter('oczekujące')}
-            className={`p-4 rounded-lg text-center border-2 transition-all ${
-              filter === 'oczekujące'
-                ? 'border-yellow-500 bg-yellow-500 text-white shadow-md'
-                : 'border-yellow-200 bg-yellow-50 text-yellow-700 hover:border-yellow-300 hover:bg-yellow-100'
-            }`}
+            className={`p-4 rounded-lg text-center border-2 transition-all ${filter === 'oczekujące'
+              ? 'border-yellow-500 bg-yellow-500 text-white shadow-md'
+              : 'border-yellow-200 bg-yellow-50 text-yellow-700 hover:border-yellow-300 hover:bg-yellow-100'
+              }`}
           >
             <div className="text-xl font-bold">{stats.oczekujace}</div>
             <div className="text-xs mt-1">Oczekujące</div>
           </button>
-          
+
           <button
             onClick={() => setFilter('zaakceptowano')}
-            className={`p-4 rounded-lg text-center border-2 transition-all ${
-              filter === 'zaakceptowano'
-                ? 'border-green-500 bg-green-500 text-white shadow-md'
-                : 'border-green-200 bg-green-50 text-green-700 hover:border-green-300 hover:bg-green-100'
-            }`}
+            className={`p-4 rounded-lg text-center border-2 transition-all ${filter === 'zaakceptowano'
+              ? 'border-green-500 bg-green-500 text-white shadow-md'
+              : 'border-green-200 bg-green-50 text-green-700 hover:border-green-300 hover:bg-green-100'
+              }`}
           >
             <div className="text-xl font-bold">{stats.zaakceptowane}</div>
             <div className="text-xs mt-1">Zaakceptowane</div>
           </button>
-          
+
           <button
             onClick={() => setFilter('odrzucono')}
-            className={`p-4 rounded-lg text-center border-2 transition-all ${
-              filter === 'odrzucono'
-                ? 'border-red-500 bg-red-500 text-white shadow-md'
-                : 'border-red-200 bg-red-50 text-red-700 hover:border-red-300 hover:bg-red-100'
-            }`}
+            className={`p-4 rounded-lg text-center border-2 transition-all ${filter === 'odrzucono'
+              ? 'border-red-500 bg-red-500 text-white shadow-md'
+              : 'border-red-200 bg-red-50 text-red-700 hover:border-red-300 hover:bg-red-100'
+              }`}
           >
             <div className="text-xl font-bold">{stats.odrzucone}</div>
             <div className="text-xs mt-1">Odrzucone</div>
@@ -280,11 +281,10 @@ export default function ZarzadzajRezerwacje({ autoFilter, onAutoFilterProcessed 
 
           <button
             onClick={() => setFilter('anulowane')}
-            className={`p-4 rounded-lg text-center border-2 transition-all ${
-              filter === 'anulowane'
-                ? 'border-gray-500 bg-gray-500 text-white shadow-md'
-                : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 hover:bg-gray-100'
-            }`}
+            className={`p-4 rounded-lg text-center border-2 transition-all ${filter === 'anulowane'
+              ? 'border-gray-500 bg-gray-500 text-white shadow-md'
+              : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 hover:bg-gray-100'
+              }`}
           >
             <div className="text-xl font-bold">{rezerwacje.filter(r => r.status === 'anulowane').length}</div>
             <div className="text-xs mt-1">Anulowane</div>
@@ -295,11 +295,10 @@ export default function ZarzadzajRezerwacje({ autoFilter, onAutoFilterProcessed 
               setFilter('po terminie');
               setShowCompleted(true);
             }}
-            className={`p-4 rounded-lg text-center border-2 transition-all ${
-              filter === 'po terminie'
-                ? 'border-orange-500 bg-orange-500 text-white shadow-md'
-                : 'border-orange-200 bg-orange-50 text-orange-700 hover:border-orange-300 hover:bg-orange-100'
-            }`}
+            className={`p-4 rounded-lg text-center border-2 transition-all ${filter === 'po terminie'
+              ? 'border-orange-500 bg-orange-500 text-white shadow-md'
+              : 'border-orange-200 bg-orange-50 text-orange-700 hover:border-orange-300 hover:bg-orange-100'
+              }`}
           >
             <div className="text-xl font-bold">{stats.poTerminie}</div>
             <div className="text-xs mt-1">Po terminie</div>
@@ -315,7 +314,7 @@ export default function ZarzadzajRezerwacje({ autoFilter, onAutoFilterProcessed 
             {rezerwacje.length === 0 ? 'Brak rezerwacji' : 'Brak wyników'}
           </h2>
           <p className="text-gray-600">
-            {rezerwacje.length === 0 
+            {rezerwacje.length === 0
               ? 'Nie ma jeszcze żadnych rezerwacji dla Twoich sal.'
               : 'Zmień kryteria wyszukiwania lub filtry aby zobaczyć rezerwacje.'
             }
@@ -329,7 +328,7 @@ export default function ZarzadzajRezerwacje({ autoFilter, onAutoFilterProcessed 
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h3 className="text-lg font-semibold text-gray-900">
-                      {rezerwacja.salaId 
+                      {rezerwacja.salaId
                         ? `Sala ${rezerwacja.salaNumer} - ${rezerwacja.salaBudynek}`
                         : `${rezerwacja.stanowiskoNazwa} (${rezerwacja.stanowiskoSala})`
                       }
@@ -338,12 +337,12 @@ export default function ZarzadzajRezerwacje({ autoFilter, onAutoFilterProcessed 
                       {getStatusIcon(rezerwacja.status)} {rezerwacja.status}
                     </span>
                   </div>
-                  
+
                   <div className="text-sm text-gray-600 space-y-1">
                     <p>👤 <strong>Użytkownik:</strong> {rezerwacja.uzytkownikImie} {rezerwacja.uzytkownikNazwisko} ({rezerwacja.uzytkownikEmail})</p>
-                    <p>📅 <strong>Data:</strong> {new Date(rezerwacja.dataStart).toLocaleDateString('pl-PL')} 
-                       {' '}({new Date(rezerwacja.dataStart).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })} - 
-                       {new Date(rezerwacja.dataKoniec).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })})</p>
+                    <p>📅 <strong>Data:</strong> {new Date(rezerwacja.dataStart).toLocaleDateString('pl-PL')}
+                      {' '}({new Date(rezerwacja.dataStart).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })} -
+                      {new Date(rezerwacja.dataKoniec).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })})</p>
                     <p>🕒 <strong>Zgłoszono:</strong> {new Date(rezerwacja.dataUtworzenia).toLocaleString('pl-PL')}</p>
                     {rezerwacja.opis && <p>📝 <strong>Opis:</strong> {rezerwacja.opis}</p>}
                   </div>
@@ -386,7 +385,7 @@ export default function ZarzadzajRezerwacje({ autoFilter, onAutoFilterProcessed 
               >
                 Poprzednia
               </button>
-              
+
               {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
                 let pageNumber;
                 if (totalPages <= 7) {
@@ -398,22 +397,21 @@ export default function ZarzadzajRezerwacje({ autoFilter, onAutoFilterProcessed 
                 } else {
                   pageNumber = currentPage - 3 + i;
                 }
-                
+
                 return (
                   <button
                     key={pageNumber}
                     onClick={() => setCurrentPage(pageNumber)}
-                    className={`px-3 py-1 border rounded text-sm ${
-                      currentPage === pageNumber
-                        ? 'border-red-500 bg-red-500 text-white'
-                        : 'border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50'
-                    }`}
+                    className={`px-3 py-1 border rounded text-sm ${currentPage === pageNumber
+                      ? 'border-red-500 bg-red-500 text-white'
+                      : 'border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50'
+                      }`}
                   >
                     {pageNumber}
                   </button>
                 );
               })}
-              
+
               <button
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}

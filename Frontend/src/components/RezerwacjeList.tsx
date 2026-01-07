@@ -91,8 +91,7 @@ export default function RezerwacjeList({ autoFilter, onAutoFilterProcessed }: Re
 
   // Filtrowanie i sortowanie rezerwacji
   const filteredAndSortedRezerwacje = (() => {
-    const today = new Date();
-    today.setHours(23, 59, 59, 999); // koniec dnia
+    const now = new Date(); // Aktualny czas
 
     // 1. Filtrowanie
     let filtered = rezerwacje.filter(rez => {
@@ -108,8 +107,8 @@ export default function RezerwacjeList({ autoFilter, onAutoFilterProcessed }: Re
 
       const matchesStatus = statusFilter === "" || rez.status === statusFilter;
 
-      // Filtr zakończonych rezerwacji
-      const isCompleted = new Date(rez.dataKoniec) < today;
+      // Filtr zakończonych rezerwacji - porównaj z aktualnym czasem, nie z końcem dnia
+      const isCompleted = new Date(rez.dataKoniec) < now;
       const matchesCompleted = showCompleted || !isCompleted;
 
       return matchesSearch && matchesStatus && matchesCompleted;
@@ -123,7 +122,7 @@ export default function RezerwacjeList({ autoFilter, onAutoFilterProcessed }: Re
         return [...filtered].sort((a, b) => new Date(a.dataUtworzenia).getTime() - new Date(b.dataUtworzenia).getTime());
       case 'nearest':
         return [...filtered]
-          .filter(rez => new Date(rez.dataKoniec) >= today) // tylko aktywne
+          .filter(rez => new Date(rez.dataKoniec) >= now) // tylko aktywne
           .sort((a, b) => new Date(a.dataStart).getTime() - new Date(b.dataStart).getTime());
       default:
         return filtered; // domyślna kolejność z API
@@ -404,8 +403,8 @@ export default function RezerwacjeList({ autoFilter, onAutoFilterProcessed }: Re
                       onClick={() => handleStatusChange(rez.id, 'oczekujące')}
                       disabled={changingStatusId === rez.id || cancelingId === rez.id}
                       className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center ${rez.status === 'oczekujące'
-                          ? 'bg-yellow-100 text-yellow-800 ring-2 ring-yellow-300 shadow-sm'
-                          : 'bg-gray-100 text-gray-600 hover:bg-yellow-50 hover:text-yellow-700 hover:shadow-md border border-gray-200'
+                        ? 'bg-yellow-100 text-yellow-800 ring-2 ring-yellow-300 shadow-sm'
+                        : 'bg-gray-100 text-gray-600 hover:bg-yellow-50 hover:text-yellow-700 hover:shadow-md border border-gray-200'
                         }`}
                     >
                       {changingStatusId === rez.id ? (
@@ -422,8 +421,8 @@ export default function RezerwacjeList({ autoFilter, onAutoFilterProcessed }: Re
                       onClick={() => handleStatusChange(rez.id, 'zaakceptowano')}
                       disabled={changingStatusId === rez.id || cancelingId === rez.id}
                       className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center ${rez.status === 'zaakceptowano'
-                          ? 'bg-green-100 text-green-800 ring-2 ring-green-300 shadow-sm'
-                          : 'bg-gray-100 text-gray-600 hover:bg-green-50 hover:text-green-700 hover:shadow-md border border-gray-200'
+                        ? 'bg-green-100 text-green-800 ring-2 ring-green-300 shadow-sm'
+                        : 'bg-gray-100 text-gray-600 hover:bg-green-50 hover:text-green-700 hover:shadow-md border border-gray-200'
                         }`}
                     >
                       {changingStatusId === rez.id ? (
@@ -440,8 +439,8 @@ export default function RezerwacjeList({ autoFilter, onAutoFilterProcessed }: Re
                       onClick={() => handleStatusChange(rez.id, 'odrzucono')}
                       disabled={changingStatusId === rez.id || cancelingId === rez.id}
                       className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center ${rez.status === 'odrzucono'
-                          ? 'bg-red-100 text-red-800 ring-2 ring-red-300 shadow-sm'
-                          : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-700 hover:shadow-md border border-gray-200'
+                        ? 'bg-red-100 text-red-800 ring-2 ring-red-300 shadow-sm'
+                        : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-700 hover:shadow-md border border-gray-200'
                         }`}
                     >
                       {changingStatusId === rez.id ? (
@@ -500,8 +499,8 @@ export default function RezerwacjeList({ autoFilter, onAutoFilterProcessed }: Re
                 key={page}
                 onClick={() => setCurrentPage(page)}
                 className={`btn btn-sm ${currentPage === page
-                    ? 'btn-primary'
-                    : 'btn-secondary'
+                  ? 'btn-primary'
+                  : 'btn-secondary'
                   }`}
               >
                 {page}
