@@ -18,13 +18,11 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
-// Configure Identity options for account lockout
+// Configure Identity options
 builder.Services.Configure<IdentityOptions>(options =>
 {
-    // Lockout settings
-    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
-    options.Lockout.MaxFailedAccessAttempts = 5;
-    options.Lockout.AllowedForNewUsers = true;
+    // Disable account lockout - we use IP-based blocking instead
+    options.Lockout.AllowedForNewUsers = false;
     
     // Password settings (optional security improvement)
     options.Password.RequireDigit = true;
@@ -119,6 +117,9 @@ builder.Services.AddScoped<Backend.Services.IAuditService, Backend.Services.Audi
 
 // Register Token Hashing Service
 builder.Services.AddScoped<Backend.Services.ITokenHashingService, Backend.Services.TokenHashingService>();
+
+// Register Login Attempt Service (IP-based blocking)
+builder.Services.AddSingleton<Backend.Services.ILoginAttemptService, Backend.Services.LoginAttemptService>();
 
 // Register Realtime Availability Service
 builder.Services.AddScoped<Backend.Services.IRealtimeAvailabilityService, Backend.Services.RealtimeAvailabilityService>();

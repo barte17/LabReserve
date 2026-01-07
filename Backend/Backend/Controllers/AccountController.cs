@@ -24,15 +24,17 @@ namespace Backend.Controllers
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IAuditService _auditService;
         private readonly ITokenHashingService _tokenHashingService;
+        private readonly ILoginAttemptService _loginAttemptService;
         private static readonly SemaphoreSlim _refreshSemaphore = new(1, 1); // Mutex dla refresh
 
-        public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IConfiguration config, IAuditService auditService, ITokenHashingService tokenHashingService)
+        public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IConfiguration config, IAuditService auditService, ITokenHashingService tokenHashingService, ILoginAttemptService loginAttemptService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _config = config;
             _auditService = auditService;
             _tokenHashingService = tokenHashingService;
+            _loginAttemptService = loginAttemptService;
         }
 
         private string GenerateRefreshToken()
@@ -129,12 +131,40 @@ namespace Backend.Controllers
             // Timing attack protection - always wait ~200ms
             var delay = Task.Delay(Random.Shared.Next(150, 250));
 
+            // Get IP address from request
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() 
+                ?? HttpContext.Request.Headers["X-Real-IP"].FirstOrDefault() 
+                ?? HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault() 
+                ?? "unknown";
+
+            // Check if IP is blocked
+            if (await _loginAttemptService.IsIpBlockedAsync(ipAddress))
+            {
+                var blockTimeRemaining = await _loginAttemptService.GetBlockTimeRemainingAsync(ipAddress);
+                var remainingMinutes = Math.Ceiling(blockTimeRemaining?.TotalMinutes ?? 0);
+                
+                // Log blocked IP attempt
+                await _auditService.LogAsync("LOGOWANIE_IP_ZABLOKOWANE", "User", null, 
+                    $"IP: {ipAddress}, Email: {dto.Email}, Pozostaly czas blokady: {remainingMinutes} minut");
+
+                await delay;
+                return BadRequest(new { 
+                    message = $"Zbyt wiele nieudanych prób logowania z tego adresu IP. Spróbuj ponownie za {remainingMinutes} minut.",
+                    type = "ip_blocked",
+                    remainingMinutes = remainingMinutes
+                });
+            }
+
             var user = await _userManager.FindByEmailAsync(dto.Email);
             
             if (user == null)
             {
+                // Record failed attempt for IP (even for non-existent email)
+                await _loginAttemptService.RecordFailedAttemptAsync(ipAddress);
+                
                 // Log nieudanego logowania - nieistniejący email
-                await _auditService.LogAsync("LOGOWANIE_NIEUDANE", "User", null, $"Email: {dto.Email}, Powod: Nieistniejacy email");
+                await _auditService.LogAsync("LOGOWANIE_NIEUDANE", "User", null, 
+                    $"IP: {ipAddress}, Email: {dto.Email}, Powod: Nieistniejacy email");
 
                 await delay;
                 return BadRequest(new { 
@@ -143,32 +173,13 @@ namespace Backend.Controllers
                 });
             }
 
-            // Check if account is locked out
-            if (await _userManager.IsLockedOutAsync(user))
-            {
-                var lockoutEnd = await _userManager.GetLockoutEndDateAsync(user);
-                var remainingTime = lockoutEnd?.Subtract(DateTimeOffset.UtcNow);
-                var remainingMinutes = Math.Ceiling(remainingTime?.TotalMinutes ?? 0);
-                
-                await delay;
-                return BadRequest(new { 
-                    message = $"Konto zostało zablokowane z powodu zbyt wielu nieudanych prób logowania. Spróbuj ponownie za {remainingMinutes} minut.",
-                    type = "account_locked",
-                    remainingMinutes = remainingMinutes,
-                    lockoutEnd = lockoutEnd?.ToString("yyyy-MM-dd HH:mm:ss")
-                });
-            }
-
-            // Get current failed attempts before checking password
-            var currentFailedAttempts = await _userManager.GetAccessFailedCountAsync(user);
-
-            // Check password with lockout on failure enabled
-            var result = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, lockoutOnFailure: true);
+            // Check password (no account lockout, only IP-based blocking)
+            var result = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, lockoutOnFailure: false);
             
             if (result.Succeeded)
             {
-                // Reset failed access attempts on successful login
-                await _userManager.ResetAccessFailedCountAsync(user);
+                // Reset IP-based failed attempts on successful login
+                await _loginAttemptService.ResetAttemptsAsync(ipAddress);
                 
                 var accessToken = await GenerateJwtToken(user);
                 var refreshToken = GenerateRefreshToken();
@@ -191,7 +202,7 @@ namespace Backend.Controllers
                 Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
 
                 // Log udanego logowania
-                await _auditService.LogAsync("LOGOWANIE_UDANE", "User", null, $"Email: {dto.Email}");
+                await _auditService.LogAsync("LOGOWANIE_UDANE", "User", null, $"IP: {ipAddress}, Email: {dto.Email}");
 
                 await delay;
                 return Ok(new
@@ -201,48 +212,41 @@ namespace Backend.Controllers
                 });
             }
             
-            if (result.IsLockedOut)
-            {
-                // Log blokady konta
-                await _auditService.LogAsync("BLOKADA_KONTA", "User", null, 
-                    $"Email: {dto.Email}, Powod: Zbyt wiele nieudanych prob logowania, Czas blokady: 15 minut");
+            // Password incorrect - record failed attempt for IP
+            await _loginAttemptService.RecordFailedAttemptAsync(ipAddress);
 
-                await delay;
-                return BadRequest(new { 
-                    message = "Konto zostało zablokowane na 15 minut z powodu zbyt wielu nieudanych prób logowania.",
-                    type = "account_locked_now",
-                    remainingMinutes = 15
-                });
-            }
-
-            // Get updated failed attempts count
-            var newFailedAttempts = await _userManager.GetAccessFailedCountAsync(user);
-            var maxAttempts = 5; // From Identity configuration
-            var remainingAttempts = maxAttempts - newFailedAttempts;
+            // Get remaining attempts for this IP
+            var remainingAttempts = await _loginAttemptService.GetRemainingAttemptsAsync(ipAddress);
 
             // Log nieudanego logowania - błędne hasło
             await _auditService.LogAsync("LOGOWANIE_NIEUDANE", "User", null, 
-                $"Email: {dto.Email}, Powod: Bledne haslo, Pozostalo prob: {remainingAttempts}");
+                $"IP: {ipAddress}, Email: {dto.Email}, Powod: Bledne haslo, Pozostalo prob: {remainingAttempts}");
 
             await delay;
 
             // Different messages based on remaining attempts
-            if (remainingAttempts <= 1)
+            if (remainingAttempts == 0)
             {
                 return BadRequest(new { 
-                    message = "Nieprawidłowy email lub hasło. UWAGA: Kolejna nieudana próba spowoduje zablokowanie konta na 15 minut!",
+                    message = "Zbyt wiele nieudanych prób logowania. Twój adres IP został zablokowany na 15 minut.",
+                    type = "ip_blocked_now",
+                    remainingMinutes = 15
+                });
+            }
+            else if (remainingAttempts == 1)
+            {
+                return BadRequest(new { 
+                    message = "Nieprawidłowy email lub hasło. UWAGA: Kolejna nieudana próba spowoduje zablokowanie adresu IP na 15 minut!",
                     type = "last_attempt_warning",
-                    remainingAttempts = remainingAttempts,
-                    failedAttempts = newFailedAttempts
+                    remainingAttempts = remainingAttempts
                 });
             }
             else if (remainingAttempts <= 2)
             {
                 return BadRequest(new { 
-                    message = $"Nieprawidłowy email lub hasło. Pozostało {remainingAttempts} prób przed zablokowaniem konta.",
+                    message = $"Nieprawidłowy email lub hasło. Pozostało {remainingAttempts} prób przed zablokowaniem adresu IP.",
                     type = "few_attempts_left",
-                    remainingAttempts = remainingAttempts,
-                    failedAttempts = newFailedAttempts
+                    remainingAttempts = remainingAttempts
                 });
             }
             else
@@ -250,8 +254,7 @@ namespace Backend.Controllers
                 return BadRequest(new { 
                     message = "Nieprawidłowy email lub hasło. Sprawdź wprowadzone dane.",
                     type = "invalid_credentials",
-                    remainingAttempts = remainingAttempts,
-                    failedAttempts = newFailedAttempts
+                    remainingAttempts = remainingAttempts
                 });
             }
         }

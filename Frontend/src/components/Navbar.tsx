@@ -227,7 +227,7 @@ export function Navbar() {
           </div>
 
           {/* Mobile menu */}
-          <div className="md:hidden flex items-center space-x-2">
+          <div className="md:hidden flex flex-grow items-center justify-end space-x-2">
             {/* Mobile Notification Bell - tylko dla zalogowanych */}
             {isLogged && (
               <div className="relative">
