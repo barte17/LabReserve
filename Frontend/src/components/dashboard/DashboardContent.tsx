@@ -32,9 +32,10 @@ interface DashboardContentProps {
   onStatsUpdate?: (stats: { mojeSale: number; mojeStanowiska: number; oczekujaceRezerwacje: number }) => void;
   autoFilterRezerwacje?: string | null;
   onAutoFilterProcessed?: () => void;
+  autoFilterUzytkownicy?: string | null;
 }
 
-export default function DashboardContent({ role, activeSection, onSectionChange, autoAdd, onAutoAddProcessed, onStatsUpdate, autoFilterRezerwacje, onAutoFilterProcessed }: DashboardContentProps) {
+export default function DashboardContent({ role, activeSection, onSectionChange, autoAdd, onAutoAddProcessed, onStatsUpdate, autoFilterRezerwacje, onAutoFilterProcessed, autoFilterUzytkownicy }: DashboardContentProps) {
   // Renderowanie dla roli Admin
   if (role === 'admin') {
     switch (activeSection) {
@@ -45,7 +46,7 @@ export default function DashboardContent({ role, activeSection, onSectionChange,
       case 'stanowiska':
         return <StanowiskaListAdmin autoAdd={autoAdd === 'stanowiska'} onAutoAddProcessed={onAutoAddProcessed} />;
       case 'uzytkownicy':
-        return <UsersListAdmin autoFilter={autoAdd === 'uzytkownicy-niezatwierdzeni' ? 'niezatwierdzony' : undefined} />;
+        return <UsersListAdmin autoFilter={autoFilterUzytkownicy || undefined} />;
       case 'rezerwacje':
         return <RezerwacjeList autoFilter={autoFilterRezerwacje || undefined} onAutoFilterProcessed={onAutoFilterProcessed} />;
       case 'logi':

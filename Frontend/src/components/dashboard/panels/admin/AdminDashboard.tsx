@@ -12,6 +12,18 @@ interface AdminDashboardProps {
   onSectionChange?: (section: string, shouldAutoAdd?: boolean, options?: { autoFilter?: string }) => void;
 }
 
+interface StatItem {
+  title: string;
+  value: string;
+  change: string;
+  icon: string;
+  color: string;
+  section?: string;
+  href?: string;
+  unconfirmedUsers?: number;
+  pendingReservations?: number;
+}
+
 export default function AdminDashboard({ onSectionChange }: AdminDashboardProps = {}) {
   const navigate = useNavigate();
   const { showInfo, showSuccess, showError } = useToastContext();
@@ -43,7 +55,7 @@ export default function AdminDashboard({ onSectionChange }: AdminDashboardProps 
     }
   };
 
-  const [stats, setStats] = useState([
+  const [stats, setStats] = useState<StatItem[]>([
     {
       title: 'Sale',
       value: '0',
@@ -80,6 +92,37 @@ export default function AdminDashboard({ onSectionChange }: AdminDashboardProps 
 
   const [recentActivities, setRecentActivities] = useState<AuditLog[]>([]);
   const [activitiesLoading, setActivitiesLoading] = useState(true);
+
+  const getStatIcon = (title: string) => {
+    switch (title) {
+      case 'Sale':
+        return (
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+        );
+      case 'Stanowiska':
+        return (
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+        );
+      case 'Użytkownicy':
+        return (
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+        );
+      case 'Rezerwacje':
+        return (
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        );
+      default:
+        return null;
+    }
+  };
 
   const loadStats = async () => {
     try {
@@ -246,12 +289,12 @@ export default function AdminDashboard({ onSectionChange }: AdminDashboardProps 
         {stats.map((stat, index) => (
           <div
             key={index}
-            onClick={() => handleSectionChange(stat.section)}
+            onClick={() => handleSectionChange(stat.section ?? '')}
             className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
           >
             <div className="flex items-center">
-              <div className={`${stat.color} p-3 rounded-lg text-white text-2xl mr-4`}>
-                {stat.icon}
+              <div className={`${stat.color} p-3 rounded-lg text-white mr-4 flex items-center justify-center`}>
+                {getStatIcon(stat.title)}
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">{stat.title}</p>
@@ -315,11 +358,13 @@ export default function AdminDashboard({ onSectionChange }: AdminDashboardProps 
           </h3>
           <div className="space-y-4">
             <div className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors cursor-pointer"
-              onClick={() => handleSectionChange('uzytkownicy', true)}>
+              onClick={() => handleSectionChange('uzytkownicy', false, { autoFilter: 'uzytkownik' })}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                    <span className="text-orange-600">👥</span>
+                    <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900">Użytkownicy bez ról biznesowych</p>
@@ -340,7 +385,9 @@ export default function AdminDashboard({ onSectionChange }: AdminDashboardProps 
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                    <span className="text-yellow-600">📅</span>
+                    <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900">Oczekujące rezerwacje</p>

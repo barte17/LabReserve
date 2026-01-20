@@ -145,7 +145,7 @@ namespace Backend.Controllers
                 
                 // Log blocked IP attempt
                 await _auditService.LogAsync("LOGOWANIE_IP_ZABLOKOWANE", "User", null, 
-                    $"IP: {ipAddress}, Email: {dto.Email}, Pozostaly czas blokady: {remainingMinutes} minut");
+                    $"Email: {dto.Email}, Pozostaly czas blokady: {remainingMinutes} minut");
 
                 await delay;
                 return BadRequest(new { 
@@ -164,7 +164,7 @@ namespace Backend.Controllers
                 
                 // Log nieudanego logowania - nieistniejący email
                 await _auditService.LogAsync("LOGOWANIE_NIEUDANE", "User", null, 
-                    $"IP: {ipAddress}, Email: {dto.Email}, Powod: Nieistniejacy email");
+                    $"Email: {dto.Email}, Powod: Nieistniejacy email");
 
                 await delay;
                 return BadRequest(new { 
@@ -202,7 +202,7 @@ namespace Backend.Controllers
                 Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
 
                 // Log udanego logowania
-                await _auditService.LogAsync("LOGOWANIE_UDANE", "User", null, $"IP: {ipAddress}, Email: {dto.Email}");
+                await _auditService.LogAsync("LOGOWANIE_UDANE", "User", null, $"Email: {dto.Email}");
 
                 await delay;
                 return Ok(new
@@ -220,7 +220,7 @@ namespace Backend.Controllers
 
             // Log nieudanego logowania - błędne hasło
             await _auditService.LogAsync("LOGOWANIE_NIEUDANE", "User", null, 
-                $"IP: {ipAddress}, Email: {dto.Email}, Powod: Bledne haslo, Pozostalo prob: {remainingAttempts}");
+                $"Email: {dto.Email}, Powod: Bledne haslo, Pozostalo prob: {remainingAttempts}");
 
             await delay;
 

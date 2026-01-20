@@ -28,6 +28,7 @@ export default function DashboardLayout({ role, availableRoles, onRoleChange, in
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [autoAdd, setAutoAdd] = useState<string | null>(null);
   const [autoFilterRezerwacje, setAutoFilterRezerwacje] = useState<string | null>(null);
+  const [autoFilterUzytkownicy, setAutoFilterUzytkownicy] = useState<string | null>(null);
 
   // Aktualizuj activeSection gdy zmieni się initialSection
   useEffect(() => {
@@ -102,6 +103,17 @@ export default function DashboardLayout({ role, availableRoles, onRoleChange, in
     } else {
       setAutoFilterRezerwacje(null);
     }
+
+    // Obsługa automatycznego filtra dla użytkowników
+    if (section === 'uzytkownicy') {
+      if (options?.autoFilter) {
+        setAutoFilterUzytkownicy(options.autoFilter);
+      } else {
+        setAutoFilterUzytkownicy(null);
+      }
+    } else {
+      setAutoFilterUzytkownicy(null);
+    }
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [role, searchParams, navigate]);
@@ -153,6 +165,7 @@ export default function DashboardLayout({ role, availableRoles, onRoleChange, in
                 onStatsUpdate={setSidebarStats}
                 autoFilterRezerwacje={autoFilterRezerwacje}
                 onAutoFilterProcessed={() => setAutoFilterRezerwacje(null)}
+                autoFilterUzytkownicy={autoFilterUzytkownicy}
               />
             </div>
           </main>
